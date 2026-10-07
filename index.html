@@ -728,13 +728,15 @@
   .rec-card p{ margin:0; font-size:14px; color:var(--text-dim); line-height:1.55; flex:1; }
   .rec-open{ font-size:14px; font-weight:600; color:var(--blush); }
   .rec-estado{ min-height:18px; margin-top:16px; font-size:13.5px; color:var(--text-dim); }
-  .rec-viewer{ position:fixed; inset:0; z-index:300; display:flex; flex-direction:column; background:#0d0304; }
+  .rec-viewer{ position:fixed; inset:0; z-index:300; background:#0d0304; }
   .rec-viewer[hidden]{ display:none; }
-  .rec-viewer-bar{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; border-bottom:1px solid var(--border); background:#1a0509; }
-  .rec-viewer-title{ font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .rec-viewer-actions{ display:flex; gap:8px; flex:none; }
-  .rec-frame{ flex:1; width:100%; border:0; background:#0d0304; color-scheme:dark; }
-  @media(max-width:560px){ #recNuevaPestana{ display:none; } }
+  .rec-frame{ position:absolute; inset:0; width:100%; height:100%; border:0; background:#0d0304; color-scheme:dark; }
+  .rec-cerrar{
+    position:absolute; top:max(14px, env(safe-area-inset-top)); right:16px; z-index:2; width:34px; height:34px; padding:0;
+    border-radius:50%; border:1px solid rgba(247,236,233,0.22); background:rgba(13,3,4,0.5); backdrop-filter:blur(6px);
+    color:rgba(247,236,233,0.8); font:400 14px/1 Inter,sans-serif; cursor:pointer; opacity:0.75; transition:opacity .15s, background .15s;
+  }
+  .rec-cerrar:hover, .rec-cerrar:focus-visible{ opacity:1; background:rgba(13,3,4,0.8); }
 
   #metricasScreen.active{ display:flex; flex-direction:column; }
   #metricasScreen .wrap{ width:100%; flex:1; display:flex; flex-direction:column; padding-bottom:40px; }
@@ -937,7 +939,7 @@
   </div>
   <script>
     try {
-      if (localStorage.getItem('shu_site_ok') === '1') {
+      if (localStorage.getItem('shu_site_ok') === '1' && localStorage.getItem('shu_site_key')) {
         document.getElementById('siteGateOverlay').style.display = 'none';
       }
     } catch (e) {}
@@ -1692,30 +1694,10 @@
     </div>
   </section>
 
-  <!-- Visor de recursos (pantalla completa) -->
+  <!-- Visor de recursos (pantalla completa, solo una "✕" discreta para cerrar) -->
   <div class="rec-viewer" id="recViewer" hidden>
-    <div class="rec-viewer-bar">
-      <span class="rec-viewer-title" id="recViewerTitle"></span>
-      <div class="rec-viewer-actions">
-        <button type="button" class="ghost-link-btn" id="recNuevaPestana">Abrir en pestaña nueva</button>
-        <button type="button" class="ghost-link-btn" id="recCerrar">Cerrar ✕</button>
-      </div>
-    </div>
+    <button type="button" class="rec-cerrar" id="recCerrar" aria-label="Cerrar">✕</button>
     <iframe class="rec-frame" id="recFrame" title="Recurso" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"></iframe>
-  </div>
-
-  <!-- Pide la contraseña de la plataforma si este navegador todavía no la tiene guardada -->
-  <div class="modal-overlay" id="recClaveOverlay">
-    <div class="modal-card">
-      <div class="modal-title">Recursos</div>
-      <p class="modal-sub">Para abrir este material, ingresá otra vez la contraseña de la plataforma.</p>
-      <input type="password" id="recClaveInput" class="modal-input" placeholder="Contraseña" autocomplete="off">
-      <div class="modal-error" id="recClaveError">Contraseña incorrecta.</div>
-      <div class="modal-actions">
-        <button type="button" class="ghost-link-btn" id="recClaveCancelar">Cancelar</button>
-        <button type="button" class="btn-small" id="recClaveOk">Entrar</button>
-      </div>
-    </div>
   </div>
 
   <!-- ===================== Estrategias de alumnas (solo Admin) — hoy
@@ -1845,7 +1827,6 @@
     { id: 'low-ticket', etiqueta: 'Presentación · Low Ticket', titulo: 'Sistema de crecimiento en Skool',
       desc: 'El programa en Skool con más de 100 videos: posicionamiento, contenido, grabación y edición, Meta Business y ventas.' },
   ];
-  let recursoAbierto = null; // { titulo, html }
 
   function renderRecursos(){
     document.getElementById('recGrid').innerHTML = RECURSOS.map(r => `
@@ -1858,27 +1839,24 @@
     document.querySelectorAll('#recGrid .rec-card').forEach(b => b.addEventListener('click', () => abrirRecurso(b.dataset.id)));
   }
   const claveDePlataforma = () => { try { return localStorage.getItem('shu_site_key') || ''; } catch(e){ return ''; } };
+  // La contraseña ya se pidió al entrar al portal. Si por algún motivo falta (o
+  // cambió en el servidor), se vuelve al candado de entrada: no se pide acá.
+  function volverAlCandado(){
+    try { localStorage.removeItem('shu_site_ok'); localStorage.removeItem('shu_site_key'); } catch(e){}
+    location.reload();
+  }
 
-  async function abrirRecurso(id, claveNueva){
-    const r = RECURSOS.find(x => x.id === id);
+  async function abrirRecurso(id){
     const estado = document.getElementById('recEstado');
-    const clave = claveNueva || claveDePlataforma();
-    if(!clave){ pedirClaveRecursos(id); return; }
+    const clave = claveDePlataforma();
+    if(!clave){ volverAlCandado(); return; }
     estado.textContent = 'Cargando…';
     try {
       const res = await fetch(`${WORKER_URL}/recursos/${encodeURIComponent(id)}`, { headers: { 'X-Site-Key': clave } });
-      if(res.status === 401){
-        try { localStorage.removeItem('shu_site_key'); } catch(e){}
-        estado.textContent = '';
-        pedirClaveRecursos(id, true);
-        return;
-      }
+      if(res.status === 401){ volverAlCandado(); return; }
       if(!res.ok){ estado.textContent = 'No se pudo cargar el material. Probá de nuevo en un rato.'; return; }
       const html = await res.text();
-      if(claveNueva){ try { localStorage.setItem('shu_site_key', claveNueva); } catch(e){} }
       estado.textContent = '';
-      recursoAbierto = { titulo: r.titulo, html };
-      document.getElementById('recViewerTitle').textContent = r.etiqueta + ' · ' + r.titulo;
       document.getElementById('recFrame').srcdoc = html;
       document.getElementById('recViewer').hidden = false;
       document.body.style.overflow = 'hidden';
@@ -1893,31 +1871,6 @@
   }
   document.getElementById('recCerrar').addEventListener('click', cerrarRecurso);
   document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && !document.getElementById('recViewer').hidden) cerrarRecurso(); });
-  document.getElementById('recNuevaPestana').addEventListener('click', () => {
-    if(!recursoAbierto) return;
-    const url = URL.createObjectURL(new Blob([recursoAbierto.html], { type: 'text/html' }));
-    window.open(url, '_blank', 'noopener');
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-  });
-
-  // Pide la contraseña de la plataforma (solo si este navegador no la tiene).
-  let recursoPendiente = null;
-  function pedirClaveRecursos(id, falloAntes){
-    recursoPendiente = id;
-    document.getElementById('recClaveInput').value = '';
-    document.getElementById('recClaveError').classList.toggle('show', !!falloAntes);
-    document.getElementById('recClaveOverlay').classList.add('open');
-    document.getElementById('recClaveInput').focus();
-  }
-  function confirmarClaveRecursos(){
-    const v = document.getElementById('recClaveInput').value;
-    if(!v) return;
-    document.getElementById('recClaveOverlay').classList.remove('open');
-    abrirRecurso(recursoPendiente, v);
-  }
-  document.getElementById('recClaveOk').addEventListener('click', confirmarClaveRecursos);
-  document.getElementById('recClaveInput').addEventListener('keydown', (e) => { if(e.key === 'Enter') confirmarClaveRecursos(); });
-  document.getElementById('recClaveCancelar').addEventListener('click', () => document.getElementById('recClaveOverlay').classList.remove('open'));
 
   function entrarARecursos(){
     cambiarDeSeccion(recursosScreen, 'Recursos', () => { renderRecursos(); });
