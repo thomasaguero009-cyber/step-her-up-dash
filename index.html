@@ -1252,6 +1252,10 @@
       <div class="tab-panel active" data-tab-panel="ghl" id="ghl">
         <div class="kpi-grid">
           <div class="kpi-card">
+            <div class="kpi-label">Leads (entran al funnel)</div>
+            <div class="kpi-value" id="ghlLeads">–</div>
+          </div>
+          <div class="kpi-card">
             <div class="kpi-label">Llamadas</div>
             <div class="kpi-value" id="ghlLlamadas">–</div>
           </div>
@@ -1288,7 +1292,7 @@
             <div class="kpi-value" id="mateCierre">–</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Conversión total (show → venta)</div>
+            <div class="kpi-label">Conversión total (lead → venta)</div>
             <div class="kpi-value" id="mateConversion">–</div>
           </div>
           <div class="kpi-card">
@@ -4333,6 +4337,7 @@
     fijarValorNumero('leadsTotal', total.toLocaleString('es-AR'));
     fijarValorNumero('leadsPromedio', diasAMostrar > 0 ? (total / diasAMostrar).toLocaleString('es-AR', { maximumFractionDigits: 1 }) : '–');
     fijarValorNumero('leadsMejor', mejor > 0 ? `${mejor} · día ${serie.indexOf(mejor) + 1}` : '–');
+    pintarConversionTotal();
   }
   async function cargarYPintarLeads(silencioso = false){
     const pedido = ++leadsPedido;
@@ -4383,11 +4388,31 @@
   // cargarYPintarDatosMes (no await'eada ahí) porque tarda varios segundos
   // (recorre ~2500 oportunidades del lado del Worker) — así el resto del
   // dashboard no espera a GHL para pintarse. =====
-  const GHL_IDS = ['ghlLlamadas','ghlAgendadas','ghlShows','ghlCierres','ghlVentas','ghlAov','mateAgendado','mateShowRate','mateCierre','mateConversion'];
+  const GHL_IDS = ['ghlLeads','ghlLlamadas','ghlAgendadas','ghlShows','ghlCierres','ghlVentas','ghlAov','mateAgendado','mateShowRate','mateCierre','mateConversion'];
   // silencioso=true (refresco automático o botón "Actualizar"): deja los
   // números viejos a la vista mientras llegan los nuevos, en vez de
   // taparlos con el círculo de carga — así no "parpadea" cada 5 minutos.
   let ghlPedidoActual = 0;
+  // Conversión total = cierres ÷ leads (contactos nuevos del mes en GHL,
+  // los mismos de "Leads por día"). Necesita los dos pedidos, que llegan
+  // por separado, así que se repinta cuando llega cualquiera de los dos.
+  let ghlTotales = null;
+  function leadsDelMes(){
+    if(!leadsData) return null;
+    const { anio, mes } = mesElegidoAYyyyMm();
+    const dias = new Date(anio, mes + 1, 0).getDate();
+    let total = 0;
+    for(let d = 1; d <= dias; d++){
+      total += leadsData.dias[`${anio}-${String(mes + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`]?.total || 0;
+    }
+    return total;
+  }
+  function pintarConversionTotal(){
+    const leads = leadsDelMes();
+    fijarValorNumero('ghlLeads', leads != null ? leads.toLocaleString('es-AR') : '–');
+    if(leads == null || !ghlTotales){ fijarValorNumero('mateConversion', '–'); return; }
+    fijarValorNumero('mateConversion', leads > 0 ? (ghlTotales.cierres / leads * 100).toFixed(1) + '%' : '–');
+  }
   async function cargarYPintarGHL(silencioso = false){
     const pedido = ++ghlPedidoActual;
     const { anio, mes } = mesElegidoAYyyyMm();
@@ -4398,6 +4423,7 @@
     if(silencioso){
       statusEl.textContent = 'Actualizando desde GHL…';
     } else {
+      ghlTotales = null;
       GHL_IDS.forEach(mostrarCargandoNumero);
       grid.innerHTML = '';
       statusEl.textContent = 'Conectando con GHL…';
@@ -4428,7 +4454,8 @@
       fijarValorNumero('mateAgendado', pctGhl(data.totales.agendadas, data.totales.llamadas));
       fijarValorNumero('mateShowRate', pctGhl(data.totales.shows, data.totales.agendadas));
       fijarValorNumero('mateCierre', pctGhl(data.totales.cierres, data.totales.shows));
-      fijarValorNumero('mateConversion', pctGhl(data.totales.cierres, data.totales.shows));
+      ghlTotales = data.totales;
+      pintarConversionTotal();
 
       const fuentes = Object.entries(data.porFuente).sort((a,b) => b[1].ventas - a[1].ventas);
       grid.innerHTML = fuentes.map(([nombre, f]) => `
