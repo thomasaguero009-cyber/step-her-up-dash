@@ -717,27 +717,37 @@
   /* ===== Recursos ===== */
   #recursosScreen .wrap{ padding-bottom:60px; }
   .rec-intro{ margin:6px 0 26px; color:var(--text-dim); font-size:15px; }
-  .rec-grupo{ margin:34px 0 14px; font-family:Inter,sans-serif; font-size:12px; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--blush); }
-  .rec-grupo:first-child{ margin-top:0; }
+  [data-tipo="presentacion"]{ --ac:#dcc08f; }   /* champagne: presentaciones */
+  [data-tipo="compartir"]{ --ac:#f0a8be; }      /* rosa: para compartir con las leads */
+  .rec-grupo{ display:flex; align-items:center; gap:10px; margin:38px 0 16px; font-family:Inter,sans-serif; font-size:12px; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--ac); }
+  .rec-grupo:first-of-type{ margin-top:0; }
+  .rec-grupo::after{ content:""; flex:1; height:1px; background:linear-gradient(90deg,var(--ac),transparent); opacity:0.35; }
+  .rec-grupo-ic{ width:20px; height:20px; display:inline-flex; }
+  .rec-grupo-ic svg{ width:100%; height:100%; }
+  .rec-top{ display:flex; align-items:center; gap:12px; }
+  .rec-ic{ flex:none; width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--ac); background:color-mix(in srgb, var(--ac) 14%, transparent); border:1px solid color-mix(in srgb, var(--ac) 38%, transparent); }
+  .rec-ic svg{ width:22px; height:22px; }
   .rec-fila{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; }
   .rec-card{
     display:flex; flex-direction:column; gap:12px; text-align:left; padding:24px; border-radius:18px;
     background:var(--card); border:1px solid var(--border); color:inherit; font-family:inherit; transition:border-color .15s;
+    box-shadow:inset 0 3px 0 var(--ac);
   }
-  .rec-card:hover{ border-color:rgba(240,168,190,0.5); }
+  .rec-card:hover{ border-color:color-mix(in srgb, var(--ac) 55%, transparent); }
   .rec-tags{ display:flex; gap:8px; flex-wrap:wrap; }
   .rec-borrador{ color:#ffd9a0; border-color:rgba(255,217,160,0.45); }
+  .rec-card .rec-borrador{ color:#ffd9a0; border-color:rgba(255,217,160,0.45); }
   .rec-acciones{ display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
   .rec-btn{
     flex:none; padding:10px 16px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,0.06);
     color:var(--cream); font:600 13.5px Inter,sans-serif; cursor:pointer; transition:background .15s, border-color .15s;
   }
   .rec-btn:hover{ background:rgba(255,255,255,0.13); border-color:var(--blush-2); }
-  .rec-btn-main{ background:linear-gradient(90deg,var(--blush-2),var(--blush)); color:#2a0a13; border-color:transparent; }
-  .rec-btn-main:hover{ background:linear-gradient(90deg,var(--blush-2),var(--blush)); filter:brightness(1.06); }
+  .rec-btn-main{ background:var(--ac); color:#2a0a13; border-color:transparent; }
+  .rec-btn-main:hover{ background:var(--ac); filter:brightness(1.07); border-color:transparent; }
   .rec-btn.ok{ color:#5fd39a; border-color:rgba(95,211,154,0.6); }
   @media(max-width:560px){ .rec-card{ padding:20px 18px; } .rec-acciones{ gap:6px; flex-wrap:nowrap; } .rec-btn{ padding:10px 11px; font-size:13px; white-space:nowrap; } }
-  .rec-tag{ align-self:flex-start; font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--blush); border:1px solid rgba(240,168,190,0.45); border-radius:999px; padding:4px 11px; }
+  .rec-tag{ align-self:flex-start; font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--ac); border:1px solid color-mix(in srgb, var(--ac) 50%, transparent); border-radius:999px; padding:4px 11px; }
   .rec-card h3{ font-size:22px; line-height:1.2; margin:0; }
   .rec-card p{ margin:0; font-size:14px; color:var(--text-dim); line-height:1.55; flex:1; }
   .rec-estado{ min-height:18px; margin-top:16px; font-size:13.5px; color:var(--text-dim); }
@@ -1845,41 +1855,49 @@
       desc: 'El programa en Skool con más de 100 videos: posicionamiento, contenido, grabación y edición, Meta Business y ventas.' },
     { grupo: 'Para compartir con las leads', id: 'vsl', etiqueta: 'VSL', titulo: 'Video de ventas de Gianie',
       desc: 'La página del video de ventas, para mandársela a una lead por WhatsApp.',
-      url: 'https://class.stepherup.com/step-her-up-c', externo: true,
-      msg: 'Hola 🤍 Te comparto este video de Gianie sobre cómo pasar de experta invisible a autoridad pagada: ' },
+      url: 'https://class.stepherup.com/step-her-up-c', externo: true, },
     { grupo: 'Para compartir con las leads', id: 'lead-magnet-mapa', etiqueta: 'Lead magnet', titulo: 'El Mapa de las 3 Etapas', borrador: true,
       desc: 'Guía de 10 páginas: por qué una marca personal no factura lo que merece y en qué etapa está cada clienta.',
-      url: DOMINIO_PUBLICO + '/r/mapa/',
-      msg: 'Hola 🤍 Te comparto El Mapa de las 3 Etapas de Step Her Up, para que veas en qué etapa está tu marca: ' },
+      url: DOMINIO_PUBLICO + '/r/mapa/', },
     { grupo: 'Para compartir con las leads', id: 'regalo-post-llamada', etiqueta: 'Regalo post-llamada', titulo: 'Calculadora y 3 acciones', borrador: true,
       desc: 'Para quien no avanzó en la llamada: una calculadora de cuántas ventas y clientas potenciales necesita, más 3 cosas concretas para esta semana.',
-      url: DOMINIO_PUBLICO + '/r/regalo/',
-      msg: 'Hola 🤍 Gracias por tu tiempo en la llamada. Te dejo un regalo: una calculadora para ver tus números con claridad y 3 acciones para esta semana: ' },
+      url: DOMINIO_PUBLICO + '/r/regalo/', },
     { grupo: 'Para compartir con las leads', id: 'carta-ventas', etiqueta: 'Carta de ventas', titulo: 'Antes de aplicar al programa', borrador: true,
       desc: 'Carta de Gianie para quien está por aplicar: por qué su negocio no cobra lo que debería.',
-      url: DOMINIO_PUBLICO + '/r/carta/',
-      msg: 'Hola 🤍 Antes de aplicar, te comparto esta carta de Gianie: ' },
+      url: DOMINIO_PUBLICO + '/r/carta/', },
   ];
+
+  // Íconos de línea por tipo: presentación (pantalla) y material para compartir (link).
+  const ICONO_REC = {
+    presentacion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
+    compartir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
+  };
+  const tipoRec = (r) => r.url ? 'compartir' : 'presentacion';
 
   function renderRecursos(){
     const grupos = [...new Set(RECURSOS.map(r => r.grupo))];
-    document.getElementById('recGrid').innerHTML = grupos.map(g => `
-      <h2 class="rec-grupo">${escapeHtml(g)}</h2>
+    document.getElementById('recGrid').innerHTML = grupos.map(g => {
+      const tipo = tipoRec(RECURSOS.find(r => r.grupo === g));
+      return `
+      <h2 class="rec-grupo" data-tipo="${tipo}"><span class="rec-grupo-ic">${ICONO_REC[tipo]}</span>${escapeHtml(g)}</h2>
       <div class="rec-fila">${RECURSOS.filter(r => r.grupo === g).map(r => `
-        <div class="rec-card" data-id="${r.id}">
-          <div class="rec-tags"><span class="rec-tag">${escapeHtml(r.etiqueta)}</span>${r.borrador ? '<span class="rec-tag rec-borrador">En revisión</span>' : ''}</div>
+        <div class="rec-card" data-id="${r.id}" data-tipo="${tipo}">
+          <div class="rec-top">
+            <span class="rec-ic">${ICONO_REC[tipo]}</span>
+            <div class="rec-tags"><span class="rec-tag">${escapeHtml(r.etiqueta)}</span>${r.borrador ? '<span class="rec-tag rec-borrador">En revisión</span>' : ''}</div>
+          </div>
           <h3>${escapeHtml(r.titulo)}</h3>
           <p>${escapeHtml(r.desc)}</p>
           <div class="rec-acciones">
             <button type="button" class="rec-btn rec-btn-main" data-act="abrir">Abrir${r.externo ? ' ↗' : ''}</button>
-            ${r.url ? '<button type="button" class="rec-btn" data-act="copiar">Copiar link</button><button type="button" class="rec-btn" data-act="whatsapp">WhatsApp</button>' : ''}
+            ${r.url ? '<button type="button" class="rec-btn" data-act="copiar">Copiar link</button>' : ''}
           </div>
-        </div>`).join('')}</div>`).join('') + '<p class="rec-estado" id="recEstado"></p>';
+        </div>`).join('')}</div>`;
+    }).join('') + '<p class="rec-estado" id="recEstado"></p>';
     document.querySelectorAll('#recGrid .rec-btn').forEach(b => b.addEventListener('click', () => {
       const id = b.closest('.rec-card').dataset.id, r = RECURSOS.find(x => x.id === id);
       if(b.dataset.act === 'abrir') abrirRecurso(id);
       else if(b.dataset.act === 'copiar') copiarLinkRecurso(r, b);
-      else if(b.dataset.act === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent(r.msg + r.url), '_blank', 'noopener');
     }));
   }
   // Copia el link público (con respaldo para navegadores que no dejan usar el portapapeles).
