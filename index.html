@@ -3838,13 +3838,21 @@
     return isNaN(n) ? 0 : n;
   }
 
+  // Un encabezado del Sheet puede traer las tildes danadas ("No respondi\u221a\u2265" en
+  // vez de "No respondi\u00f3"): se arregla acá para que igual se reconozca la columna.
+  const TILDES_DANADAS = [['\u221a\u00b0','\u00e1'],['\u221a\u00a9','\u00e9'],['\u221a\u2260','\u00ed'],['\u221a\u2265','\u00f3'],['\u221a\u222b','\u00fa'],['\u221a\u00b1','\u00f1']];
+  function normalizarEncabezado(h){
+    let t = String(h || '');
+    TILDES_DANADAS.forEach(([mal, bien]) => { t = t.split(mal).join(bien); });
+    return t.trim().toLowerCase();
+  }
   let filasTrackerCache = null;
   async function obtenerFilasTracker(){
     if(filasTrackerCache) return filasTrackerCache;
     try {
       const texto = await fetchTextConTimeout(SHEET_TRACKER_CSV_URL, 8000);
       const filas = parseCSVSheet(texto);
-      const header = (filas[0] || []).map(h => h.trim().toLowerCase());
+      const header = (filas[0] || []).map(normalizarEncabezado);
       // Acepta variantes cercanas del nombre de cada columna (typos como
       // "Agendas" en vez de "Agendadas" no deberían romper el dashboard).
       const idxDe = (...opciones) => {
@@ -3895,7 +3903,7 @@
     try {
       const texto = await fetchTextConTimeout(SHEET_RANKING_CSV_URL, 8000);
       const filas = parseCSVSheet(texto);
-      const header = (filas[0] || []).map(h => h.trim().toLowerCase());
+      const header = (filas[0] || []).map(normalizarEncabezado);
       const idx = {
         fecha: header.indexOf('fecha'),
         closer: header.indexOf('closer'),
@@ -3935,7 +3943,7 @@
     try {
       const texto = await fetchTextConTimeout(SHEET_ADS_CSV_URL, 8000);
       const filas = parseCSVSheet(texto);
-      const header = (filas[0] || []).map(h => h.trim().toLowerCase());
+      const header = (filas[0] || []).map(normalizarEncabezado);
       const idx = { fecha: header.indexOf('fecha'), gasto: header.indexOf('gasto') };
       const datos = [];
       for(let i=1;i<filas.length;i++){
@@ -3961,7 +3969,7 @@
     try {
       const texto = await fetchTextConTimeout(pista.csvUrl, 8000);
       const filas = parseCSVSheet(texto);
-      const header = (filas[0] || []).map(h => h.trim().toLowerCase());
+      const header = (filas[0] || []).map(normalizarEncabezado);
       const idx = {
         orden: header.indexOf('orden'),
         titulo: header.indexOf('titulo'),
@@ -4231,15 +4239,24 @@
   const COLORES_EXTRA = ['#5fd39a', '#d9b4ff', '#ffb08a'];
   const colorDeSetter = (nombre, i) => COLORES_SETTER[nombre] || COLORES_EXTRA[i % COLORES_EXTRA.length];
   const nombresSetters = () => [...new Set([...SETTERS_FIJOS, ...datosSetters.keys()])];
-  let datosSetters = new Map(), setterMetrica = 'ventas', setterFiltro = 'Comparar';
+  let datosSetters = new Map(), setterMetrica = 'ventas', setterFiltro = 'Comparar', setterMetricaElegida = false;
+  // Si nadie eligió una métrica a mano y la de entrada no tiene datos este mes (por ejemplo, todavía
+  // no hay cash cargado), se muestra la primera que sí tenga, en vez de un gráfico vacío.
+  function metricaConDatos(mapa, metricas, actual){
+    const tiene = (campo) => [...mapa.values()].some(s => s[campo] && s[campo].some(v => v > 0));
+    if(tiene(actual)) return actual;
+    const otra = metricas.find(m => tiene(m.valor));
+    return otra ? otra.valor : actual;
+  }
   function renderGraficoSetters(){
+    if(!setterMetricaElegida) setterMetrica = metricaConDatos(datosSetters, METRICAS_SETTER, 'ventas');
     const m = METRICAS_SETTER.find(x => x.valor === setterMetrica);
     const nombres = nombresSetters();
     if(setterFiltro !== 'Comparar' && setterFiltro !== 'Todos' && !nombres.includes(setterFiltro)) setterFiltro = 'Comparar';
-    pintarChips('settersMetrica', METRICAS_SETTER.map(x => ({ valor: x.valor, texto: x.texto })), setterMetrica, v => { setterMetrica = v; renderGraficoSetters(); });
+    pintarChips('settersMetrica', METRICAS_SETTER.map(x => ({ valor: x.valor, texto: x.texto })), setterMetrica, v => { setterMetrica = v; setterMetricaElegida = true; renderGraficoSetters(); });
     pintarChips('settersFiltro', [{ valor: 'Comparar', texto: 'Comparar setters' }, { valor: 'Todos', texto: 'Equipo' }, ...nombres.map(n => ({ valor: n, texto: n }))], setterFiltro, v => { setterFiltro = v; renderGraficoSetters(); });
     const leyenda = document.getElementById('settersLeyenda');
-    const vacio = 'Sin datos de setters este mes';
+    const vacio = 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' cargado este mes';
     if(setterFiltro === 'Comparar'){
       const series = nombres.map((n, i) => ({
         nombre: n, color: colorDeSetter(n, i),
@@ -4262,14 +4279,15 @@
     { valor: 'noShows', texto: 'No shows', color: '#ff9b9b' },
     { valor: 'cierres', texto: 'Cierres', color: '#f0c674' },
   ];
-  let datosClosers = new Map(), closerMetrica = 'cash', closerFiltro = 'Todos';
+  let datosClosers = new Map(), closerMetrica = 'cash', closerFiltro = 'Todos', closerMetricaElegida = false;
   function renderGraficoClosers(){
+    if(!closerMetricaElegida) closerMetrica = metricaConDatos(datosClosers, METRICAS_CLOSER, 'cash');
     const m = METRICAS_CLOSER.find(x => x.valor === closerMetrica);
     if(closerFiltro !== 'Todos' && !datosClosers.has(closerFiltro)) closerFiltro = 'Todos';
-    pintarChips('closersMetrica', METRICAS_CLOSER.map(x => ({ valor: x.valor, texto: x.texto })), closerMetrica, v => { closerMetrica = v; renderGraficoClosers(); });
+    pintarChips('closersMetrica', METRICAS_CLOSER.map(x => ({ valor: x.valor, texto: x.texto })), closerMetrica, v => { closerMetrica = v; closerMetricaElegida = true; renderGraficoClosers(); });
     pintarChips('closersFiltro', ['Todos', ...datosClosers.keys()].map(n => ({ valor: n, texto: n === 'Todos' ? 'Todos los closers' : n })), closerFiltro, v => { closerFiltro = v; renderGraficoClosers(); });
     const serie = sumarSeries(datosClosers, closerFiltro, closerMetrica, ctxMes.dias).slice(0, ctxMes.diasAMostrar);
-    drawChart('chartClosers', 'tooltipClosers', serie, m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio: 'Sin cobros de closers este mes' });
+    drawChart('chartClosers', 'tooltipClosers', serie, m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio: 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' cargado este mes' });
   }
   function renderBreakdownClosers(mapa){
     const grid = document.getElementById('closersGrid');
