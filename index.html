@@ -714,6 +714,28 @@
   /* ===== Métricas: formulario donde cada setter/closer carga sus
      números del día — a diferencia de Herramientas, esto se sube al
      Sheet y sí se comparte/refleja en el dashboard. ===== */
+  /* ===== Recursos ===== */
+  #recursosScreen .wrap{ padding-bottom:60px; }
+  .rec-intro{ margin:6px 0 26px; color:var(--text-dim); font-size:15px; }
+  .rec-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; }
+  .rec-card{
+    display:flex; flex-direction:column; gap:12px; text-align:left; padding:24px; border-radius:18px; cursor:pointer;
+    background:var(--card); border:1px solid var(--border); color:inherit; font-family:inherit; transition:border-color .15s, background .15s;
+  }
+  .rec-card:hover{ border-color:var(--blush-2); background:rgba(255,255,255,0.09); }
+  .rec-tag{ align-self:flex-start; font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--blush); border:1px solid rgba(240,168,190,0.45); border-radius:999px; padding:4px 11px; }
+  .rec-card h3{ font-size:22px; line-height:1.2; margin:0; }
+  .rec-card p{ margin:0; font-size:14px; color:var(--text-dim); line-height:1.55; flex:1; }
+  .rec-open{ font-size:14px; font-weight:600; color:var(--blush); }
+  .rec-estado{ min-height:18px; margin-top:16px; font-size:13.5px; color:var(--text-dim); }
+  .rec-viewer{ position:fixed; inset:0; z-index:300; display:flex; flex-direction:column; background:#0d0304; }
+  .rec-viewer[hidden]{ display:none; }
+  .rec-viewer-bar{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px; border-bottom:1px solid var(--border); background:#1a0509; }
+  .rec-viewer-title{ font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rec-viewer-actions{ display:flex; gap:8px; flex:none; }
+  .rec-frame{ flex:1; width:100%; border:0; background:#0d0304; color-scheme:dark; }
+  @media(max-width:560px){ #recNuevaPestana{ display:none; } }
+
   #metricasScreen.active{ display:flex; flex-direction:column; }
   #metricasScreen .wrap{ width:100%; flex:1; display:flex; flex-direction:column; padding-bottom:40px; }
   .metricas-card{
@@ -955,6 +977,12 @@
           <span class="entry-option-text">
             <span class="entry-option-title">Métricas</span>
             <span class="entry-option-sub">Cargá tus números del día</span>
+          </span>
+        </button>
+        <button type="button" class="entry-option" id="goRecursosBtn">
+          <span class="entry-option-text">
+            <span class="entry-option-title">Recursos</span>
+            <span class="entry-option-sub">Presentaciones y materiales</span>
           </span>
         </button>
       </div>
@@ -1645,6 +1673,51 @@
     </div>
   </section>
 
+  <!-- ===================== Recursos (presentaciones y materiales del equipo).
+       Los archivos viven en el servidor privado (Worker + KV), no en este repo
+       público: solo se descargan con la contraseña de la plataforma. ===================== -->
+  <section class="screen" id="recursosScreen">
+    <div class="wrap">
+      <header class="dash-header">
+        <div class="section-label" style="margin:0;">Recursos</div>
+        <div class="dash-header-right">
+          <div class="section-switcher" id="sectionSwitcherRecursos">
+            <button type="button" class="ghost-link-btn" id="sectionSwitcherBtnRecursos">Secciones ▾</button>
+            <div class="month-list" id="sectionSwitcherListRecursos"></div>
+          </div>
+        </div>
+      </header>
+      <p class="rec-intro">Materiales para usar en las llamadas y con las clientas.</p>
+      <div class="rec-grid" id="recGrid"></div>
+    </div>
+  </section>
+
+  <!-- Visor de recursos (pantalla completa) -->
+  <div class="rec-viewer" id="recViewer" hidden>
+    <div class="rec-viewer-bar">
+      <span class="rec-viewer-title" id="recViewerTitle"></span>
+      <div class="rec-viewer-actions">
+        <button type="button" class="ghost-link-btn" id="recNuevaPestana">Abrir en pestaña nueva</button>
+        <button type="button" class="ghost-link-btn" id="recCerrar">Cerrar ✕</button>
+      </div>
+    </div>
+    <iframe class="rec-frame" id="recFrame" title="Recurso" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"></iframe>
+  </div>
+
+  <!-- Pide la contraseña de la plataforma si este navegador todavía no la tiene guardada -->
+  <div class="modal-overlay" id="recClaveOverlay">
+    <div class="modal-card">
+      <div class="modal-title">Recursos</div>
+      <p class="modal-sub">Para abrir este material, ingresá otra vez la contraseña de la plataforma.</p>
+      <input type="password" id="recClaveInput" class="modal-input" placeholder="Contraseña" autocomplete="off">
+      <div class="modal-error" id="recClaveError">Contraseña incorrecta.</div>
+      <div class="modal-actions">
+        <button type="button" class="ghost-link-btn" id="recClaveCancelar">Cancelar</button>
+        <button type="button" class="btn-small" id="recClaveOk">Entrar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== Estrategias de alumnas (solo Admin) — hoy
        con datos de EJEMPLO; todavía no está conectada a las respuestas
        reales del formulario ni a la IA. ===================== -->
@@ -1673,10 +1746,11 @@
   const rankingScreen = document.getElementById('rankingScreen');
   const toolsScreen = document.getElementById('toolsScreen');
   const metricasScreen = document.getElementById('metricasScreen');
+  const recursosScreen = document.getElementById('recursosScreen');
   const estrategiasScreen = document.getElementById('estrategiasScreen');
 
   function showScreen(el){
-    [loadingScreen, onboardingScreen, transitionScreen, dashboardScreen, rankingScreen, toolsScreen, metricasScreen, estrategiasScreen].forEach(s => s.classList.remove('active'));
+    [loadingScreen, onboardingScreen, transitionScreen, dashboardScreen, rankingScreen, toolsScreen, metricasScreen, recursosScreen, estrategiasScreen].forEach(s => s.classList.remove('active'));
     el.classList.add('active');
   }
 
@@ -1762,6 +1836,92 @@
   }
   document.getElementById('goHerramientasBtn').addEventListener('click', entrarAHerramientas);
 
+  // ===== Recursos: presentaciones y materiales del equipo. Cada uno se pide
+  // al Worker (servidor privado) con la contraseña de la plataforma, y se
+  // muestra en un visor a pantalla completa. =====
+  const RECURSOS = [
+    { id: 'high-ticket', etiqueta: 'Presentación', titulo: 'Consultoría High Ticket',
+      desc: 'Presentación de la consultoría 1:1 de Step Her Up: el sistema, el acompañamiento, los bonos y la inversión.' },
+  ];
+  let recursoAbierto = null; // { titulo, html }
+
+  function renderRecursos(){
+    document.getElementById('recGrid').innerHTML = RECURSOS.map(r => `
+      <button type="button" class="rec-card" data-id="${r.id}">
+        <span class="rec-tag">${escapeHtml(r.etiqueta)}</span>
+        <h3>${escapeHtml(r.titulo)}</h3>
+        <p>${escapeHtml(r.desc)}</p>
+        <span class="rec-open">Abrir →</span>
+      </button>`).join('') + '<p class="rec-estado" id="recEstado"></p>';
+    document.querySelectorAll('#recGrid .rec-card').forEach(b => b.addEventListener('click', () => abrirRecurso(b.dataset.id)));
+  }
+  const claveDePlataforma = () => { try { return localStorage.getItem('shu_site_key') || ''; } catch(e){ return ''; } };
+
+  async function abrirRecurso(id, claveNueva){
+    const r = RECURSOS.find(x => x.id === id);
+    const estado = document.getElementById('recEstado');
+    const clave = claveNueva || claveDePlataforma();
+    if(!clave){ pedirClaveRecursos(id); return; }
+    estado.textContent = 'Cargando…';
+    try {
+      const res = await fetch(`${WORKER_URL}/recursos/${encodeURIComponent(id)}`, { headers: { 'X-Site-Key': clave } });
+      if(res.status === 401){
+        try { localStorage.removeItem('shu_site_key'); } catch(e){}
+        estado.textContent = '';
+        pedirClaveRecursos(id, true);
+        return;
+      }
+      if(!res.ok){ estado.textContent = 'No se pudo cargar el material. Probá de nuevo en un rato.'; return; }
+      const html = await res.text();
+      if(claveNueva){ try { localStorage.setItem('shu_site_key', claveNueva); } catch(e){} }
+      estado.textContent = '';
+      recursoAbierto = { titulo: r.titulo, html };
+      document.getElementById('recViewerTitle').textContent = r.etiqueta + ' · ' + r.titulo;
+      document.getElementById('recFrame').srcdoc = html;
+      document.getElementById('recViewer').hidden = false;
+      document.body.style.overflow = 'hidden';
+    } catch(e){
+      estado.textContent = 'No se pudo conectar. Revisá tu internet y probá de nuevo.';
+    }
+  }
+  function cerrarRecurso(){
+    document.getElementById('recViewer').hidden = true;
+    document.getElementById('recFrame').srcdoc = '';
+    document.body.style.overflow = '';
+  }
+  document.getElementById('recCerrar').addEventListener('click', cerrarRecurso);
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && !document.getElementById('recViewer').hidden) cerrarRecurso(); });
+  document.getElementById('recNuevaPestana').addEventListener('click', () => {
+    if(!recursoAbierto) return;
+    const url = URL.createObjectURL(new Blob([recursoAbierto.html], { type: 'text/html' }));
+    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  });
+
+  // Pide la contraseña de la plataforma (solo si este navegador no la tiene).
+  let recursoPendiente = null;
+  function pedirClaveRecursos(id, falloAntes){
+    recursoPendiente = id;
+    document.getElementById('recClaveInput').value = '';
+    document.getElementById('recClaveError').classList.toggle('show', !!falloAntes);
+    document.getElementById('recClaveOverlay').classList.add('open');
+    document.getElementById('recClaveInput').focus();
+  }
+  function confirmarClaveRecursos(){
+    const v = document.getElementById('recClaveInput').value;
+    if(!v) return;
+    document.getElementById('recClaveOverlay').classList.remove('open');
+    abrirRecurso(recursoPendiente, v);
+  }
+  document.getElementById('recClaveOk').addEventListener('click', confirmarClaveRecursos);
+  document.getElementById('recClaveInput').addEventListener('keydown', (e) => { if(e.key === 'Enter') confirmarClaveRecursos(); });
+  document.getElementById('recClaveCancelar').addEventListener('click', () => document.getElementById('recClaveOverlay').classList.remove('open'));
+
+  function entrarARecursos(){
+    cambiarDeSeccion(recursosScreen, 'Recursos', () => { renderRecursos(); });
+  }
+  document.getElementById('goRecursosBtn').addEventListener('click', entrarARecursos);
+
   function entrarAMetricas(){
     cambiarDeSeccion(metricasScreen, 'Métricas', () => {
       prepararPantallaMetricas();
@@ -1779,6 +1939,7 @@
     { id: 'ranking', label: 'Ranking', activa: () => rankingScreen.classList.contains('active'), ir: entrarAlRanking },
     { id: 'herramientas', label: 'Herramientas', activa: () => toolsScreen.classList.contains('active'), ir: entrarAHerramientas },
     { id: 'metricas', label: 'Métricas', activa: () => metricasScreen.classList.contains('active'), ir: entrarAMetricas },
+    { id: 'recursos', label: 'Recursos', activa: () => recursosScreen.classList.contains('active'), ir: entrarARecursos },
   ];
 
   function cerrarSwitchersSecciones(){
@@ -1817,6 +1978,7 @@
   inicializarSwitcherSecciones('sectionSwitcherRanking', 'sectionSwitcherBtnRanking', 'sectionSwitcherListRanking');
   inicializarSwitcherSecciones('sectionSwitcherTools', 'sectionSwitcherBtnTools', 'sectionSwitcherListTools');
   inicializarSwitcherSecciones('sectionSwitcherMetricas', 'sectionSwitcherBtnMetricas', 'sectionSwitcherListMetricas');
+  inicializarSwitcherSecciones('sectionSwitcherRecursos', 'sectionSwitcherBtnRecursos', 'sectionSwitcherListRecursos');
 
   // ===== Herramientas: contadores tipo "tally counter" — cada setter/
   // closer los usa para llevar cuentas propias (ej. llamadas hechas en
@@ -2121,7 +2283,7 @@
   const siteGateConfirm = document.getElementById('siteGateConfirm');
   function intentarSiteGate(){
     if(siteGateInput.value === 'shu100k'){
-      try { localStorage.setItem('shu_site_ok', '1'); } catch(e){}
+      try { localStorage.setItem('shu_site_ok', '1'); localStorage.setItem('shu_site_key', siteGateInput.value); } catch(e){}
       siteGateOverlay.style.display = 'none';
     } else {
       siteGateError.classList.add('show');
