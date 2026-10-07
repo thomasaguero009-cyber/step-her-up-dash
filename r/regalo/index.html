@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regalo — Step Her Up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Cormorant+Garamond:ital@1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wine-1:#1a0509; --wine-2:#3d0f1f; --wine-3:#5a1626;
+    --blush:#f0a8be; --blush-2:#e88aa8;
+    --cream:#f7ece9; --text-dim:rgba(247,236,233,0.72);
+    --card:rgba(255,255,255,0.06); --border:rgba(255,255,255,0.16);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; color:var(--cream);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,sans-serif;
+    line-height:1.6; font-size:16.5px;
+    background:
+      radial-gradient(ellipse 1100px 700px at 82% 0%, rgba(90,22,38,0.5), transparent 55%),
+      radial-gradient(ellipse 900px 600px at 15% 60%, rgba(90,22,38,0.35), transparent 55%),
+      linear-gradient(180deg, var(--wine-2) 0%, var(--wine-1) 40%);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:620px; margin:0 auto; padding:60px 24px 90px; }
+  h1,h2{ font-family:"Playfair Display", Georgia, serif; margin:0; font-weight:600; letter-spacing:-0.2px; }
+  em{ font-family:"Cormorant Garamond", Georgia, serif; font-style:italic; }
+  .hl{ color:var(--blush); }
+  p{ margin:0 0 16px; }
+  b{ color:var(--cream); }
+
+  .brand{ text-align:center; font-size:12.5px; font-weight:700; letter-spacing:0.28em; color:var(--blush); margin-bottom:40px; }
+  .eyebrow{ font-size:12px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--blush); margin-bottom:14px; }
+  h1.title{ font-size:clamp(26px,5vw,34px); line-height:1.25; margin-bottom:20px; }
+  .lede{ font-size:17px; line-height:1.55; color:var(--cream); margin-bottom:36px; }
+
+  .rule{ height:1px; background:linear-gradient(90deg, var(--blush-2), transparent); margin:40px 0; border:none; }
+
+  /* ===== Calculadora ===== */
+  .calc-card{
+    background:var(--card); border:1px solid var(--border); border-radius:18px;
+    padding:30px 26px; margin:26px 0;
+  }
+  .calc-card h2{ font-size:21px; margin-bottom:6px; }
+  .calc-sub{ font-size:13.5px; color:var(--text-dim); margin-bottom:22px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:12.5px; color:var(--text-dim); margin-bottom:6px; font-weight:600; }
+  .field .input-row{ position:relative; }
+  .field .prefix{ position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-dim); font-size:14.5px; pointer-events:none; }
+  .field .suffix{ position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--text-dim); font-size:14.5px; pointer-events:none; }
+  .field input{
+    width:100%; padding:13px 14px; border-radius:10px; border:1px solid var(--border);
+    background:rgba(0,0,0,0.25); color:var(--cream); font-size:15px; font-family:inherit;
+  }
+  .field input.has-prefix{ padding-left:30px; }
+  .field input.has-suffix{ padding-right:34px; }
+  .field input:focus{ outline:none; border-color:var(--blush-2); }
+  .field input::-webkit-outer-spin-button, .field input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+
+  .calc-results{ margin-top:24px; padding-top:22px; border-top:1px dashed var(--border); }
+  .result-row{ display:flex; justify-content:space-between; align-items:baseline; padding:9px 0; }
+  .result-row .rlabel{ font-size:13.5px; color:var(--text-dim); }
+  .result-row .rval{ font-family:"Playfair Display",serif; font-size:20px; font-weight:600; color:var(--blush); font-variant-numeric:tabular-nums; }
+  .result-row.main .rval{ font-size:26px; }
+  .calc-note{ margin-top:16px; font-size:12px; color:var(--text-dim); line-height:1.5; }
+
+  /* ===== Mientras tanto ===== */
+  .actions{ margin:26px 0; display:flex; flex-direction:column; gap:0; }
+  .action{ display:flex; gap:16px; padding:18px 0; border-top:1px solid var(--border); }
+  .action:first-child{ border-top:none; padding-top:4px; }
+  .action-num{ font-family:"Playfair Display", serif; font-size:20px; color:var(--blush); min-width:28px; flex-shrink:0; }
+  .action h3{ font-family:"Inter",sans-serif; font-weight:700; font-size:15px; color:var(--cream); margin:0 0 4px; }
+  .action p{ font-size:14px; color:var(--text-dim); margin:0; }
+
+  .closing{
+    margin-top:40px; padding:24px 26px; background:var(--card); border:1px solid var(--border);
+    border-radius:16px; text-align:center;
+  }
+  .closing p{ font-size:14.5px; color:var(--text-dim); margin-bottom:6px; }
+  .closing .sig{ font-family:"Cormorant Garamond", Georgia, serif; font-style:italic; font-size:19px; color:var(--blush); margin-top:8px; }
+
+  footer{ text-align:center; margin-top:56px; }
+  footer p{ font-size:11.5px; color:var(--text-dim); max-width:440px; margin:0 auto; }
+</style>
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Un regalo de Step Her Up: calculadora y 3 acciones">
+<meta property="og:description" content="Calcula cuántas ventas y clientas potenciales necesitas para tu meta, y 3 cosas para hacer esta semana.">
+<meta property="og:image" content="https://dash.stepherup.com/assets/gianie-foto.jpg">
+<meta property="og:url" content="https://dash.stepherup.com/r/regalo/">
+<meta name="description" content="Calcula cuántas ventas y clientas potenciales necesitas para tu meta, y 3 cosas para hacer esta semana.">
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="brand">STEP HER UP</div>
+
+  <div class="eyebrow">Un regalo, sin nada a cambio</div>
+  <h1 class="title">Gracias por tu tiempo en la llamada.</h1>
+  <p class="lede">Sé que esta vez no era el momento — y está bien. Igual quiero dejarte algo útil: una calculadora para que veas tus números con claridad, y 3 cosas concretas que podés hacer esta semana, con o sin nosotros.</p>
+
+  <hr class="rule">
+
+  <div class="calc-card">
+    <h2>¿Cuánto tenés que facturar por semana?</h2>
+    <p class="calc-sub">Poné tus números reales — nada se guarda, esto corre en tu navegador.</p>
+
+    <div class="field">
+      <label for="metaMensual">Tu meta de facturación mensual</label>
+      <div class="input-row">
+        <span class="prefix">$</span>
+        <input type="number" id="metaMensual" class="has-prefix" placeholder="50000" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="ticket">Tu ticket promedio por clienta</label>
+      <div class="input-row">
+        <span class="prefix">$</span>
+        <input type="number" id="ticket" class="has-prefix" placeholder="800" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="cierre">Tu tasa de cierre (de cada 10 clientas potenciales que te consultan, cuántas te compran)</label>
+      <div class="input-row">
+        <input type="number" id="cierre" class="has-suffix" placeholder="30" inputmode="numeric" min="1" max="100">
+        <span class="suffix">%</span>
+      </div>
+    </div>
+
+    <div class="calc-results" id="calcResults" style="display:none;">
+      <div class="result-row main">
+        <span class="rlabel">Ventas que necesitás por mes</span>
+        <span class="rval" id="rVentas">—</span>
+      </div>
+      <div class="result-row">
+        <span class="rlabel">Clientas potenciales que necesitás por mes</span>
+        <span class="rval" id="rLlamadas">—</span>
+      </div>
+      <div class="result-row">
+        <span class="rlabel">Clientas potenciales que necesitás por semana</span>
+        <span class="rval" id="rLlamadasSemana">—</span>
+      </div>
+      <p class="calc-note">Esto asume 4.3 semanas por mes. Si esa cantidad de clientas potenciales por semana te resulta imposible con tu capacidad actual (llamadas, consultas, mensajes o lo que uses para cerrar), el problema no es esforzarte más — es que tu ticket promedio o tu tasa de cierre tienen que subir.</p>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <h2 style="font-size:22px; margin-bottom:8px;">Mientras tanto</h2>
+  <p style="color:var(--text-dim); font-size:14.5px; margin-bottom:6px;">3 cosas para que empieces a mirar distinto esta semana:</p>
+
+  <div class="actions">
+    <div class="action">
+      <span class="action-num">01</span>
+      <div><h3>Contá cuántas veces te preguntaron "pero vos qué hacés exactamente"</h3><p>Si te pasa seguido, no es que expliques mal en el momento — es que en ningún lado donde te encuentren (perfil, web, local) queda clara la transformación que generás. Eso se nota antes de que abras la boca.</p></div>
+    </div>
+    <div class="action">
+      <span class="action-num">02</span>
+      <div><h3>Contá cuántas pruebas reales mostraste esta semana, no opiniones</h3><p>Un resultado, un número, un antes/después — no "me encanta lo que hago". La mayoría cree que ya lo está mostrando, y en realidad casi todo lo que comparte es simpatía, no evidencia.</p></div>
+    </div>
+    <div class="action">
+      <span class="action-num">03</span>
+      <div><h3>Contá cuántos mensajes distintos probaste esta semana</h3><p>Si cambiás de ángulo todo el tiempo, es imposible saber qué está funcionando. El problema casi nunca es el mensaje en sí — es que nunca le diste tiempo a uno solo.</p></div>
+    </div>
+  </div>
+
+  <div class="closing">
+    <p>Cuando quieras retomar la conversación, la puerta sigue abierta — sin presión, a tu tiempo.</p>
+    <div class="sig">— Step Her Up</div>
+  </div>
+
+  <footer>
+    <p>Step Her Up · Gianie Milet — estratega en posicionamiento y crecimiento de negocios para mujeres profesionales.</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const metaMensual = document.getElementById('metaMensual');
+  const ticket = document.getElementById('ticket');
+  const cierre = document.getElementById('cierre');
+  const results = document.getElementById('calcResults');
+  const fmt = n => '$' + Math.round(n).toLocaleString('es-AR');
+
+  function calcular(){
+    const meta = Number(metaMensual.value);
+    const tk = Number(ticket.value);
+    const cr = Number(cierre.value);
+    if(!meta || !tk || !cr){ results.style.display = 'none'; return; }
+
+    const ventasMes = meta / tk;
+    const llamadasMes = ventasMes / (cr / 100);
+    const llamadasSemana = llamadasMes / 4.3;
+
+    document.getElementById('rVentas').textContent = Math.ceil(ventasMes) + (ventasMes === 1 ? ' venta' : ' ventas');
+    document.getElementById('rLlamadas').textContent = Math.ceil(llamadasMes);
+    document.getElementById('rLlamadasSemana').textContent = Math.ceil(llamadasSemana);
+    results.style.display = 'block';
+  }
+
+  [metaMensual, ticket, cierre].forEach(el => el.addEventListener('input', calcular));
+})();
+</script>
+</body>
+</html>

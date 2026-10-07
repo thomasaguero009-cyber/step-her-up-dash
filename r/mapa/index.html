@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El Mapa de las 3 Etapas — Step Her Up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Paleta marfil + oro viejo + vino casi negro — reemplaza el rosa/fucsia
+       anterior por dorado envejecido, que lee más autoridad editorial que
+       romance/belleza. Los NOMBRES de variable quedan iguales a propósito
+       (--rose sigue siendo el acento principal) para no tener que rastrear
+       cada uso suelto en las 9 páginas — solo cambia el valor. */
+    --wine: #591722;
+    --wine-deep: #200508;
+    --heading: #200508; /* títulos sobre --paper/--blush — separado de --wine-deep
+                            porque ese también pinta el fondo de tapa/cierre, que
+                            se queda oscuro siempre; los títulos sí necesitan
+                            invertirse a claro en modo oscuro. */
+    --rose: #9C7A3E;
+    --rose-soft: #C7A968;
+    --blush: #F1E7D6;
+    --paper: #FBF7F1;
+    --ink: #211611;
+    --ink-soft: #7A6858;
+    --gold: #8C6A2F;
+    --page-bg: #E7DDCE;
+    --shadow: 0 30px 60px -25px rgba(32, 5, 8, 0.4);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --page-bg: #1C1310;
+      --paper: #251A14;
+      --ink: #F1E6D8;
+      --ink-soft: #C7B7A3;
+      --blush: #362A1F;
+      --heading: #E8D9B8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page-bg: #1C1310;
+    --paper: #251A14;
+    --ink: #F1E6D8;
+    --ink-soft: #C7B7A3;
+    --blush: #362A1F;
+    --heading: #E8D9B8;
+  }
+
+  * { box-sizing: border-box; }
+  html {
+    scroll-padding-top: env(safe-area-inset-top, 0px);
+  }
+  html, body {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--ink);
+    font-family: "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, .display {
+    font-family: "Fraunces", Georgia, "Times New Roman", serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 14px;
+    background: linear-gradient(180deg, var(--page-bg) 70%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .topbar span {
+    pointer-events: auto;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid rgba(122, 18, 48, 0.15);
+    padding: 7px 16px;
+    border-radius: 100px;
+    box-shadow: 0 8px 20px -12px rgba(0,0,0,0.25);
+  }
+
+  .deck {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 8px 20px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .page {
+    background: var(--paper);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    padding: 46px 38px 40px;
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1 / 1.35;
+    display: flex;
+    flex-direction: column;
+  }
+  @media (max-width: 480px) {
+    .page { aspect-ratio: auto; min-height: auto; padding: 34px 26px 30px; }
+  }
+
+  .folio {
+    position: absolute;
+    bottom: 20px;
+    right: 24px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+  }
+  .folio-l {
+    position: absolute;
+    bottom: 20px;
+    left: 24px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--rose);
+  }
+
+  /* ---------- PAGE 1 — COVER ---------- */
+  .p-cover {
+    background: linear-gradient(155deg, var(--wine) 0%, var(--wine-deep) 62%, #120303 100%);
+    color: #F5EEE1;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .p-cover .brand {
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    color: var(--rose-soft);
+    font-weight: 500;
+  }
+  .p-cover .cover-title {
+    font-size: clamp(34px, 8vw, 46px);
+    line-height: 1.05;
+    color: #F8F2E6;
+    margin-top: 20px;
+  }
+  .p-cover .cover-title em {
+    font-style: italic;
+    color: var(--rose-soft);
+  }
+  .p-cover .cover-sub {
+    margin-top: 18px;
+    font-size: 16px;
+    line-height: 1.55;
+    color: #E2D3B9;
+    max-width: 34ch;
+  }
+  .cover-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .tagline {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: var(--rose-soft);
+  }
+  .cover-mark {
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(199,169,104,0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Fraunces", serif;
+    font-size: 15px;
+    color: #F5EEE1;
+  }
+
+  /* ---------- generic content page ---------- */
+  .kicker {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--rose);
+    font-weight: 600;
+  }
+  .h-title {
+    font-size: clamp(24px, 5.5vw, 30px);
+    line-height: 1.15;
+    margin-top: 10px;
+    color: var(--heading);
+  }
+  .lede {
+    margin-top: 16px;
+    font-size: 15.5px;
+    line-height: 1.6;
+    color: var(--ink);
+    max-width: 46ch;
+  }
+  .rule {
+    height: 1px;
+    background: linear-gradient(90deg, var(--rose-soft), transparent);
+    margin: 22px 0;
+  }
+
+  /* stage overview list (page 3) */
+  .stage-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 16px 0;
+    border-top: 1px solid rgba(122,18,48,0.12);
+  }
+  .stage-row:first-of-type { border-top: none; }
+  .stage-num {
+    font-family: "Fraunces", serif;
+    font-size: 26px;
+    color: var(--rose-soft);
+    min-width: 44px;
+  }
+  .stage-copy h3 { font-size: 16px; color: var(--heading); }
+  .stage-copy p { margin: 6px 0 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; }
+
+  /* deep-dive stage pages */
+  .stage-tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    padding: 5px 12px;
+    border-radius: 100px;
+    background: var(--blush);
+    color: var(--heading);
+    font-weight: 600;
+    width: fit-content;
+  }
+  .block-label {
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    color: var(--rose);
+    font-weight: 600;
+    margin-top: 22px;
+  }
+  .block-text {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--ink);
+    margin-top: 6px;
+  }
+  ul.plain {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--ink);
+  }
+  ul.plain li { margin-bottom: 4px; }
+
+  /* objections table page */
+  .obj-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    padding: 14px 0;
+    border-top: 1px solid rgba(122,18,48,0.12);
+  }
+  .obj-row:first-of-type { border-top: none; }
+  .obj-col-label { font-size: 10.5px; letter-spacing: 0.06em; color: var(--rose); font-weight: 600; margin-bottom: 4px; display: block;}
+  .obj-said { font-size: 13.5px; color: var(--ink-soft); font-style: italic; }
+  .obj-real { font-size: 13.5px; color: var(--heading); font-weight: 500; line-height: 1.45; }
+
+  /* self diagnostic checklist */
+  .quiz-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 11px 0;
+    border-top: 1px solid rgba(122,18,48,0.12);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .quiz-item:first-of-type { border-top: none; }
+  .quiz-box {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--rose);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .score-note {
+    margin-top: 20px;
+    background: var(--blush);
+    border-radius: 4px;
+    padding: 14px 16px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--heading);
+  }
+
+  /* closing CTA page */
+  .p-cta {
+    background: linear-gradient(160deg, var(--wine-deep) 0%, #150304 100%);
+    color: #F5EEE1;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .p-cta .h-title { color: #F8F2E6; }
+  .p-cta .lede { color: #E2D3B9; }
+  .p-cta .block-label { color: var(--rose-soft); }
+  .p-cta ul.plain { color: #E2D3B9; }
+  .cta-btn {
+    margin-top: 28px;
+    display: inline-block;
+    background: #F5EEE1;
+    color: var(--wine-deep);
+    font-weight: 600;
+    font-size: 14.5px;
+    padding: 14px 26px;
+    border-radius: 100px;
+    text-decoration: none;
+  }
+  .cta-note {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--rose-soft);
+  }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .mini-card {
+    background: var(--blush);
+    border-radius: 4px;
+    padding: 14px;
+  }
+  .mini-card b { font-size: 12.5px; color: var(--heading); display:block; margin-bottom: 4px;}
+  .mini-card span { font-size: 12px; color: var(--ink-soft); line-height: 1.45; }
+</style>
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:title" content="El Mapa de las 3 Etapas — Step Her Up">
+<meta property="og:description" content="Por qué tu marca personal no factura lo que merece y en qué etapa estás tú ahora mismo.">
+<meta property="og:image" content="https://dash.stepherup.com/assets/gianie-foto.jpg">
+<meta property="og:url" content="https://dash.stepherup.com/r/mapa/">
+<meta name="description" content="Por qué tu marca personal no factura lo que merece y en qué etapa estás tú ahora mismo.">
+</head>
+<body>
+
+<div class="topbar"><span>Vista previa · Lead Magnet PDF · 10 páginas</span></div>
+
+<div class="deck">
+
+  <!-- PAGE 1 — COVER -->
+  <section class="page p-cover">
+    <div class="brand">STEP HER UP</div>
+    <div>
+      <h1 class="cover-title">El Mapa de<br>las <em>3 Etapas</em></h1>
+      <p class="cover-sub">Por qué tu marca personal no factura lo que merece — y en qué etapa estás vos ahora mismo.</p>
+    </div>
+    <div class="cover-foot">
+      <span class="tagline">Sanar · Creer · Conquistar</span>
+      <div class="cover-mark">SH</div>
+    </div>
+  </section>
+
+  <!-- PAGE 2 — INTRO -->
+  <section class="page">
+    <span class="kicker">ANTES DE EMPEZAR</span>
+    <h2 class="h-title">El problema casi nunca es el que creés</h2>
+    <p class="lede">Cuando una marca personal no factura lo que debería, la primera reacción es publicar más, subir presupuesto en ads o cambiar de nicho. Pero en la mayoría de los casos el freno no es visibilidad — es que se está tratando de resolver un problema de la etapa equivocada.</p>
+    <div class="rule"></div>
+    <p class="block-text">Una clienta en etapa de validación no necesita más contenido. Necesita prueba. Una clienta que ya vende pero factura pareja no necesita más leads. Necesita un posicionamiento que la saque del catálogo. Y una que ya vende alto no necesita otro curso — necesita un sistema.</p>
+    <p class="block-text" style="margin-top:14px;">Esta guía te ayuda a ubicarte primero, para que lo próximo que hagas sea lo correcto y no lo que "se supone" que hay que hacer.</p>
+    <span class="folio-l">02</span><span class="folio">Step Her Up</span>
+  </section>
+
+  <!-- PAGE 3 — OVERVIEW -->
+  <section class="page">
+    <span class="kicker">LAS 3 ETAPAS</span>
+    <h2 class="h-title">¿Dónde estás parada hoy?</h2>
+    <div style="margin-top: 18px;">
+      <div class="stage-row">
+        <span class="stage-num">01</span>
+        <div class="stage-copy">
+          <h3>Validación temprana</h3>
+          <p>Vendés poco y de forma irregular. Tu perfil todavía se lee como "esteticista/consultora/coach que ofrece servicios", no como una marca con posicionamiento propio.</p>
+        </div>
+      </div>
+      <div class="stage-row">
+        <span class="stage-num">02</span>
+        <div class="stage-copy">
+          <h3>Catálogo con tracción</h3>
+          <p>Ya vendés, pero facturás parejo. Te comparan por precio, escuchás "está caro" seguido, y tu perfil se siente más lista de servicios que experiencia premium.</p>
+        </div>
+      </div>
+      <div class="stage-row">
+        <span class="stage-num">03</span>
+        <div class="stage-copy">
+          <h3>Escala sin sistema</h3>
+          <p>Ya facturaste ticket alto, pero de forma inconsistente. Todo depende de vos: contenido, ventas, entrega. El techo no es de marketing, es operativo.</p>
+        </div>
+      </div>
+    </div>
+    <span class="folio-l">03</span><span class="folio">Step Her Up</span>
+  </section>
+
+  <!-- PAGE 4 — ETAPA 1 -->
+  <section class="page">
+    <span class="stage-tag">ETAPA 01 · VALIDACIÓN TEMPRANA</span>
+    <h2 class="h-title" style="margin-top:14px;">Tenés el servicio. Falta la prueba.</h2>
+    <div class="block-label">LOS SÍNTOMAS</div>
+    <ul class="plain">
+      <li>1 a 3 ventas por mes, sin previsibilidad</li>
+      <li>Tu bio describe qué hacés, pero no para quién ni por qué vos</li>
+      <li>No tenés (o no usás) testimonios documentados</li>
+      <li>El DM se corta después de "cuánto cuesta"</li>
+    </ul>
+    <div class="block-label">LO QUE REALMENTE ESTÁ ROTO</div>
+    <p class="block-text">No es falta de contenido. Es que quien te descubre no tiene suficiente evidencia para confiar en que vos sos la opción segura para su caso puntual. La objeción "no sé si me va a funcionar" es, en el fondo, "no vi pruebas de que funcione para alguien como yo".</p>
+    <div class="block-label">QUÉ ARREGLAR PRIMERO — EN ESTE ORDEN</div>
+    <ul class="plain">
+      <li>Reescribir tu bio para que hable de resultado, no de servicio</li>
+      <li>Fijar 3 publicaciones que muestren evidencia real, no promesas</li>
+      <li>Armar una destacada de "Prueba" con lo que ya tenés hoy</li>
+    </ul>
+    <span class="folio-l">04</span><span class="folio">Step Her Up</span>
+  </section>
+
+  <!-- PAGE 5 — ETAPA 2 -->
+  <section class="page">
+    <span class="stage-tag">ETAPA 02 · CATÁLOGO CON TRACCIÓN</span>
+    <h2 class="h-title" style="margin-top:14px;">Vendés, pero te ven como una opción más.</h2>
+    <div class="block-label">LOS SÍNTOMAS</div>
+    <ul class="plain">
+      <li>Facturación estable pero plana, mes tras mes</li>
+      <li>"Está caro" es la objeción más común</li>
+      <li>Tu perfil enumera servicios en vez de contar una transformación</li>
+      <li>No hay paquetes claros, solo precios sueltos por sesión/consulta</li>
+    </ul>
+    <div class="block-label">LO QUE REALMENTE ESTÁ ROTO</div>
+    <p class="block-text">Tu contenido demuestra que sabés hacer el trabajo, pero no construye estatus ni deseo. "Caro" casi nunca es el precio real — es que no se percibió suficiente diferencia entre vos y la opción de al lado.</p>
+    <div class="block-label">QUÉ ARREGLAR PRIMERO — EN ESTE ORDEN</div>
+    <ul class="plain">
+      <li>Convertir tus servicios sueltos en 2 o 3 paquetes con nombre y promesa</li>
+      <li>Cambiar contenido de "cómo lo hago" por contenido de "en qué te transformo"</li>
+      <li>Definir 3 a 5 ángulos de venta para dejar de repetir el mismo mensaje</li>
+    </ul>
+    <span class="folio-l">05</span><span class="folio">Step Her Up</span>
+  </section>
+
+  <!-- PAGE 6 — ETAPA 3 -->
+  <section class="page">
+    <span class="stage-tag">ETAPA 03 · ESCALA SIN SISTEMA</span>
+    <h2 class="h-title" style="margin-top:14px;">El techo ya no es de marketing.</h2>
+    <div class="block-label">LOS SÍNTOMAS</div>
+    <ul class="plain">
+      <li>Ya cerraste ventas de ticket alto, pero de forma esporádica</li>
+      <li>Todo pasa por vos: contenido, cierre y entrega</li>
+      <li>Cuando te frenás una semana, se frena la facturación</li>
+      <li>No hay proceso escrito, todo vive en tu cabeza</li>
+    </ul>
+    <div class="block-label">LO QUE REALMENTE ESTÁ ROTO</div>
+    <p class="block-text">No falta demanda, falta capacidad instalada de sostenerla. Meter más presupuesto en este punto solo apura un cuello de botella que ya existe: no vas a poder entregar lo que vendas.</p>
+    <div class="block-label">QUÉ ARREGLAR PRIMERO — EN ESTE ORDEN</div>
+    <ul class="plain">
+      <li>Mapear tu embudo actual y ponerle números — hoy es una sensación, no un dato</li>
+      <li>Elegir UNA pieza para delegar primero: cierre o entrega, no las dos juntas</li>
+      <li>Documentar por escrito el paso que hoy solo hacés vos</li>
+    </ul>
+    <span class="folio-l">06</span><span class="folio">Step Her Up</span>
+  </section>
+
+  <!-- PAGE 7 — OBJECIONES -->
+  <section class="page">
+    <span class="kicker">DEBAJO DE LA EXCUSA</span>
+    <h2 class="h-title">Lo que te dicen vs. lo que en realidad significa</h2>
+    <div style="margin-top:16px;">
+      <div class="obj-row">
+        <div><span class="obj-col-label">TE DICEN</span><span class="obj-said">"No sé si me va a funcionar a mí."</span></div>
+        <div><span class="obj-col-label">SIGNIFICA</span><span class="obj-real">No vio suficiente evidencia de alguien parecida a ella.</span></div>
+      </div>
+      <div class="obj-row">
+        <div><span class="obj-col-label">TE DICEN</span><span class="obj-said">"Está caro."</span></div>
+        <div><span class="obj-col-label">SIGNIFICA</span><span class="obj-real">No percibió una diferencia real frente a la opción más barata.</span></div>
+      </div>
+      <div class="obj-row">
+        <div><span class="obj-col-label">TE DICEN</span><span class="obj-said">"No tengo tiempo ahora."</span></div>
+        <div><span class="obj-col-label">SIGNIFICA</span><span class="obj-real">Todavía no confía lo suficiente en el proceso como para priorizarlo.</span></div>
+      </div>
+    </div>
+    <p class="block-text" style="margin-top:20px;">Ninguna de estas se resuelve con descuento. Se resuelven con prueba, posicionamiento y un proceso de venta que hable de la objeción real, no de la excusa.</p>
+    <span class="folio-l">07</span><span class="folio">Step Her Up</span>
+  </section>
+
+  <!-- PAGE 8 — AUTODIAGNÓSTICO -->
+  <section class="page">
+    <span class="kicker">HACÉ LA PRUEBA</span>
+    <h2 class="h-title">Autodiagnóstico rápido</h2>
+    <p class="lede" style="margin-top:10px;">Marcá las que se apliquen a vos hoy.</p>
+    <div style="margin-top:10px;">
+      <div class="quiz-item"><span class="quiz-box"></span>Mi bio dice qué hago, pero no para quién ni por qué yo</div>
+      <div class="quiz-item"><span class="quiz-box"></span>Vendo entre 1 y 3 veces por mes, sin previsibilidad</div>
+      <div class="quiz-item"><span class="quiz-box"></span>Escucho "está caro" seguido</div>
+      <div class="quiz-item"><span class="quiz-box"></span>No tengo paquetes definidos, solo precios sueltos</div>
+      <div class="quiz-item"><span class="quiz-box"></span>Ya vendí ticket alto, pero no de forma constante</div>
+      <div class="quiz-item"><span class="quiz-box"></span>Si dejo de postear una semana, se nota en las ventas</div>
+      <div class="quiz-item"><span class="quiz-box"></span>Todo el proceso de venta y entrega depende de mí</div>
+    </div>
+    <div class="score-note">0-2 marcadas → Etapa 1, Validación. 3-5 marcadas → Etapa 2, Catálogo. 6-7 marcadas → Etapa 3, Escala sin sistema.</div>
+    <span class="folio-l">08</span><span class="folio">Step Her Up</span>
+  </section>
+
+  <!-- PAGE 9 — CÓMO LO RESOLVEMOS -->
+  <section class="page">
+    <span class="kicker">NUESTRO PROCESO</span>
+    <h2 class="h-title">No es un curso más. Es intervención por etapa.</h2>
+    <p class="lede">Cada etapa se rompe distinto, así que se arregla distinto. Esto es, en concreto, lo que trabajamos con vos según dónde estés parada:</p>
+    <div style="margin-top: 18px;">
+      <div class="stage-row">
+        <span class="stage-num">01</span>
+        <div class="stage-copy">
+          <h3>Validación → posicionamiento y prueba</h3>
+          <p>Sesión de posicionamiento 1:1 + guion de prueba social para reescribir tu bio y armar tus destacadas.</p>
+        </div>
+      </div>
+      <div class="stage-row">
+        <span class="stage-num">02</span>
+        <div class="stage-copy">
+          <h3>Catálogo → oferta y percepción de valor</h3>
+          <p>Rediseño de tu oferta en paquetes con nombre propio + calendario de contenido que construye estatus, no solo alcance.</p>
+        </div>
+      </div>
+      <div class="stage-row">
+        <span class="stage-num">03</span>
+        <div class="stage-copy">
+          <h3>Escala → sistema y delegación</h3>
+          <p>Mapa de tu embudo con números reales + plan para delegar tu primer proceso sin que se caiga la calidad.</p>
+        </div>
+      </div>
+    </div>
+    <p class="block-text" style="margin-top:20px;">Todo esto arranca en una sola llamada, donde vemos primero en qué etapa estás vos — no se trabaja a ciegas.</p>
+    <span class="folio-l">09</span><span class="folio">Step Her Up</span>
+  </section>
+
+  <!-- PAGE 10 — CIERRE -->
+  <section class="page p-cta">
+    <span class="kicker" style="color:var(--rose-soft);">EL SIGUIENTE PASO</span>
+    <h2 class="h-title">Ya sabés en qué etapa estás.</h2>
+    <p class="lede">Ahora falta lo específico: qué mover primero en tu bio, tu contenido y tu oferta para pasar a la siguiente etapa — sin adivinar.</p>
+    <p class="lede" style="margin-top:10px;">En una llamada de 20 minutos revisamos tu perfil real y te decimos, con datos, qué es lo primero que hay que arreglar.</p>
+    <div class="block-label">EN LA LLAMADA SALÍS CON</div>
+    <ul class="plain">
+      <li>Tu etapa real, confirmada con datos de tu perfil — no a ojo</li>
+      <li>Las 3 cosas puntuales que hay que cambiar primero</li>
+      <li>Un plan de siguientes pasos, lo hagas con nosotros o no</li>
+    </ul>
+    <a class="cta-btn" href="#">Agendar mi diagnóstico gratuito</a>
+    <p class="cta-note">Cupos limitados por semana · Respondemos por WhatsApp</p>
+    <div class="grid2">
+      <div class="mini-card"><b>Sin compromiso</b><span>La llamada es diagnóstica, no una venta a ciegas.</span></div>
+      <div class="mini-card"><b>Con datos reales</b><span>Analizamos tu perfil antes de la llamada.</span></div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

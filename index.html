@@ -721,14 +721,25 @@
   .rec-grupo:first-child{ margin-top:0; }
   .rec-fila{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; }
   .rec-card{
-    display:flex; flex-direction:column; gap:12px; text-align:left; padding:24px; border-radius:18px; cursor:pointer;
-    background:var(--card); border:1px solid var(--border); color:inherit; font-family:inherit; transition:border-color .15s, background .15s;
+    display:flex; flex-direction:column; gap:12px; text-align:left; padding:24px; border-radius:18px;
+    background:var(--card); border:1px solid var(--border); color:inherit; font-family:inherit; transition:border-color .15s;
   }
-  .rec-card:hover{ border-color:var(--blush-2); background:rgba(255,255,255,0.09); }
+  .rec-card:hover{ border-color:rgba(240,168,190,0.5); }
+  .rec-tags{ display:flex; gap:8px; flex-wrap:wrap; }
+  .rec-borrador{ color:#ffd9a0; border-color:rgba(255,217,160,0.45); }
+  .rec-acciones{ display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+  .rec-btn{
+    flex:none; padding:10px 16px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,0.06);
+    color:var(--cream); font:600 13.5px Inter,sans-serif; cursor:pointer; transition:background .15s, border-color .15s;
+  }
+  .rec-btn:hover{ background:rgba(255,255,255,0.13); border-color:var(--blush-2); }
+  .rec-btn-main{ background:linear-gradient(90deg,var(--blush-2),var(--blush)); color:#2a0a13; border-color:transparent; }
+  .rec-btn-main:hover{ background:linear-gradient(90deg,var(--blush-2),var(--blush)); filter:brightness(1.06); }
+  .rec-btn.ok{ color:#5fd39a; border-color:rgba(95,211,154,0.6); }
+  @media(max-width:560px){ .rec-card{ padding:20px 18px; } .rec-acciones{ gap:6px; flex-wrap:nowrap; } .rec-btn{ padding:10px 11px; font-size:13px; white-space:nowrap; } }
   .rec-tag{ align-self:flex-start; font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--blush); border:1px solid rgba(240,168,190,0.45); border-radius:999px; padding:4px 11px; }
   .rec-card h3{ font-size:22px; line-height:1.2; margin:0; }
   .rec-card p{ margin:0; font-size:14px; color:var(--text-dim); line-height:1.55; flex:1; }
-  .rec-open{ font-size:14px; font-weight:600; color:var(--blush); }
   .rec-estado{ min-height:18px; margin-top:16px; font-size:13.5px; color:var(--text-dim); }
   .rec-viewer{ position:fixed; inset:0; z-index:300; background:#0d0304; }
   .rec-viewer[hidden]{ display:none; }
@@ -1823,17 +1834,31 @@
   // ===== Recursos: presentaciones y materiales del equipo. Cada uno se pide
   // al Worker (servidor privado) con la contraseña de la plataforma, y se
   // muestra en un visor a pantalla completa. =====
+  // `url` = link público para compartir con las leads (se abre sin contraseña).
+  // `externo` = se abre en otra pestaña (no dentro del visor).
+  // Sin `url` = privado: se pide al servidor con la contraseña de la plataforma.
+  const DOMINIO_PUBLICO = 'https://dash.stepherup.com';
   const RECURSOS = [
     { grupo: 'Presentaciones', id: 'high-ticket', etiqueta: 'High Ticket', titulo: 'Consultoría 1:1',
       desc: 'La consultoría individual de Step Her Up: el sistema, el acompañamiento, los bonos y la inversión.' },
     { grupo: 'Presentaciones', id: 'low-ticket', etiqueta: 'Low Ticket', titulo: 'Sistema de crecimiento en Skool',
       desc: 'El programa en Skool con más de 100 videos: posicionamiento, contenido, grabación y edición, Meta Business y ventas.' },
-    { grupo: 'Lead magnets y materiales', id: 'lead-magnet-mapa', etiqueta: 'Lead magnet', titulo: 'El Mapa de las 3 Etapas',
-      desc: 'Guía de 10 páginas: por qué una marca personal no factura lo que merece y en qué etapa está cada clienta.' },
-    { grupo: 'Lead magnets y materiales', id: 'regalo-post-llamada', etiqueta: 'Regalo post-llamada', titulo: 'Calculadora y 3 acciones',
-      desc: 'Para quien no avanzó en la llamada: una calculadora de cuántas ventas y clientas potenciales necesita, más 3 cosas concretas para esta semana.' },
-    { grupo: 'Lead magnets y materiales', id: 'carta-ventas', etiqueta: 'Carta de ventas', titulo: 'Antes de aplicar al programa',
-      desc: 'Carta de Gianie para quien está por aplicar: por qué su negocio no cobra lo que debería.' },
+    { grupo: 'Para compartir con las leads', id: 'vsl', etiqueta: 'VSL', titulo: 'Video de ventas de Gianie',
+      desc: 'La página del video de ventas, para mandársela a una lead por WhatsApp.',
+      url: 'https://class.stepherup.com/step-her-up-c', externo: true,
+      msg: 'Hola 🤍 Te comparto este video de Gianie sobre cómo pasar de experta invisible a autoridad pagada: ' },
+    { grupo: 'Para compartir con las leads', id: 'lead-magnet-mapa', etiqueta: 'Lead magnet', titulo: 'El Mapa de las 3 Etapas', borrador: true,
+      desc: 'Guía de 10 páginas: por qué una marca personal no factura lo que merece y en qué etapa está cada clienta.',
+      url: DOMINIO_PUBLICO + '/r/mapa/',
+      msg: 'Hola 🤍 Te comparto El Mapa de las 3 Etapas de Step Her Up, para que veas en qué etapa está tu marca: ' },
+    { grupo: 'Para compartir con las leads', id: 'regalo-post-llamada', etiqueta: 'Regalo post-llamada', titulo: 'Calculadora y 3 acciones', borrador: true,
+      desc: 'Para quien no avanzó en la llamada: una calculadora de cuántas ventas y clientas potenciales necesita, más 3 cosas concretas para esta semana.',
+      url: DOMINIO_PUBLICO + '/r/regalo/',
+      msg: 'Hola 🤍 Gracias por tu tiempo en la llamada. Te dejo un regalo: una calculadora para ver tus números con claridad y 3 acciones para esta semana: ' },
+    { grupo: 'Para compartir con las leads', id: 'carta-ventas', etiqueta: 'Carta de ventas', titulo: 'Antes de aplicar al programa', borrador: true,
+      desc: 'Carta de Gianie para quien está por aplicar: por qué su negocio no cobra lo que debería.',
+      url: DOMINIO_PUBLICO + '/r/carta/',
+      msg: 'Hola 🤍 Antes de aplicar, te comparto esta carta de Gianie: ' },
   ];
 
   function renderRecursos(){
@@ -1841,13 +1866,37 @@
     document.getElementById('recGrid').innerHTML = grupos.map(g => `
       <h2 class="rec-grupo">${escapeHtml(g)}</h2>
       <div class="rec-fila">${RECURSOS.filter(r => r.grupo === g).map(r => `
-        <button type="button" class="rec-card" data-id="${r.id}">
-          <span class="rec-tag">${escapeHtml(r.etiqueta)}</span>
+        <div class="rec-card" data-id="${r.id}">
+          <div class="rec-tags"><span class="rec-tag">${escapeHtml(r.etiqueta)}</span>${r.borrador ? '<span class="rec-tag rec-borrador">En revisión</span>' : ''}</div>
           <h3>${escapeHtml(r.titulo)}</h3>
           <p>${escapeHtml(r.desc)}</p>
-          <span class="rec-open">Abrir →</span>
-        </button>`).join('')}</div>`).join('') + '<p class="rec-estado" id="recEstado"></p>';
-    document.querySelectorAll('#recGrid .rec-card').forEach(b => b.addEventListener('click', () => abrirRecurso(b.dataset.id)));
+          <div class="rec-acciones">
+            <button type="button" class="rec-btn rec-btn-main" data-act="abrir">Abrir${r.externo ? ' ↗' : ''}</button>
+            ${r.url ? '<button type="button" class="rec-btn" data-act="copiar">Copiar link</button><button type="button" class="rec-btn" data-act="whatsapp">WhatsApp</button>' : ''}
+          </div>
+        </div>`).join('')}</div>`).join('') + '<p class="rec-estado" id="recEstado"></p>';
+    document.querySelectorAll('#recGrid .rec-btn').forEach(b => b.addEventListener('click', () => {
+      const id = b.closest('.rec-card').dataset.id, r = RECURSOS.find(x => x.id === id);
+      if(b.dataset.act === 'abrir') abrirRecurso(id);
+      else if(b.dataset.act === 'copiar') copiarLinkRecurso(r, b);
+      else if(b.dataset.act === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent(r.msg + r.url), '_blank', 'noopener');
+    }));
+  }
+  // Copia el link público (con respaldo para navegadores que no dejan usar el portapapeles).
+  async function copiarLinkRecurso(r, boton){
+    let ok = false;
+    try { await navigator.clipboard.writeText(r.url); ok = true; }
+    catch(e){
+      const t = document.createElement('textarea');
+      t.value = r.url; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      try { ok = document.execCommand('copy'); } catch(e2){}
+      t.remove();
+    }
+    const original = boton.textContent;
+    boton.textContent = ok ? '¡Link copiado!' : 'Copiá: ' + r.url;
+    boton.classList.toggle('ok', ok);
+    setTimeout(() => { boton.textContent = original; boton.classList.remove('ok'); }, ok ? 1800 : 5000);
   }
   const claveDePlataforma = () => { try { return localStorage.getItem('shu_site_key') || ''; } catch(e){ return ''; } };
   // La contraseña ya se pidió al entrar al portal. Si por algún motivo falta (o
@@ -1858,7 +1907,18 @@
   }
 
   async function abrirRecurso(id){
+    const r = RECURSOS.find(x => x.id === id);
     const estado = document.getElementById('recEstado');
+    const frame = document.getElementById('recFrame');
+    // Link público: se abre directo (o en otra pestaña si es una página externa).
+    if(r.url){
+      if(r.externo){ window.open(r.url, '_blank', 'noopener'); return; }
+      frame.removeAttribute('srcdoc'); frame.src = r.url;
+      document.getElementById('recViewer').hidden = false;
+      document.body.style.overflow = 'hidden';
+      return;
+    }
+    // Privado: se pide al servidor con la contraseña de la plataforma.
     const clave = claveDePlataforma();
     if(!clave){ volverAlCandado(); return; }
     estado.textContent = 'Cargando…';
@@ -1868,7 +1928,7 @@
       if(!res.ok){ estado.textContent = 'No se pudo cargar el material. Probá de nuevo en un rato.'; return; }
       const html = await res.text();
       estado.textContent = '';
-      document.getElementById('recFrame').srcdoc = html;
+      frame.removeAttribute('src'); frame.srcdoc = html;
       document.getElementById('recViewer').hidden = false;
       document.body.style.overflow = 'hidden';
     } catch(e){
@@ -1877,7 +1937,7 @@
   }
   function cerrarRecurso(){
     document.getElementById('recViewer').hidden = true;
-    document.getElementById('recFrame').srcdoc = '';
+    const f = document.getElementById('recFrame'); f.srcdoc = ''; f.removeAttribute('src');
     document.body.style.overflow = '';
   }
   document.getElementById('recCerrar').addEventListener('click', cerrarRecurso);

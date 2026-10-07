@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carta — Step Her Up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Cormorant+Garamond:ital@1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Misma paleta e identidad que la VSL (index.html) — a propósito, para
+       que esta carta se sienta parte del mismo sistema, no un documento aparte. */
+    --wine-1:#1a0509; --wine-2:#3d0f1f; --wine-3:#5a1626;
+    --blush:#f0a8be; --blush-2:#e88aa8;
+    --cream:#f7ece9; --text-dim:rgba(247,236,233,0.72);
+    --card:rgba(255,255,255,0.06); --border:rgba(255,255,255,0.16);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:20px;}
+  body{
+    margin:0; color:var(--cream);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,sans-serif;
+    line-height:1.6; font-size:16.5px;
+    background:
+      radial-gradient(ellipse 1100px 700px at 82% 0%, rgba(90,22,38,0.5), transparent 55%),
+      radial-gradient(ellipse 900px 600px at 15% 60%, rgba(90,22,38,0.35), transparent 55%),
+      linear-gradient(180deg, var(--wine-2) 0%, var(--wine-1) 40%);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+  .letter{ max-width:660px; margin:0 auto; padding:64px 24px 100px; }
+  h1,h2{ font-family:"Playfair Display", Georgia, serif; margin:0; font-weight:600; letter-spacing:-0.2px; }
+  em{ font-family:"Cormorant Garamond", Georgia, serif; font-style:italic; }
+  .hl{ color:var(--blush); }
+  a{ color:inherit; }
+  p{ margin:0 0 18px; }
+  b{ color:var(--cream); }
+
+  .brand{
+    text-align:center; font-size:12.5px; font-weight:700; letter-spacing:0.28em;
+    color:var(--blush); margin-bottom:46px;
+  }
+
+  .eyebrow{
+    font-size:12px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--blush); margin-bottom:14px;
+  }
+  h1.title{ font-size:clamp(28px,5.5vw,38px); line-height:1.2; margin-bottom:28px; }
+
+  .lede{ font-size:19px; line-height:1.55; color:var(--cream); margin-bottom:34px; }
+
+  .rule{
+    height:1px; background:linear-gradient(90deg, var(--blush-2), transparent);
+    margin:40px 0; border:none;
+  }
+
+  .sig{ font-family:"Cormorant Garamond", Georgia, serif; font-style:italic; font-size:22px; color:var(--blush); margin-top:6px; }
+
+  /* pull-quotes de testimonios reales */
+  blockquote{
+    margin:28px 0; padding:22px 24px; border-left:2px solid var(--blush-2);
+    background:var(--card); border-radius:0 12px 12px 0;
+  }
+  blockquote p{ margin:0 0 10px; font-size:15.5px; color:var(--cream); font-style:italic; }
+  blockquote cite{ font-style:normal; font-size:12.5px; color:var(--text-dim); font-weight:600; }
+
+  /* bloque "el sistema" — 3 pasos, mismo lenguaje que usa la sección
+     "Por qué podemos ayudarte" del landing real (diagnóstico, estrategia
+     de posicionamiento, estructura de oferta) */
+  .steps{ margin:30px 0; display:flex; flex-direction:column; gap:0; }
+  .step{ display:flex; gap:18px; padding:18px 0; border-top:1px solid var(--border); }
+  .step:first-child{ border-top:none; padding-top:6px; }
+  .step-num{
+    font-family:"Playfair Display", serif; font-size:22px; color:var(--blush);
+    min-width:32px; flex-shrink:0;
+  }
+  .step h3{ font-family:"Inter",sans-serif; font-weight:700; font-size:15.5px; color:var(--cream); margin:0 0 4px; }
+  .step p{ font-size:14.5px; color:var(--text-dim); margin:0; }
+
+  /* para quién es / no es */
+  .fit-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:30px 0; }
+  .fit-card{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px 20px; }
+  .fit-card h4{ font-size:12.5px; letter-spacing:0.06em; text-transform:uppercase; margin:0 0 10px; }
+  .fit-card.yes h4{ color:#8fd6a8; }
+  .fit-card.no h4{ color:#e29a9a; }
+  .fit-card ul{ margin:0; padding-left:16px; font-size:13.5px; color:var(--text-dim); line-height:1.55; }
+  .fit-card li{ margin-bottom:6px; }
+  @media (max-width:560px){ .fit-grid{ grid-template-columns:1fr; } }
+
+  .cta-block{ text-align:center; margin:46px 0 10px; }
+  .btn-solid{
+    display:inline-flex; align-items:center; gap:10px; padding:22px 46px; border-radius:999px;
+    font-weight:700; font-size:18px; text-decoration:none; cursor:pointer;
+    background:linear-gradient(90deg,var(--blush-2),var(--blush)); color:#2a0a13; border:none;
+    box-shadow:0 10px 30px rgba(232,138,168,0.32); transition:transform .15s ease, box-shadow .2s ease;
+  }
+  .btn-solid:hover{ transform:translateY(-1px); box-shadow:0 14px 36px rgba(232,138,168,0.45); }
+  .cta-note{ margin-top:16px; font-size:12.5px; color:var(--text-dim); }
+
+  .ps{ margin-top:44px; font-size:14.5px; color:var(--text-dim); border-top:1px solid var(--border); padding-top:24px; }
+  .ps b{ color:var(--blush); }
+
+  footer{ text-align:center; margin-top:70px; }
+  footer p{ font-size:11.5px; color:var(--text-dim); max-width:440px; margin:0 auto; }
+</style>
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Carta de Gianie Milet — Step Her Up">
+<meta property="og:description" content="Antes de aplicar al programa: por qué tu negocio no está cobrando lo que debería.">
+<meta property="og:image" content="https://dash.stepherup.com/assets/gianie-foto.jpg">
+<meta property="og:url" content="https://dash.stepherup.com/r/carta/">
+<meta name="description" content="Antes de aplicar al programa: por qué tu negocio no está cobrando lo que debería.">
+</head>
+<body>
+
+<div class="letter">
+
+  <div class="brand">STEP HER UP</div>
+
+  <div class="eyebrow">Antes de aplicar al programa</div>
+  <h1 class="title">De experta invisible a <span class="hl">autoridad pagada</span>.</h1>
+  <p class="lede">Si estás leyendo esto es porque ya tenés experiencia, clientas y resultados — y aun así sentís que tu negocio no está cobrando lo que debería. Quiero explicarte exactamente por qué pasa eso, antes de que apliques a nada.</p>
+
+  <p>Hola, soy <b>Gianie Milet</b>. Llevo años acompañando a mujeres profesionales a posicionar su marca y escalar su facturación, y hay un patrón que veo repetirse una y otra vez — tan seguido que ya puedo predecirlo con vos sin haberte visto trabajar ni una sola vez.</p>
+
+  <p>No sos la que menos sabe. Probablemente sos de las que más saben en tu rubro. Pero seguís compitiendo por precio contra gente que sabe menos que vos, porque tu perfil todavía se lee como "una opción más" y no como la opción obvia.</p>
+
+  <hr class="rule">
+
+  <h2 style="font-size:24px; margin-bottom:18px;">El error que casi todas cometen primero</h2>
+  <p>Cuando la facturación no acompaña el esfuerzo, la reacción automática es publicar más, bajar el precio o "trabajar el mindset". Ninguna de esas tres arregla lo que realmente está roto.</p>
+  <p>Lo que está roto es la <em>estructura</em>: cómo te presentás, qué le vendés a quién, y si tu oferta está armada para que una clienta ideal diga que sí sin pedirte descuento. Eso no se arregla con más contenido — se arregla con posicionamiento.</p>
+
+  <hr class="rule">
+
+  <h2 style="font-size:24px; margin-bottom:18px;">Nuestro proceso no es un curso más</h2>
+  <p>Es un sistema con tres partes, pensado para que factures más sin que tu carga de trabajo crezca al mismo ritmo:</p>
+
+  <div class="steps">
+    <div class="step">
+      <span class="step-num">01</span>
+      <div><h3>Diagnóstico</h3><p>Vemos tu perfil, tu oferta y tu contenido real — no a ojo, con datos — para saber exactamente qué está frenando la venta.</p></div>
+    </div>
+    <div class="step">
+      <span class="step-num">02</span>
+      <div><h3>Estrategia de posicionamiento</h3><p>Definimos cómo te presentás y a quién le hablás, para que dejes de competir por precio contra opciones más baratas.</p></div>
+    </div>
+    <div class="step">
+      <span class="step-num">03</span>
+      <div><h3>Estructura de oferta</h3><p>Empaquetamos lo que ya sabés hacer en una oferta con nombre y valor claro, lista para venderse sola.</p></div>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <h2 style="font-size:24px; margin-bottom:18px;">No te lo estoy prometiendo — ya pasó</h2>
+  <p>Con Step Her Up acompañé a más de <b>70 mujeres</b> a estructurar su marca, redefinir su oferta y escalar su facturación. Esto es lo que dicen algunas de ellas, con sus propias palabras:</p>
+
+  <blockquote>
+    <p>"He tenido un crecimiento gigante en clientas desde mayo... De febrero a acá, tengo 51 clientas recurrentes y 16 nuevas — solo con contenido orgánico."</p>
+    <cite>— Fabi</cite>
+  </blockquote>
+
+  <blockquote>
+    <p>"En menos de un mes adquirimos más de 2000 nuevos followers y más de 30 llamadas de clientes interesados en nuestro servicio. 1000% recomendada."</p>
+    <cite>— Piazza</cite>
+  </blockquote>
+
+  <hr class="rule">
+
+  <h2 style="font-size:24px; margin-bottom:18px;">¿Es esto para vos?</h2>
+  <div class="fit-grid">
+    <div class="fit-card yes">
+      <h4>Sí, si...</h4>
+      <ul>
+        <li>Ya tenés experiencia y clientas, pero facturás menos de lo que deberías</li>
+        <li>Estás cansada de que te comparen por precio</li>
+        <li>Preferís un sistema antes que "otro curso más"</li>
+      </ul>
+    </div>
+    <div class="fit-card no">
+      <h4>Todavía no, si...</h4>
+      <ul>
+        <li>Recién estás por empezar y no tenés servicio armado</li>
+        <li>Buscás una solución sin cambiar nada de lo que hacés hoy</li>
+        <li>No estás dispuesta a que te digan, con datos, qué está fallando</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <p>Si te reconociste en la primera lista, el siguiente paso es simple: aplicás al programa, te hacemos algunas preguntas para conocer tu situación real, y si encajamos, coordinamos una llamada para armar el plan concreto — no una venta a ciegas.</p>
+
+  <div class="cta-block">
+    <a class="btn-solid" href="#">Aplicar al programa →</a>
+    <p class="cta-note">Cupos limitados por semana · Respondemos por WhatsApp</p>
+  </div>
+
+  <div class="ps">
+    <p><b>P.D.</b> Nada de esto cambia si volvés mañana a hacer lo mismo que ya veníamos haciendo. Lo único que cambia algo es una estructura distinta — y eso es, literalmente, lo único que hacemos.</p>
+  </div>
+
+  <footer>
+    <p>Step Her Up · Gianie Milet — estratega en posicionamiento y crecimiento de negocios para mujeres profesionales.</p>
+  </footer>
+
+</div>
+</body>
+</html>
