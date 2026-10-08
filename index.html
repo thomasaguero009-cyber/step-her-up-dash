@@ -851,6 +851,16 @@
      variable (depende de cuántos nombres/fuentes distintos aparezcan
      en el Sheet ese mes), por eso auto-fill en vez de una columna fija. */
   .breakdown-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; margin-bottom:10px; }
+  .utm-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:18px; background:var(--card); }
+  .utm-table{ width:100%; border-collapse:collapse; min-width:620px; font-size:14px; }
+  .utm-table th{ text-align:right; font-weight:600; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); padding:14px 16px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .utm-table td{ text-align:right; padding:13px 16px; border-bottom:1px solid rgba(255,255,255,0.06); font-variant-numeric:tabular-nums; }
+  .utm-table th:first-child, .utm-table td:first-child{ text-align:left; }
+  .utm-table tbody tr:last-child td{ border-bottom:none; }
+  .utm-table td:first-child{ color:var(--cream); font-weight:600; max-width:340px; overflow-wrap:anywhere; }
+  .utm-table .utm-sin{ color:var(--text-dim); font-style:italic; font-weight:500; }
+  .utm-table .utm-top td:first-child::before{ content:"★ "; color:var(--blush-2); }
+  .utm-vacio{ padding:28px 20px; color:var(--text-dim); font-size:14px; text-align:center; }
   .breakdown-card{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px; }
   .breakdown-card h4{ font-family:"Playfair Display", Georgia, serif; font-size:17px; font-weight:600; margin:0 0 10px; color:var(--blush); }
   .breakdown-stat-row{
@@ -1217,6 +1227,7 @@
         <button type="button" class="quick-nav-btn" data-tab="matematica">Matemática del éxito</button>
         <button type="button" class="quick-nav-btn" data-tab="setters">Setters</button>
         <button type="button" class="quick-nav-btn" data-tab="closers">Closers</button>
+        <button type="button" class="quick-nav-btn" data-tab="utm">Campañas (UTM)</button>
       </div>
 
       <!-- Segunda fila, más chica/tenue a propósito — no aísla una
@@ -1232,6 +1243,7 @@
         <button type="button" class="quick-nav-btn-jump" data-jump="matematica">Matemática</button>
         <button type="button" class="quick-nav-btn-jump" data-jump="setters">Setters</button>
         <button type="button" class="quick-nav-btn-jump" data-jump="closers">Closers</button>
+        <button type="button" class="quick-nav-btn-jump" data-jump="utm">Campañas</button>
       </div>
 
       <!-- Cluster único de "números de arriba" — antes eran 3 bloques
@@ -1490,6 +1502,24 @@
         </div>
         <div class="breakdown-grid" id="settersGrid"></div>
         <div class="chart-status" id="statusSetters" style="margin-bottom:44px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
+      </div>
+
+      <!-- Campañas (UTM): de dónde vienen los leads, las agendas y las ventas.
+           Sale de las etiquetas src-/med-/camp-/cont- que el Worker le pone a
+           cada contacto en GHL según las UTMs del link por el que entró. -->
+      <div class="tab-panel active" data-tab-panel="utm">
+        <div class="section-label" id="utm">De dónde vienen los leads y las agendas</div>
+        <div class="chart-panel">
+          <div class="chart-chips" id="utmDimension"></div>
+          <div class="utm-wrap" style="margin-top:14px;">
+            <table class="utm-table">
+              <thead><tr><th id="utmColNombre">Campaña</th><th>Leads</th><th>Agendadas</th><th>Shows</th><th>Cierres</th><th>Ventas</th><th>Lead → agenda</th></tr></thead>
+              <tbody id="utmBody"></tbody>
+            </table>
+            <div class="utm-vacio" id="utmVacio" hidden></div>
+          </div>
+        </div>
+        <div class="chart-status" id="statusUtm" style="margin-bottom:44px;">Cargando desde GHL…</div>
       </div>
 
       <!-- Closers: sale de la pestaña "Ranking" del Sheet (Fecha | Closer | Monto),
@@ -4338,6 +4368,7 @@
     fijarValorNumero('leadsPromedio', diasAMostrar > 0 ? (total / diasAMostrar).toLocaleString('es-AR', { maximumFractionDigits: 1 }) : '–');
     fijarValorNumero('leadsMejor', mejor > 0 ? `${mejor} · día ${serie.indexOf(mejor) + 1}` : '–');
     pintarConversionFunnel();
+    renderCampanas();
   }
   async function cargarYPintarLeads(silencioso = false){
     const pedido = ++leadsPedido;
@@ -4388,6 +4419,64 @@
   // cargarYPintarDatosMes (no await'eada ahí) porque tarda varios segundos
   // (recorre ~2500 oportunidades del lado del Worker) — así el resto del
   // dashboard no espera a GHL para pintarse. =====
+  // ===== Campañas (UTM) — junta dos pedidos que llegan por separado:
+  // leads-summary (agendadas/shows/cierres/ventas por etiqueta) y
+  // leads-por-dia (leads por etiqueta). =====
+  let utmResumen = null;
+  const UTM_DIMENSIONES = [
+    { k: 'camp', texto: 'Por campaña', col: 'Campaña' },
+    { k: 'cont', texto: 'Por anuncio / contenido', col: 'Anuncio / contenido' },
+    { k: 'src', texto: 'Por fuente', col: 'Fuente' },
+    { k: 'med', texto: 'Por medio', col: 'Medio' },
+  ];
+  let utmDimension = 'camp';
+  function utmNombreLindo(slug){
+    if(!slug) return '';
+    const t = slug.replace(/-/g, ' ');
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  function renderCampanas(){
+    const chips = document.getElementById('utmDimension');
+    if(!chips) return;
+    chips.innerHTML = UTM_DIMENSIONES.map(d => `<button type="button" class="chart-chip${d.k === utmDimension ? ' active' : ''}" data-utm-dim="${d.k}">${d.texto}</button>`).join('');
+    chips.querySelectorAll('[data-utm-dim]').forEach(b => b.addEventListener('click', () => { utmDimension = b.dataset.utmDim; renderCampanas(); }));
+    const dim = UTM_DIMENSIONES.find(d => d.k === utmDimension);
+    document.getElementById('utmColNombre').textContent = dim.col;
+    const body = document.getElementById('utmBody');
+    const vacio = document.getElementById('utmVacio');
+    const status = document.getElementById('statusUtm');
+    if(!utmResumen){ body.innerHTML = ''; vacio.hidden = true; return; }
+    const ventasPor = utmResumen[utmDimension] || {};
+    const leadsPor = (leadsData && leadsData.utmLeads && leadsData.utmLeads[utmDimension]) || null;
+    const claves = new Set([...Object.keys(ventasPor), ...(leadsPor ? Object.keys(leadsPor) : [])]);
+    const filas = [...claves].map(k => {
+      const v = ventasPor[k] || { agendadas: 0, shows: 0, cierres: 0, ventas: 0 };
+      const leads = leadsPor ? (leadsPor[k] || 0) : null;
+      return { k, leads, agendadas: v.agendadas, shows: v.shows, cierres: v.cierres, ventas: v.ventas };
+    }).filter(f => f.leads || f.agendadas || f.shows || f.cierres || f.ventas);
+    // Con UTM primero (ordenadas por agendadas y leads); "Sin UTM" siempre al final.
+    filas.sort((a, b) => (!a.k) - (!b.k) || b.agendadas - a.agendadas || (b.leads || 0) - (a.leads || 0) || b.ventas - a.ventas);
+    const n = x => x == null ? '–' : x.toLocaleString('es-AR');
+    const mejor = filas.find(f => f.k && f.agendadas > 0);
+    body.innerHTML = filas.map(f => `<tr class="${f === mejor ? 'utm-top' : ''}">
+      <td class="${f.k ? '' : 'utm-sin'}">${f.k ? escapeHtml(utmNombreLindo(f.k)) : 'Sin UTM (sin rastrear)'}</td>
+      <td>${n(f.leads)}</td><td>${n(f.agendadas)}</td><td>${n(f.shows)}</td><td>${n(f.cierres)}</td>
+      <td>$${Math.round(f.ventas).toLocaleString('es-AR')}</td>
+      <td>${f.leads ? (f.agendadas / f.leads * 100).toFixed(1) + '%' : '–'}</td></tr>`).join('');
+    const conUtm = filas.filter(f => f.k);
+    vacio.hidden = filas.length > 0 && conUtm.length > 0;
+    if(!vacio.hidden){
+      vacio.textContent = filas.length
+        ? 'Todavía no hay leads con UTM este mes. Cuando entren por links con UTM (anuncios o el generador del Admin) van a aparecer acá.'
+        : 'Sin datos este mes todavía.';
+    }
+    const totalAg = filas.reduce((a, f) => a + f.agendadas, 0);
+    const agConUtm = conUtm.reduce((a, f) => a + f.agendadas, 0);
+    status.textContent = totalAg > 0
+      ? `${agConUtm} de ${totalAg} agendadas del mes tienen UTM (${Math.round(agConUtm / totalAg * 100)}%) · agendas/cierres cuentan por la fecha del último movimiento en GHL, los leads por su fecha de ingreso`
+      : 'Agendas, shows y cierres cuentan por la fecha del último movimiento en GHL; los leads por su fecha de ingreso';
+  }
+
   const GHL_IDS = ['ghlLlamadas','ghlAgendadas','ghlShows','ghlCierres','ghlVentas','ghlAov','mateAgendado','mateShowRate','mateCierre','mateConversion','mateConversionFunnel'];
   // silencioso=true (refresco automático o botón "Actualizar"): deja los
   // números viejos a la vista mientras llegan los nuevos, en vez de
@@ -4455,6 +4544,8 @@
       fijarValorNumero('mateCierre', pctGhl(data.totales.cierres, data.totales.shows));
       fijarValorNumero('mateConversion', pctGhl(data.totales.cierres, data.totales.shows));
       ghlTotales = data.totales;
+      utmResumen = data.utm || null;
+      renderCampanas();
       pintarConversionFunnel();
 
       const fuentes = Object.entries(data.porFuente).sort((a,b) => b[1].ventas - a[1].ventas);
