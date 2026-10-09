@@ -219,7 +219,7 @@
   .ghost-link-btn:disabled{ opacity:0.5; cursor:not-allowed; }
   .ghost-link-btn:disabled:hover{ background:rgba(255,255,255,0.08); border-color:var(--border); }
   .section-switcher{ position:relative; }
-  .section-switcher .month-list{ top:calc(100% + 10px); left:auto; right:0; min-width:180px; }
+  .section-switcher .month-list{ top:calc(100% + 10px); left:auto; right:0; min-width:180px; max-height:none; overflow:visible; }
   .active-month-pill{
     position:relative; display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--border);
     border-radius:999px; padding:10px 8px 10px 18px; font-size:14px;
@@ -2047,6 +2047,7 @@
   // El día que se agregue otra parte a la plataforma, alcanza con
   // sumarla acá — no hay que tocar el HTML de ninguna cabecera. =====
   const SECCIONES = [
+    { id: 'inicio', label: 'Inicio', activa: () => loadingScreen.classList.contains('active'), ir: () => showScreen(loadingScreen) },
     { id: 'onboarding', label: 'Onboarding', activa: () => onboardingScreen.classList.contains('active'), ir: entrarAlOnboarding },
     { id: 'dashboard', label: 'Dashboard', activa: () => dashboardScreen.classList.contains('active'), ir: entrarAlDashboard },
     { id: 'ranking', label: 'Ranking', activa: () => rankingScreen.classList.contains('active'), ir: entrarAlRanking },
