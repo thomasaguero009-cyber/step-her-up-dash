@@ -2984,6 +2984,7 @@
       if(!b) return;
       campo.value = b.dataset.valor;
       utmMarcar(id, b.dataset.valor);
+      utmRefrescarLink();
     });
     campo.addEventListener('input', () => utmMarcar(id, campo.value.trim()));
   });
