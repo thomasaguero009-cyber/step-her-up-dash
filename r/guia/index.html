@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>De empleada a dueña de tu marca | Step Her Up</title>
+<meta name="description" content="Guía gratuita para mujeres profesionales que quieren convertir su profesión en un negocio propio, sin renunciar a su trabajo mientras lo construyen.">
+<meta property="og:title" content="De empleada a dueña de tu marca">
+<meta property="og:description" content="Guía gratuita: convierte tu profesión en un negocio propio en 5 pasos y 30 días, sin renunciar a tu trabajo.">
+<meta property="og:image" content="https://dash.stepherup.com/assets/gianie-foto.jpg">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wine:#591722; --wine-deep:#200508;
+    --gold:#8C6A2F; --gold-soft:#C7A968;
+    --paper:#FBF7F1; --page:#EFE6D8; --sand:#F1E7D6;
+    --ink:#211611; --ink-soft:#6E5D4E; --line:rgba(33,22,17,0.14);
+    --heading:#200508; --field:#FFFFFF; --ok:#3F7A4F;
+    --shadow:0 24px 50px -28px rgba(32,5,8,0.45);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#251A14; --page:#1C1310; --sand:#362A1F;
+      --ink:#F1E6D8; --ink-soft:#C7B7A3; --line:rgba(241,230,216,0.18);
+      --heading:#E8D9B8; --field:#1C1310; --gold:#D9B877; --ok:#7FC596;
+      --shadow:0 24px 50px -28px rgba(0,0,0,0.7);
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#251A14; --page:#1C1310; --sand:#362A1F;
+    --ink:#F1E6D8; --ink-soft:#C7B7A3; --line:rgba(241,230,216,0.18);
+    --heading:#E8D9B8; --field:#1C1310; --gold:#D9B877; --ok:#7FC596;
+    --shadow:0 24px 50px -28px rgba(0,0,0,0.7);
+    color-scheme:dark;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--page); color:var(--ink);
+    font-family:"Work Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-size:16px; line-height:1.65; -webkit-font-smoothing:antialiased;
+    padding:0 16px env(safe-area-inset-bottom,0px);
+  }
+  h1,h2,h3{ font-family:"Fraunces",Georgia,serif; color:var(--heading); font-weight:600; letter-spacing:-0.01em; margin:0; text-wrap:balance; }
+  p{ margin:0 0 14px; }
+  .wrap{ max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:22px; padding:20px 0 70px; }
+  .eyebrow{ font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+
+  /* Portada */
+  .cover{
+    background:var(--wine-deep); color:#F7ECE6; border-radius:8px; box-shadow:var(--shadow);
+    padding:56px 36px 48px; display:flex; flex-direction:column; gap:20px;
+    background-image:radial-gradient(ellipse 520px 320px at 85% 0%, rgba(199,169,104,0.22), transparent 70%);
+  }
+  .cover .eyebrow{ color:var(--gold-soft); }
+  .cover h1{ color:#F7ECE6; font-size:clamp(34px,7vw,52px); line-height:1.08; }
+  .cover h1 em{ color:var(--gold-soft); font-style:italic; font-weight:500; }
+  .cover p{ color:rgba(247,236,230,0.82); font-size:17px; max-width:520px; margin:0; }
+  .cover .by{ font-size:13px; color:rgba(247,236,230,0.6); letter-spacing:.04em; }
+  .cover-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;
+    padding:13px 24px; border-radius:100px; border:1px solid transparent; font:600 14.5px/1 "Work Sans",sans-serif;
+    text-decoration:none; transition:transform .15s, background .15s;
+  }
+  .btn:hover{ transform:translateY(-1px); }
+  .btn-gold{ background:var(--gold-soft); color:#2a1a0c; }
+  .btn-ghost{ background:transparent; color:#F7ECE6; border-color:rgba(247,236,230,0.4); }
+
+  /* Secciones */
+  .sec{ background:var(--paper); border-radius:8px; box-shadow:var(--shadow); padding:38px 34px; display:flex; flex-direction:column; gap:6px; }
+  .sec h2{ font-size:clamp(25px,5vw,32px); line-height:1.15; margin:6px 0 10px; }
+  .sec h3{ font-size:19px; margin:20px 0 8px; }
+  .paso{ display:flex; align-items:center; gap:12px; }
+  .paso i{
+    font-style:normal; font-family:"Fraunces",serif; font-weight:600; font-size:15px;
+    width:34px; height:34px; border-radius:50%; background:var(--wine); color:#F7ECE6;
+    display:inline-flex; align-items:center; justify-content:center; flex:none;
+  }
+  .lead{ font-size:17.5px; color:var(--ink); }
+  .nota{
+    background:var(--sand); border-left:3px solid var(--gold); border-radius:4px;
+    padding:14px 16px; font-size:14.5px; color:var(--ink); margin:8px 0 14px;
+  }
+  .nota b{ color:var(--heading); }
+  ul.check, ul.plain{ margin:0 0 14px; padding:0; list-style:none; display:flex; flex-direction:column; gap:10px; }
+  ul.plain li{ padding-left:20px; position:relative; }
+  ul.plain li::before{ content:""; position:absolute; left:2px; top:.72em; width:6px; height:6px; border-radius:50%; background:var(--gold); }
+
+  /* Campos */
+  label.f{ display:block; font-size:13.5px; font-weight:600; color:var(--heading); margin:14px 0 6px; }
+  .f-hint{ font-weight:400; color:var(--ink-soft); }
+  textarea, input[type=text], input[type=number]{
+    width:100%; background:var(--field); color:var(--ink); border:1px solid var(--line); border-radius:8px;
+    padding:12px 14px; font:inherit; font-size:15px; line-height:1.5;
+  }
+  textarea{ min-height:84px; resize:vertical; }
+  textarea:focus, input:focus{ outline:2px solid var(--gold); outline-offset:1px; border-color:transparent; }
+  .frase{
+    margin-top:16px; padding:18px 20px; border-radius:6px; background:var(--wine-deep); color:#F7ECE6;
+    font-family:"Fraunces",serif; font-size:19px; line-height:1.45;
+  }
+  .frase small{ display:block; font-family:"Work Sans",sans-serif; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-soft); margin-bottom:6px; }
+  .frase .vacio{ color:rgba(247,236,230,0.45); }
+  .grid3{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+  .grid2{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  @media (max-width:620px){ .grid3,.grid2{ grid-template-columns:1fr; } .sec{ padding:30px 22px; } .cover{ padding:42px 24px 36px; } }
+
+  /* Tarjetas */
+  .cards{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:8px 0 14px; }
+  @media (max-width:620px){ .cards{ grid-template-columns:1fr; } }
+  .card{ border:1px solid var(--line); border-radius:8px; padding:16px 18px; background:var(--paper); }
+  .card b{ display:block; font-family:"Fraunces",serif; font-size:17px; color:var(--heading); margin-bottom:4px; }
+  .card span{ font-size:14.5px; color:var(--ink-soft); }
+  .ej{ font-size:14.5px; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:12px; margin-top:12px; }
+  .ej b{ color:var(--heading); }
+
+  /* Calculadora */
+  .calc{ border:1px solid var(--line); border-radius:8px; padding:20px; background:var(--sand); margin-top:10px; }
+  .calc-res{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:16px; }
+  @media (max-width:620px){ .calc-res{ grid-template-columns:1fr; } }
+  .res{ background:var(--paper); border-radius:6px; padding:14px 16px; }
+  .res small{ display:block; font-size:12px; color:var(--ink-soft); }
+  .res strong{ font-family:"Fraunces",serif; font-size:30px; color:var(--heading); font-weight:600; }
+  .veredicto{ margin-top:14px; font-size:14.5px; padding:12px 14px; border-radius:6px; background:var(--paper); border-left:3px solid var(--gold); }
+
+  /* Plan de 30 días */
+  .barra{ height:8px; background:var(--sand); border-radius:99px; overflow:hidden; margin:8px 0 4px; }
+  .barra i{ display:block; height:100%; width:0; background:var(--gold); transition:width .3s; }
+  .semana{ margin-top:18px; }
+  .semana h3{ margin:0 0 8px; }
+  ul.check li label{ display:flex; gap:12px; align-items:flex-start; cursor:pointer; font-size:15.5px; }
+  ul.check input{ width:20px; height:20px; margin-top:3px; flex:none; accent-color:var(--wine); }
+  ul.check input:checked + span{ color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--gold); }
+
+  .final{ background:var(--wine-deep); color:#F7ECE6; text-align:center; align-items:center; gap:14px; }
+  .final h2{ color:#F7ECE6; }
+  .final p{ color:rgba(247,236,230,0.82); max-width:520px; }
+  .legal{ font-size:12px; color:var(--ink-soft); text-align:center; line-height:1.6; padding:0 10px; }
+  .pie{ text-align:center; font-size:13px; color:var(--ink-soft); }
+
+  @media print{
+    body{ background:#fff; padding:0; }
+    .wrap{ padding:0; gap:14px; max-width:none; }
+    .sec,.cover{ box-shadow:none; break-inside:avoid-page; border:1px solid #ddd; }
+    .cover-actions, .final .btn{ display:none; }
+    textarea{ border-color:#bbb; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <header class="cover">
+    <div class="eyebrow">Step Her Up · Guía gratuita</div>
+    <h1>De empleada a <em>dueña de tu marca</em></h1>
+    <p>Cómo convertir tu profesión en un negocio propio, en 5 pasos y 30 días, sin renunciar a tu trabajo mientras lo construyes.</p>
+    <div class="by">Por Gianie Milet</div>
+    <div class="cover-actions">
+      <a class="btn btn-gold" href="#empieza">Empezar la guía</a>
+      <button type="button" class="btn btn-ghost" id="btnPdf">Guardar como PDF</button>
+    </div>
+  </header>
+
+  <section class="sec" id="empieza">
+    <div class="eyebrow">Antes de empezar</div>
+    <h2>Ya tienes lo más difícil: años de experiencia que otras personas pagarían por tener</h2>
+    <p class="lead">Trabajas en tu profesión, sabes cosas que a tu alrededor casi nadie sabe, y en algún momento pensaste: ¿y si esto pudiera ser mío?</p>
+    <p>Esta guía no te pide que renuncies, ni que te reinventes, ni que empieces de cero. Te enseña a tomar lo que ya sabes, convertirlo en una oferta clara y empezar a venderla en paralelo a tu empleo.</p>
+    <div class="nota"><b>Cómo usarla.</b> Ve en orden, un paso a la vez. Los espacios para escribir se guardan solos en este dispositivo, así que puedes dejarla y volver. Al final tienes un plan de 30 días para ir marcando lo que haces.</div>
+    <h3>Lo que vas a tener al terminar</h3>
+    <ul class="plain">
+      <li>Una frase que dice a quién ayudas y qué resultado le das</li>
+      <li>Una oferta con precio, lista para venderse</li>
+      <li>Un perfil que se lee como el de una profesional que tiene su negocio</li>
+      <li>Un plan de contenido que cabe en tu semana laboral</li>
+      <li>Un camino concreto para conseguir tus primeras clientas</li>
+    </ul>
+  </section>
+
+  <section class="sec" id="paso0">
+    <div class="paso"><i>0</i><div class="eyebrow">Antes de publicar nada</div></div>
+    <h2>Empieza protegida: tres cosas que revisar</h2>
+    <p>Construir tu negocio mientras tienes un empleo es posible y muy común. Solo necesita un poco de orden desde el inicio.</p>
+    <h3>1. Lee tu contrato</h3>
+    <p>Busca si tiene cláusulas de exclusividad, de no competencia o de conflicto de intereses. Algunas empresas permiten proyectos propios si no compites con ellas y avisas. Otras no. Si algo no te queda claro, consulta con una abogada antes de seguir.</p>
+    <div class="nota"><b>Importante.</b> Esto es orientación general, no asesoría legal. Cada país y cada contrato son distintos.</div>
+    <h3>2. Separa tu negocio de tu empleo</h3>
+    <p>Tu negocio se construye con tu tiempo, tus herramientas y tu criterio. No uses clientes, bases de datos, materiales, correos ni horario de tu empleo. Eso te cuida a ti y le da seriedad a lo que estás armando.</p>
+    <h3>3. Decide tu tiempo real</h3>
+    <p>No necesitas todo el día. Con 5 a 7 horas por semana (un par de noches y un bloque del fin de semana) alcanza para avanzar con constancia. Escribe cuántas tienes tú de verdad:</p>
+    <label class="f" for="horas">Horas por semana que puedo dedicarle de forma realista <span class="f-hint">(guarda el número en este dispositivo)</span></label>
+    <input type="number" id="horas" min="0" max="60" placeholder="Ej: 6" data-save="horas">
+  </section>
+
+  <section class="sec" id="paso1">
+    <div class="paso"><i>1</i><div class="eyebrow">Tu especialidad</div></div>
+    <h2>De profesión a problema que resuelves</h2>
+    <p class="lead">Nadie paga por un título. La gente paga porque alguien le resuelva un problema concreto. Tu trabajo en este paso es traducir tu profesión a ese problema.</p>
+    <label class="f" for="p1a">¿Qué problema de tu área resuelves casi sin esfuerzo, y a otras personas les cuesta muchísimo?</label>
+    <textarea id="p1a" data-save="p1a" placeholder="Lo que tus colegas, amigas o familia te piden siempre que les expliques o les arregles."></textarea>
+    <label class="f" for="p1b">¿Quién te hace esa pregunta una y otra vez?</label>
+    <textarea id="p1b" data-save="p1b" placeholder="Describe a esa persona: qué hace, qué le preocupa, en qué momento está."></textarea>
+    <h3>Arma tu frase</h3>
+    <p>Completa los tres espacios y mira cómo queda:</p>
+    <div class="grid3">
+      <div><label class="f" for="fa">Ayudo a…</label><input type="text" id="fa" data-save="fa" placeholder="mujeres con trabajo de oficina"></div>
+      <div><label class="f" for="fb">a lograr…</label><input type="text" id="fb" data-save="fb" placeholder="comer mejor y con energía"></div>
+      <div><label class="f" for="fc">sin…</label><input type="text" id="fc" data-save="fc" placeholder="dietas restrictivas ni horas en la cocina"></div>
+    </div>
+    <div class="frase" aria-live="polite"><small>Tu frase de posicionamiento</small><span id="fraseOut"></span></div>
+    <div class="ej"><b>Ejemplos.</b> Contadora: "Ayudo a emprendedoras a ordenar sus números sin sentirse perdidas entre impuestos." Psicóloga: "Ayudo a mujeres con trabajos exigentes a manejar la ansiedad sin dejar su carrera." Arquitecta: "Ayudo a parejas que van a remodelar a evitar errores de presupuesto antes de empezar la obra."</div>
+  </section>
+
+  <section class="sec" id="paso2">
+    <div class="paso"><i>2</i><div class="eyebrow">Tu oferta</div></div>
+    <h2>Convierte lo que sabes en algo que se pueda comprar</h2>
+    <p class="lead">Una oferta es una promesa clara, con un principio y un final, y con un precio. "Te ayudo con lo que necesites" no es una oferta.</p>
+    <h3>Empieza con una de estas cuatro</h3>
+    <div class="cards">
+      <div class="card"><b>Sesión estratégica</b><span>Una reunión de 60 a 90 minutos para resolver un tema puntual y dejar un plan por escrito.</span></div>
+      <div class="card"><b>Acompañamiento corto</b><span>De 4 a 8 semanas, con sesiones y seguimiento, para llegar a un resultado concreto.</span></div>
+      <div class="card"><b>Revisión o diagnóstico</b><span>Analizas lo que ya tiene la persona (un documento, un plan, un perfil) y le dices qué cambiar.</span></div>
+      <div class="card"><b>Taller en grupo pequeño</b><span>Una sesión en vivo para 5 a 10 personas con el mismo problema.</span></div>
+    </div>
+    <div class="nota"><b>Empieza con un servicio, no con un curso grabado.</b> Así aprendes qué compra la gente y cómo lo explican con sus palabras, antes de invertir meses en producir algo que quizá nadie pidió.</div>
+    <label class="f" for="p2a">Mi primera oferta es… <span class="f-hint">(qué incluye, cuánto dura, qué resultado busca la persona)</span></label>
+    <textarea id="p2a" data-save="p2a" placeholder="Ej: Acompañamiento de 4 semanas con 4 sesiones de 60 minutos para armar tu plan de alimentación y mantenerlo con tu horario de oficina."></textarea>
+
+    <h3>¿Cuánto cobrar y cuántas clientas necesitas?</h3>
+    <p>No pongas tu precio por lo que ganas por hora en tu empleo. Ponlo por el valor del resultado que entregas. Usa esta calculadora para ver si tus números cierran con el tiempo que tienes:</p>
+    <div class="calc">
+      <div class="grid2">
+        <div><label class="f" for="cMeta">Ingreso extra que quieres al mes</label><input type="number" id="cMeta" min="0" data-save="cMeta" placeholder="Ej: 800"></div>
+        <div><label class="f" for="cPrecio">Precio de tu oferta</label><input type="number" id="cPrecio" min="0" data-save="cPrecio" placeholder="Ej: 200"></div>
+        <div><label class="f" for="cHoras">Horas que te lleva atender a cada clienta</label><input type="number" id="cHoras" min="0" step="0.5" data-save="cHoras" placeholder="Ej: 5"></div>
+        <div><label class="f" for="cLibres">Horas al mes que puedes dedicar a clientas</label><input type="number" id="cLibres" min="0" data-save="cLibres" placeholder="Ej: 16"></div>
+      </div>
+      <div class="calc-res">
+        <div class="res"><small>Clientas que necesitas al mes</small><strong id="rClientas">–</strong></div>
+        <div class="res"><small>Horas que te llevaría</small><strong id="rHoras">–</strong></div>
+      </div>
+      <div class="veredicto" id="rVeredicto">Completa los cuatro datos para ver si tus números cierran.</div>
+    </div>
+    <p class="ej" style="margin-top:14px;">Si necesitas más horas de las que tienes, no se arregla trabajando más. Se arregla subiendo el precio, acortando lo que incluye la oferta o bajando la meta del primer mes.</p>
+  </section>
+
+  <section class="sec" id="paso3">
+    <div class="paso"><i>3</i><div class="eyebrow">Tu marca personal</div></div>
+    <h2>Que tu perfil se lea como el de una profesional con negocio propio</h2>
+    <p class="lead">Cuando alguien llega a tu perfil, en 5 segundos decide si eres una opción seria. Tu perfil es tu vitrina de venta.</p>
+    <h3>Tu bio en tres líneas</h3>
+    <label class="f" for="b1">Línea 1: a quién ayudas y qué logra</label>
+    <input type="text" id="b1" data-save="b1" placeholder="Te ayudo a ordenar tus finanzas sin estrés">
+    <label class="f" for="b2">Línea 2: tu credencial <span class="f-hint">(profesión y años de experiencia, sin nombrar a tu empleador)</span></label>
+    <input type="text" id="b2" data-save="b2" placeholder="Contadora pública · 8 años de experiencia">
+    <label class="f" for="b3">Línea 3: qué quieres que haga quien te lee</label>
+    <input type="text" id="b3" data-save="b3" placeholder="Escríbeme la palabra ORDEN por mensaje directo">
+    <div class="frase"><small>Así se vería tu bio</small><span id="bioOut" style="white-space:pre-line;"></span></div>
+
+    <h3>Tus tres publicaciones fijadas</h3>
+    <div class="cards">
+      <div class="card"><b>1. Quién eres</b><span>Un video donde sales tú, cuentas qué haces, para quién y por qué.</span></div>
+      <div class="card"><b>2. Prueba</b><span>Un resultado o una opinión real. Si aún no tienes clientas, tu experiencia profesional documentada.</span></div>
+      <div class="card"><b>3. Tu oferta</b><span>Qué incluye, para quién es y cómo empezar, con tu palabra clave.</span></div>
+    </div>
+    <div class="nota"><b>Sobre tu empleo actual.</b> Puedes presentar tu experiencia ("8 años en finanzas corporativas") sin nombrar a tu empleador ni usar su logo.</div>
+  </section>
+
+  <section class="sec" id="paso4">
+    <div class="paso"><i>4</i><div class="eyebrow">Tu contenido</div></div>
+    <h2>Contenido que cabe en tu semana laboral</h2>
+    <p class="lead">No necesitas publicar todos los días. Necesitas publicar con constancia y con un propósito para cada pieza.</p>
+    <h3>Los cuatro tipos de contenido</h3>
+    <div class="cards">
+      <div class="card"><b>Autoridad</b><span>Enseñas algo útil de tu área. Demuestra que sabes.</span></div>
+      <div class="card"><b>Conexión</b><span>Cuentas quién eres, tu historia, cómo trabajas. Genera confianza.</span></div>
+      <div class="card"><b>Prueba</b><span>Resultados, opiniones, antes y después, casos reales.</span></div>
+      <div class="card"><b>Venta</b><span>Presentas tu oferta y cómo comprarla, sin disculparte.</span></div>
+    </div>
+    <h3>Tu ritmo mínimo</h3>
+    <p>Tres piezas por semana: una de autoridad, una de conexión o prueba, y una de venta. Grábalas todas en un solo bloque de unas 2 horas, el fin de semana, y programa la publicación durante la semana.</p>
+    <h3>Estructura para cada video</h3>
+    <ul class="plain">
+      <li><b>Gancho (primeros 3 segundos):</b> una frase que haga que la persona se quede.</li>
+      <li><b>Valor:</b> una sola idea, explicada simple.</li>
+      <li><b>Cierre:</b> una acción clara (guárdalo, comenta una palabra, escríbeme).</li>
+    </ul>
+    <h3>10 ideas para empezar, con tu área</h3>
+    <label class="f" for="area">Mi área es… <span class="f-hint">(se usa para completar las ideas)</span></label>
+    <input type="text" id="area" data-save="area" placeholder="Ej: finanzas, nutrición, derecho laboral">
+    <ol id="ideas" style="padding-left:20px; margin:14px 0 0; display:flex; flex-direction:column; gap:8px;"></ol>
+  </section>
+
+  <section class="sec" id="paso5">
+    <div class="paso"><i>5</i><div class="eyebrow">Tus primeras clientas</div></div>
+    <h2>Tus primeras ventas, sin anuncios y sin una audiencia enorme</h2>
+    <p class="lead">Las primeras clientas casi nunca llegan por un anuncio. Llegan porque alguien que conoces, o que te empieza a seguir, te escribe o se lo cuentas tú.</p>
+    <h3>1. Haz tu lista de 30 personas</h3>
+    <p>Personas que tienen el problema que resuelves, o que conocen a alguien que lo tiene. Sin incluir clientes ni contactos de tu empleo.</p>
+    <h3>2. Escríbeles con naturalidad</h3>
+    <div class="nota">"Hola, [nombre]. Estoy empezando a ayudar a [tu persona ideal] a [resultado] y busco a 3 personas para acompañar este mes. Pensé en ti porque [razón]. ¿Te cuento cómo funciona?"</div>
+    <h3>3. Abre tres lugares piloto</h3>
+    <p>Ofrece tu oferta a un precio de lanzamiento, nunca gratis, a cambio de tu seguimiento cercano y de que la persona te cuente cómo le fue. Con eso consigues tus primeros resultados y tus primeras opiniones.</p>
+    <h3>4. Conversa con cuatro preguntas</h3>
+    <ul class="plain">
+      <li>¿Qué quieres lograr y para cuándo?</li>
+      <li>¿Qué has intentado hasta ahora?</li>
+      <li>¿Qué pasa si esto sigue igual dentro de 6 meses?</li>
+      <li>¿Cómo sería para ti tenerlo resuelto?</li>
+    </ul>
+    <p>Después de escuchar, le presentas tu oferta como la forma de llegar ahí. Si no es para ella, se lo dices con honestidad. Eso también construye reputación.</p>
+  </section>
+
+  <section class="sec" id="plan">
+    <div class="eyebrow">Tu plan</div>
+    <h2>Tus primeros 30 días</h2>
+    <p>Marca lo que vas haciendo. Se guarda en este dispositivo.</p>
+    <div class="barra" aria-hidden="true"><i id="barraProgreso"></i></div>
+    <div style="font-size:13px; color:var(--ink-soft);" id="progresoTxt">0 de 0 completadas</div>
+
+    <div class="semana"><h3>Semana 1: base</h3>
+      <ul class="check">
+        <li><label><input type="checkbox" data-plan="s1a"><span>Revisé mi contrato y sé qué puedo y qué no puedo hacer</span></label></li>
+        <li><label><input type="checkbox" data-plan="s1b"><span>Escribí mi frase: ayudo a… a lograr… sin…</span></label></li>
+        <li><label><input type="checkbox" data-plan="s1c"><span>Definí mi primera oferta y su precio</span></label></li>
+      </ul></div>
+    <div class="semana"><h3>Semana 2: vitrina</h3>
+      <ul class="check">
+        <li><label><input type="checkbox" data-plan="s2a"><span>Actualicé mi bio con las tres líneas</span></label></li>
+        <li><label><input type="checkbox" data-plan="s2b"><span>Grabé y fijé mi publicación de "quién eres"</span></label></li>
+        <li><label><input type="checkbox" data-plan="s2c"><span>Fijé una publicación de prueba y una de mi oferta</span></label></li>
+      </ul></div>
+    <div class="semana"><h3>Semana 3: contenido y lista</h3>
+      <ul class="check">
+        <li><label><input type="checkbox" data-plan="s3a"><span>Publiqué mis 3 piezas de la semana</span></label></li>
+        <li><label><input type="checkbox" data-plan="s3b"><span>Armé mi lista de 30 personas</span></label></li>
+        <li><label><input type="checkbox" data-plan="s3c"><span>Preparé mi mensaje de invitación</span></label></li>
+      </ul></div>
+    <div class="semana"><h3>Semana 4: primeras ventas</h3>
+      <ul class="check">
+        <li><label><input type="checkbox" data-plan="s4a"><span>Envié mis invitaciones</span></label></li>
+        <li><label><input type="checkbox" data-plan="s4b"><span>Tuve al menos 3 conversaciones de venta</span></label></li>
+        <li><label><input type="checkbox" data-plan="s4c"><span>Revisé qué funcionó y ajusté mi oferta o mi mensaje</span></label></li>
+      </ul></div>
+  </section>
+
+  <section class="sec">
+    <div class="eyebrow">Para que no te frenes</div>
+    <h2>Cinco errores que veo seguido</h2>
+    <ul class="plain">
+      <li><b>Esperar a sentirte lista.</b> Casi nadie se siente lista. Se aprende vendiendo, no preparándose más.</li>
+      <li><b>Querer hablarle a todas.</b> Cuando le hablas a todas, nadie siente que le hablas a ella.</li>
+      <li><b>Empezar con un curso grabado.</b> Primero un servicio, después el producto.</li>
+      <li><b>Cobrar poco para no incomodar.</b> Un precio muy bajo hace dudar de la calidad y te agota más rápido.</li>
+      <li><b>Esperar a tener el logo, la web o el perfil perfectos.</b> Tu primera versión no tiene que ser la definitiva.</li>
+    </ul>
+    <div class="nota"><b>Una nota honesta.</b> Esta guía no te pide que dejes tu empleo. Esa decisión es personal y llega cuando tus ventas sean constantes y tus números te den tranquilidad.</div>
+  </section>
+
+  <section class="sec final">
+    <div class="eyebrow" style="color:var(--gold-soft);">Siguiente paso</div>
+    <h2>¿Quieres hacerlo acompañada?</h2>
+    <p>Con Step Her Up acompañamos a mujeres profesionales a estructurar su marca, definir su oferta y conseguir clientas con un plan hecho para su caso. Si quieres ver cómo trabajamos, mira este video de Gianie.</p>
+    <a class="btn btn-gold" href="https://dash.stepherup.com/go/?utm_source=guia&amp;utm_medium=recurso&amp;utm_campaign=guia-empleada&amp;utm_content=final">Quiero ver cómo trabajamos</a>
+  </section>
+
+  <p class="legal">Step Her Up. Esta guía es educativa y no constituye asesoría legal, financiera ni fiscal. Los resultados no están garantizados y dependen del compromiso, el esfuerzo y la situación personal de cada persona.</p>
+  <p class="pie">Step Her Up · Gianie Milet</p>
+</main>
+
+<script>
+(function () {
+  var KEY = "shu_guia_empleada_v1";
+  var est = {};
+  try { est = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { est = {}; }
+  function guardar() { try { localStorage.setItem(KEY, JSON.stringify(est)); } catch (e) {} }
+  var $ = function (id) { return document.getElementById(id); };
+  var num = function (id) { var v = parseFloat($(id).value); return isFinite(v) && v >= 0 ? v : 0; };
+  var fmt = function (n) { return Math.round(n).toLocaleString("es"); };
+
+  // Campos que se guardan solos
+  document.querySelectorAll("[data-save]").forEach(function (el) {
+    var k = el.getAttribute("data-save");
+    if (est[k] != null) el.value = est[k];
+    el.addEventListener("input", function () { est[k] = el.value; guardar(); pintar(); });
+  });
+
+  // Casillas del plan
+  var casillas = document.querySelectorAll("[data-plan]");
+  casillas.forEach(function (c) {
+    var k = "plan_" + c.getAttribute("data-plan");
+    c.checked = !!est[k];
+    c.addEventListener("change", function () { est[k] = c.checked; guardar(); pintarPlan(); });
+  });
+  function pintarPlan() {
+    var hechas = 0;
+    casillas.forEach(function (c) { if (c.checked) hechas++; });
+    $("barraProgreso").style.width = (casillas.length ? hechas / casillas.length * 100 : 0) + "%";
+    $("progresoTxt").textContent = hechas + " de " + casillas.length + " completadas";
+  }
+
+  function pintar() {
+    // Frase de posicionamiento
+    var a = $("fa").value.trim(), b = $("fb").value.trim(), c = $("fc").value.trim();
+    var vac = function (t) { return '<span class="vacio">' + t + "</span>"; };
+    $("fraseOut").innerHTML = "Ayudo a " + (a ? esc(a) : vac("…")) + " a lograr " + (b ? esc(b) : vac("…")) + " sin " + (c ? esc(c) : vac("…")) + ".";
+
+    // Bio
+    var l = [$("b1").value.trim(), $("b2").value.trim(), $("b3").value.trim()].filter(Boolean);
+    $("bioOut").innerHTML = l.length ? l.map(esc).join("\n") : vac("Completa las tres líneas de arriba.");
+
+    // Calculadora
+    var meta = num("cMeta"), precio = num("cPrecio"), hCli = num("cHoras"), libres = num("cLibres");
+    if (meta > 0 && precio > 0) {
+      var clientas = Math.ceil(meta / precio);
+      $("rClientas").textContent = fmt(clientas);
+      if (hCli > 0) {
+        var horas = clientas * hCli;
+        $("rHoras").textContent = fmt(horas) + " h";
+        if (libres > 0) {
+          $("rVeredicto").textContent = horas <= libres
+            ? "Tus números cierran: necesitas " + fmt(horas) + " horas y tienes " + fmt(libres) + " disponibles al mes."
+            : "Te faltan " + fmt(horas - libres) + " horas al mes. Prueba subir el precio, acortar lo que incluye la oferta o bajar la meta del primer mes.";
+        } else {
+          $("rVeredicto").textContent = "Escribe cuántas horas al mes puedes dedicar a clientas para comparar.";
+        }
+      } else {
+        $("rHoras").textContent = "–";
+        $("rVeredicto").textContent = "Escribe cuántas horas te lleva atender a cada clienta.";
+      }
+    } else {
+      $("rClientas").textContent = "–"; $("rHoras").textContent = "–";
+      $("rVeredicto").textContent = "Completa los cuatro datos para ver si tus números cierran.";
+    }
+
+    // Ideas
+    var area = $("area").value.trim() || "tu área";
+    var ideas = [
+      "El error número 1 que veo en " + area,
+      "3 señales de que necesitas ayuda profesional en " + area,
+      "Lo que nadie te cuenta de " + area,
+      "Mi historia: por qué elegí " + area + " y qué aprendí",
+      "Un mito de " + area + " que me gustaría desmentir",
+      "Qué haría yo si empezara hoy desde cero en " + area,
+      "Un caso real: antes y después (sin datos personales)",
+      "Un día en mi vida combinando trabajo y mi proyecto propio",
+      "Pregunta que me hacen siempre sobre " + area + ", y mi respuesta",
+      "Cómo trabajo con mis clientas, paso a paso, y a quién le sirve"
+    ];
+    $("ideas").innerHTML = ideas.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("");
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]; }); }
+
+  pintar();
+  pintarPlan();
+
+  $("btnPdf").addEventListener("click", function () { window.print(); });
+})();
+</script>
+</body>
+</html>
