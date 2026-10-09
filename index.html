@@ -487,7 +487,8 @@
   .modal-card.utm-card{ max-width:440px; text-align:left; max-height:88vh; overflow-y:auto; }
   .utm-field{ display:flex; flex-direction:column; gap:6px; }
   .utm-field label{ font-size:12px; color:var(--text-dim); font-weight:600; }
-  select.modal-input{ appearance:none; -webkit-appearance:none; cursor:pointer; }
+  .utm-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .utm-chips-suave .chart-chip{ padding:4px 11px; font-size:12px; font-weight:500; }
   .utm-result-wrap{ display:none; flex-direction:column; gap:8px; }
   .utm-result-wrap.show{ display:flex; }
   .utm-result{
@@ -1053,50 +1054,65 @@
   <div class="modal-overlay" id="utmBuilderOverlay">
     <div class="modal-card utm-card">
       <div class="modal-title">Generador de UTM</div>
-      <p class="modal-sub">Pegá el link, elegí las opciones y te arma el link con UTM listo para copiar.</p>
+      <p class="modal-sub">Elige las opciones y te arma el link con UTM listo para copiar.</p>
 
       <div class="utm-field">
-        <label for="utmBaseLink">Link base</label>
-        <input type="text" id="utmBaseLink" class="modal-input" placeholder="https://class.stepherup.com/step-her-up-c" autocomplete="off">
+        <label>Destino</label>
+        <div class="utm-chips" id="utmDestinoChips">
+          <button type="button" class="chart-chip active" data-valor="vsl">VSL</button>
+          <button type="button" class="chart-chip" data-valor="otro">Otro…</button>
+        </div>
+        <input type="text" id="utmBaseLink" class="modal-input" placeholder="https://… (el link al que quieres mandar)" autocomplete="off" style="display:none;">
       </div>
 
       <div class="utm-field">
-        <label for="utmSource">Origen (utm_source)</label>
-        <select id="utmSource" class="modal-input">
-          <option value="instagram">Instagram</option>
-          <option value="facebook">Facebook</option>
-          <option value="youtube">YouTube</option>
-          <option value="tiktok">TikTok</option>
-          <option value="otro">Otro…</option>
-        </select>
-        <input type="text" id="utmSourceOtro" class="modal-input" placeholder="Escribí el origen" style="display:none;">
+        <label>Origen — dónde lo vas a poner</label>
+        <div class="utm-chips" id="utmSourceChips">
+          <button type="button" class="chart-chip active" data-valor="instagram">Instagram</button>
+          <button type="button" class="chart-chip" data-valor="facebook">Facebook</button>
+          <button type="button" class="chart-chip" data-valor="tiktok">TikTok</button>
+          <button type="button" class="chart-chip" data-valor="youtube">YouTube</button>
+          <button type="button" class="chart-chip" data-valor="whatsapp">WhatsApp</button>
+          <button type="button" class="chart-chip" data-valor="otro">Otro…</button>
+        </div>
+        <input type="text" id="utmSourceOtro" class="modal-input" placeholder="Escribe el origen" style="display:none;">
       </div>
 
       <div class="utm-field">
-        <label for="utmMedium">Medio (utm_medium)</label>
-        <select id="utmMedium" class="modal-input">
-          <option value="bio">Bio</option>
-          <option value="reel">Reel</option>
-          <option value="story">Story</option>
-          <option value="post">Post</option>
-          <option value="dm">DM</option>
-          <option value="paid">Anuncio pago</option>
-          <option value="otro">Otro…</option>
-        </select>
-        <input type="text" id="utmMediumOtro" class="modal-input" placeholder="Escribí el medio" style="display:none;">
+        <label>Medio — de qué forma</label>
+        <div class="utm-chips" id="utmMediumChips">
+          <button type="button" class="chart-chip active" data-valor="bio">Bio</button>
+          <button type="button" class="chart-chip" data-valor="reel">Reel</button>
+          <button type="button" class="chart-chip" data-valor="story">Story</button>
+          <button type="button" class="chart-chip" data-valor="post">Post</button>
+          <button type="button" class="chart-chip" data-valor="dm">DM</button>
+          <button type="button" class="chart-chip" data-valor="paid">Anuncio pago</button>
+          <button type="button" class="chart-chip" data-valor="otro">Otro…</button>
+        </div>
+        <input type="text" id="utmMediumOtro" class="modal-input" placeholder="Escribe el medio" style="display:none;">
       </div>
 
       <div class="utm-field">
-        <label for="utmCampaign">Campaña (utm_campaign)</label>
-        <input type="text" id="utmCampaign" class="modal-input" placeholder="Ej: video_ayuda_septiembre" autocomplete="off">
+        <label for="utmCampaign">Campaña</label>
+        <div class="utm-chips utm-chips-suave" id="utmCampaignChips">
+          <button type="button" class="chart-chip" data-valor="contenido-organico">Contenido orgánico</button>
+          <button type="button" class="chart-chip" data-valor="webinar-21-oct">Webinar 21 oct</button>
+          <button type="button" class="chart-chip" data-valor="seguimiento-dm">Seguimiento DM</button>
+        </div>
+        <input type="text" id="utmCampaign" class="modal-input" placeholder="Elige una arriba o escribe la tuya" autocomplete="off">
       </div>
 
       <div class="utm-field">
-        <label for="utmContent">Contenido — opcional (utm_content)</label>
+        <label for="utmContent">Setter o detalle (opcional)</label>
+        <div class="utm-chips utm-chips-suave" id="utmContentChips">
+          <button type="button" class="chart-chip" data-valor="paula">Paula</button>
+          <button type="button" class="chart-chip" data-valor="paola">Paola</button>
+          <button type="button" class="chart-chip" data-valor="mia">Mia</button>
+        </div>
         <input type="text" id="utmContent" class="modal-input" placeholder="Ej: version_a" autocomplete="off">
       </div>
 
-      <div class="modal-error" id="utmError">Completá el link base y la campaña.</div>
+      <div class="modal-error" id="utmError">Completa la campaña.</div>
 
       <div class="utm-result-wrap" id="utmResultWrap">
         <div class="utm-result" id="utmResult"></div>
@@ -2379,9 +2395,7 @@
   const openUtmBuilderBtn = document.getElementById('openUtmBuilderBtn');
   const utmBuilderClose = document.getElementById('utmBuilderClose');
   const utmBaseLink = document.getElementById('utmBaseLink');
-  const utmSource = document.getElementById('utmSource');
   const utmSourceOtro = document.getElementById('utmSourceOtro');
-  const utmMedium = document.getElementById('utmMedium');
   const utmMediumOtro = document.getElementById('utmMediumOtro');
   const utmCampaign = document.getElementById('utmCampaign');
   const utmContent = document.getElementById('utmContent');
@@ -2392,22 +2406,34 @@
   const utmGenerateBtn = document.getElementById('utmGenerateBtn');
   const utmCopyBtn = document.getElementById('utmCopyBtn');
 
+  // Destino "VSL" = el funnel con rastreo (anota de qué link vino cada visita
+  // y sigue a class.stepherup.com). Cuando estén el formulario y el calendario
+  // se suman como opciones acá.
+  const UTM_LINK_VSL = 'https://dash.stepherup.com/go/';
+  const utmSel = { destino: 'vsl', source: 'instagram', medium: 'bio' };
+  function utmMarcar(contenedor, valor){
+    document.querySelectorAll('#' + contenedor + ' .chart-chip').forEach(b => b.classList.toggle('active', b.dataset.valor === valor));
+  }
+  function utmRefrescarOtros(){
+    utmBaseLink.style.display = utmSel.destino === 'otro' ? 'block' : 'none';
+    utmSourceOtro.style.display = utmSel.source === 'otro' ? 'block' : 'none';
+    utmMediumOtro.style.display = utmSel.medium === 'otro' ? 'block' : 'none';
+  }
   function abrirUtmBuilder(){
+    utmSel.destino = 'vsl'; utmSel.source = 'instagram'; utmSel.medium = 'bio';
+    utmMarcar('utmDestinoChips', 'vsl'); utmMarcar('utmSourceChips', 'instagram'); utmMarcar('utmMediumChips', 'bio');
+    utmMarcar('utmCampaignChips', ''); utmMarcar('utmContentChips', '');
     utmBaseLink.value = '';
-    utmSource.value = 'instagram';
     utmSourceOtro.value = '';
-    utmSourceOtro.style.display = 'none';
-    utmMedium.value = 'bio';
     utmMediumOtro.value = '';
-    utmMediumOtro.style.display = 'none';
+    utmRefrescarOtros();
     utmCampaign.value = '';
     utmContent.value = '';
-    utmError.textContent = 'Completá el link base y la campaña.';
+    utmError.textContent = 'Completa la campaña.';
     utmError.classList.remove('show');
     utmResultWrap.classList.remove('show');
     utmCopyBtn.style.display = 'none';
     utmBuilderOverlay.classList.add('open');
-    utmBaseLink.focus();
   }
   openUtmBuilderBtn.addEventListener('click', () => {
     if(adminDesbloqueado){ abrirAdminMenu(); return; }
@@ -2909,32 +2935,48 @@
   document.getElementById('estrVolverBtn').addEventListener('click', () => showScreen(loadingScreen));
   utmBuilderClose.addEventListener('click', () => utmBuilderOverlay.classList.remove('open'));
   utmBuilderOverlay.addEventListener('click', (e) => { if(e.target === utmBuilderOverlay) utmBuilderOverlay.classList.remove('open'); });
-  utmSource.addEventListener('change', () => { utmSourceOtro.style.display = utmSource.value === 'otro' ? 'block' : 'none'; });
-  utmMedium.addEventListener('change', () => { utmMediumOtro.style.display = utmMedium.value === 'otro' ? 'block' : 'none'; });
+  // Grupos de opciones: un clic marca una y desmarca las demás.
+  [['utmDestinoChips', 'destino'], ['utmSourceChips', 'source'], ['utmMediumChips', 'medium']].forEach(([id, clave]) => {
+    document.getElementById(id).addEventListener('click', (e) => {
+      const b = e.target.closest('.chart-chip');
+      if(!b) return;
+      utmSel[clave] = b.dataset.valor;
+      utmMarcar(id, b.dataset.valor);
+      utmRefrescarOtros();
+      if(b.dataset.valor === 'otro'){ (clave === 'destino' ? utmBaseLink : clave === 'source' ? utmSourceOtro : utmMediumOtro).focus(); }
+    });
+  });
+  // Campaña y setter: las opciones rellenan el campo (se puede escribir otra cosa).
+  [['utmCampaignChips', utmCampaign], ['utmContentChips', utmContent]].forEach(([id, campo]) => {
+    document.getElementById(id).addEventListener('click', (e) => {
+      const b = e.target.closest('.chart-chip');
+      if(!b) return;
+      campo.value = b.dataset.valor;
+      utmMarcar(id, b.dataset.valor);
+    });
+    campo.addEventListener('input', () => utmMarcar(id, campo.value.trim()));
+  });
 
   utmGenerateBtn.addEventListener('click', () => {
-    const base = utmBaseLink.value.trim();
     const campania = utmCampaign.value.trim();
-    if(!base || !campania){
-      utmError.textContent = 'Completá el link base y la campaña.';
+    const base = utmSel.destino === 'vsl' ? UTM_LINK_VSL : utmBaseLink.value.trim();
+    const mostrarError = (msg) => {
+      utmError.textContent = msg;
       utmError.classList.add('show');
       utmResultWrap.classList.remove('show');
       utmCopyBtn.style.display = 'none';
-      return;
-    }
+    };
+    if(!base) return mostrarError('Pega el link de destino.');
+    if(!campania) return mostrarError('Completa la campaña.');
     let url;
     try{
       url = new URL(base);
     } catch(e){
-      utmError.textContent = 'El link no es válido — tiene que empezar con https://';
-      utmError.classList.add('show');
-      utmResultWrap.classList.remove('show');
-      utmCopyBtn.style.display = 'none';
-      return;
+      return mostrarError('El link no es válido: tiene que empezar con https://');
     }
     utmError.classList.remove('show');
-    const origen = utmSource.value === 'otro' ? (utmSourceOtro.value.trim() || 'otro') : utmSource.value;
-    const medio = utmMedium.value === 'otro' ? (utmMediumOtro.value.trim() || 'otro') : utmMedium.value;
+    const origen = utmSel.source === 'otro' ? (utmSourceOtro.value.trim() || 'otro') : utmSel.source;
+    const medio = utmSel.medium === 'otro' ? (utmMediumOtro.value.trim() || 'otro') : utmSel.medium;
     url.searchParams.set('utm_source', origen);
     url.searchParams.set('utm_medium', medio);
     url.searchParams.set('utm_campaign', campania);
