@@ -494,6 +494,9 @@
   .utm-meta-fila{ display:flex; gap:8px; align-items:flex-start; }
   .utm-meta-fila code{ flex:1; min-width:0; font-size:11.5px; word-break:break-all; background:rgba(0,0,0,0.28); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--cream); }
   .utm-meta-fila .chart-chip{ flex:none; }
+  .utm-footer{ position:sticky; bottom:-26px; margin:6px -24px -26px; padding:14px 24px 22px; background:#1a0509; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px; z-index:2; }
+  .utm-preview-label{ font-size:11.5px; font-weight:600; color:var(--text-dim); letter-spacing:.03em; }
+  .utm-result.incompleto{ color:var(--text-dim); }
   .utm-chips{ display:flex; flex-wrap:wrap; gap:8px; }
   .utm-chips-suave .chart-chip{ padding:4px 11px; font-size:12px; font-weight:500; }
   .utm-result-wrap{ display:none; flex-direction:column; gap:8px; }
@@ -1128,17 +1131,17 @@
         <input type="text" id="utmContent" class="modal-input" placeholder="Ej: version_a" autocomplete="off">
       </div>
 
-      <div class="modal-error" id="utmError">Completa la campaña.</div>
-
-      <div class="utm-result-wrap" id="utmResultWrap">
-        <div class="utm-result" id="utmResult"></div>
-        <span class="utm-copied-msg" id="utmCopiedMsg">Copiado ✓</span>
-      </div>
-
-      <div class="modal-actions">
-        <button type="button" class="ghost-link-btn" id="utmBuilderClose">Cerrar</button>
-        <button type="button" class="btn-small" id="utmCopyBtn" style="display:none;">Copiar link</button>
-        <button type="button" class="btn-small" id="utmGenerateBtn">Generar</button>
+      <div class="utm-footer">
+        <div class="utm-preview-label">Así va quedando tu link</div>
+        <div class="utm-result-wrap show" id="utmResultWrap">
+          <div class="utm-result" id="utmResult"></div>
+          <span class="utm-copied-msg" id="utmCopiedMsg">Copiado ✓</span>
+        </div>
+        <div class="modal-error" id="utmError">Completa la campaña.</div>
+        <div class="modal-actions">
+          <button type="button" class="ghost-link-btn" id="utmBuilderClose">Cerrar</button>
+          <button type="button" class="btn-small" id="utmCopyBtn">Copiar link</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2420,7 +2423,6 @@
   const utmResultWrap = document.getElementById('utmResultWrap');
   const utmResult = document.getElementById('utmResult');
   const utmCopiedMsg = document.getElementById('utmCopiedMsg');
-  const utmGenerateBtn = document.getElementById('utmGenerateBtn');
   const utmCopyBtn = document.getElementById('utmCopyBtn');
 
   // Destino "VSL" = el funnel con rastreo (anota de qué link vino cada visita
@@ -2436,6 +2438,7 @@
     utmSourceOtro.style.display = utmSel.source === 'otro' ? 'block' : 'none';
     utmMediumOtro.style.display = utmSel.medium === 'otro' ? 'block' : 'none';
     document.getElementById('utmMetaBox').style.display = utmSel.medium === 'paid' ? 'flex' : 'none';
+    utmRefrescarLink();
   }
   function abrirUtmBuilder(){
     utmSel.destino = 'vsl'; utmSel.source = 'instagram'; utmSel.medium = 'bio';
@@ -2449,9 +2452,8 @@
     utmContent.value = '';
     utmError.textContent = 'Completa la campaña.';
     utmError.classList.remove('show');
-    utmResultWrap.classList.remove('show');
-    utmCopyBtn.style.display = 'none';
     utmBuilderOverlay.classList.add('open');
+    utmRefrescarLink();
   }
   openUtmBuilderBtn.addEventListener('click', () => {
     if(adminDesbloqueado){ abrirAdminMenu(); return; }
@@ -2986,38 +2988,41 @@
     campo.addEventListener('input', () => utmMarcar(id, campo.value.trim()));
   });
 
-  utmGenerateBtn.addEventListener('click', () => {
+  // Vista previa en vivo: el link se rearma con cada opción que eliges.
+  const utmEnc = (v) => encodeURIComponent(v);
+  function utmArmar(){
     const campania = utmCampaign.value.trim();
-    const base = utmSel.destino === 'vsl' ? UTM_LINK_VSL : utmBaseLink.value.trim();
-    const mostrarError = (msg) => {
-      utmError.textContent = msg;
-      utmError.classList.add('show');
-      utmResultWrap.classList.remove('show');
-      utmCopyBtn.style.display = 'none';
-    };
-    if(!base) return mostrarError('Pega el link de destino.');
-    if(!campania) return mostrarError('Completa la campaña.');
-    let url;
-    try{
-      url = new URL(base);
-    } catch(e){
-      return mostrarError('El link no es válido: tiene que empezar con https://');
+    const contenido = utmContent.value.trim();
+    let base = utmSel.destino === 'vsl' ? UTM_LINK_VSL : utmBaseLink.value.trim();
+    let falta = null;
+    if(!base){ falta = 'Pega el link de destino.'; base = 'https://…'; }
+    else {
+      try{ new URL(base); } catch(e){ falta = 'El link no es válido: tiene que empezar con https://'; }
     }
-    utmError.classList.remove('show');
+    if(!falta && !campania) falta = 'Completa la campaña.';
     const origen = utmSel.source === 'otro' ? (utmSourceOtro.value.trim() || 'otro') : utmSel.source;
     const medio = utmSel.medium === 'otro' ? (utmMediumOtro.value.trim() || 'otro') : utmSel.medium;
-    url.searchParams.set('utm_source', origen);
-    url.searchParams.set('utm_medium', medio);
-    url.searchParams.set('utm_campaign', campania);
-    if(utmContent.value.trim()) url.searchParams.set('utm_content', utmContent.value.trim());
-    utmResult.textContent = url.toString();
-    utmResultWrap.classList.add('show');
-    utmCopyBtn.style.display = 'inline-flex';
-    utmCopiedMsg.classList.remove('show');
-  });
+    const partes = ['utm_source=' + utmEnc(origen), 'utm_medium=' + utmEnc(medio), 'utm_campaign=' + (campania ? utmEnc(campania) : '…')];
+    if(contenido) partes.push('utm_content=' + utmEnc(contenido));
+    return { texto: base + (base.includes('?') ? '&' : '?') + partes.join('&'), falta };
+  }
+  function utmRefrescarLink(){
+    const r = utmArmar();
+    utmResult.textContent = r.texto;
+    utmResult.classList.toggle('incompleto', !!r.falta);
+    utmError.classList.remove('show');
+  }
+  [utmBaseLink, utmSourceOtro, utmMediumOtro, utmCampaign, utmContent].forEach(el => el.addEventListener('input', utmRefrescarLink));
 
   utmCopyBtn.addEventListener('click', async () => {
-    const texto = utmResult.textContent;
+    const armado = utmArmar();
+    if(armado.falta){
+      utmError.textContent = armado.falta;
+      utmError.classList.add('show');
+      return;
+    }
+    utmError.classList.remove('show');
+    const texto = armado.texto;
     try{
       await navigator.clipboard.writeText(texto);
     } catch(e){
