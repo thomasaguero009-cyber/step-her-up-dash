@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Step Her Up</title>
+<meta property="og:title" content="Step Her Up">
+<meta property="og:description" content="Estrategia, contenido y ventas para que tu negocio crezca con claridad.">
+<meta property="og:image" content="https://dash.stepherup.com/assets/gianie-foto.jpg">
+<meta property="og:type" content="website">
+<style>
+  html,body{ margin:0; height:100%; background:#1a0509; color:#f7ece9; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  body{ display:flex; align-items:center; justify-content:center; }
+  p{ font-size:14px; letter-spacing:.04em; opacity:.7; }
+</style>
+</head>
+<body>
+<p>Un momento…</p>
+<noscript><meta http-equiv="refresh" content="0;url=https://class.stepherup.com/step-her-up-c"></noscript>
+<script>
+(function () {
+  // Pasarela de links con rastreo: anota de qué anuncio/cuenta viene la visita
+  // (Worker /click, misma huella IP + navegador que luego usa la landing) y
+  // sigue al funnel en ClickFunnels con las UTMs en el link.
+  var DESTINO = "https://class.stepherup.com/step-her-up-c";
+  var WORKER = "https://step-her-up-calendar.thomasaguero009.workers.dev";
+  var CLAVES = ["utm_source", "utm_medium", "utm_campaign", "utm_content"];
+  var params = new URLSearchParams(location.search);
+  var q = new URLSearchParams();
+  CLAVES.forEach(function (k) {
+    var v = (params.get(k) || "").trim().slice(0, 150);
+    if (v) q.set(k, v);
+  });
+  var destino = DESTINO + (q.toString() ? "?" + q.toString() : "");
+  var hecho = false;
+  function ir() { if (hecho) return; hecho = true; location.replace(destino); }
+  if (!q.toString()) { ir(); return; }
+  setTimeout(ir, 1500); // si el Worker tarda, no se hace esperar a la persona
+  try {
+    fetch(WORKER + "/click?" + q.toString(), { keepalive: true, mode: "cors" }).then(ir, ir);
+  } catch (e) { ir(); }
+})();
+</script>
+</body>
+</html>
