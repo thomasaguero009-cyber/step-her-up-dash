@@ -760,7 +760,7 @@
   .rec-btn.ok{ color:#5fd39a; border-color:rgba(95,211,154,0.6); }
   @media(max-width:560px){ .rec-card{ padding:20px 18px; } .rec-acciones{ gap:6px; flex-wrap:nowrap; } .rec-btn{ padding:10px 11px; font-size:13px; white-space:nowrap; } }
   .rec-tag{ align-self:flex-start; font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--ac); border:1px solid color-mix(in srgb, var(--ac) 50%, transparent); border-radius:999px; padding:4px 11px; }
-  .rec-card h3{ font-size:22px; line-height:1.2; margin:0; }
+  .rec-card h3{ font-size:22px; line-height:1.2; margin:0; font-variant-numeric:lining-nums; font-feature-settings:"lnum" 1; }
   .rec-card p{ margin:0; font-size:14px; color:var(--text-dim); line-height:1.55; flex:1; }
   .rec-estado{ min-height:18px; margin-top:16px; font-size:13.5px; color:var(--text-dim); }
   .rec-viewer{ position:fixed; inset:0; z-index:300; background:#0d0304; }
@@ -1942,6 +1942,9 @@
     { grupo: 'Para compartir con las leads', id: 'carta-ventas', etiqueta: 'Carta de ventas', titulo: 'Antes de aplicar al programa', borrador: true,
       desc: 'Carta de Gianie para quien está por aplicar: por qué su negocio no cobra lo que debería.',
       url: DOMINIO_PUBLICO + '/r/carta/', },
+    { grupo: 'Links de pago', id: 'pago-100', etiqueta: 'Stripe', titulo: '$100', tipo: 'pago',
+      desc: 'Link de pago único por $100.',
+      url: 'https://buy.stripe.com/7sY4gB3xy8V9bCQblBfQI13', externo: true },
     { grupo: 'Links de pago', id: 'pago-500', etiqueta: 'Stripe', titulo: '$500', tipo: 'pago',
       desc: 'Link de pago único por $500.',
       url: 'https://buy.stripe.com/5kQ28t6JK4ET0Yc3T9fQI0v', externo: true },
