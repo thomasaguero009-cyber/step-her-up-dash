@@ -730,6 +730,7 @@
   .rec-intro{ margin:6px 0 26px; color:var(--text-dim); font-size:15px; }
   [data-tipo="presentacion"]{ --ac:#dcc08f; }   /* champagne: presentaciones */
   [data-tipo="compartir"]{ --ac:#f0a8be; }      /* rosa: para compartir con las leads */
+  [data-tipo="pago"]{ --ac:#5fd39a; }            /* verde: links de pago */
   .rec-grupo{ display:flex; align-items:center; gap:10px; margin:38px 0 16px; font-family:Inter,sans-serif; font-size:12px; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:var(--ac); }
   .rec-grupo:first-of-type{ margin-top:0; }
   .rec-grupo::after{ content:""; flex:1; height:1px; background:linear-gradient(90deg,var(--ac),transparent); opacity:0.35; }
@@ -1941,14 +1942,30 @@
     { grupo: 'Para compartir con las leads', id: 'carta-ventas', etiqueta: 'Carta de ventas', titulo: 'Antes de aplicar al programa', borrador: true,
       desc: 'Carta de Gianie para quien está por aplicar: por qué su negocio no cobra lo que debería.',
       url: DOMINIO_PUBLICO + '/r/carta/', },
+    { grupo: 'Links de pago', id: 'pago-500', etiqueta: 'Stripe', titulo: '$500', tipo: 'pago',
+      desc: 'Link de pago único por $500.',
+      url: 'https://buy.stripe.com/5kQ28t6JK4ET0Yc3T9fQI0v', externo: true },
+    { grupo: 'Links de pago', id: 'pago-997', etiqueta: 'Stripe', titulo: '$997', tipo: 'pago',
+      desc: 'Link de pago único por $997.',
+      url: 'https://buy.stripe.com/dRm00l5FG5IX7mAblBfQI08', externo: true },
+    { grupo: 'Links de pago', id: 'pago-1000', etiqueta: 'Stripe', titulo: '$1,000', tipo: 'pago',
+      desc: 'Link de pago único por $1,000.',
+      url: 'https://buy.stripe.com/aFa7sN1pqgnB36k75lfQI0o', externo: true },
+    { grupo: 'Links de pago', id: 'pago-3497', etiqueta: 'Stripe', titulo: '$3,497', tipo: 'pago',
+      desc: 'Link de pago único por $3,497.',
+      url: 'https://buy.stripe.com/8x29AVb007R5ayMcpFfQI0D', externo: true },
+    { grupo: 'Links de pago', id: 'pago-1250-mensual', etiqueta: 'Stripe · mensual', titulo: '$1,250 por mes', tipo: 'pago',
+      desc: 'Suscripción mensual: Stripe descuenta $1,250 automáticamente cada mes.',
+      url: 'https://buy.stripe.com/eVqeVf5FGeft4ao0GXfQI0y', externo: true },
   ];
 
   // Íconos de línea por tipo: presentación (pantalla) y material para compartir (link).
   const ICONO_REC = {
+    pago: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg>',
     presentacion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
     compartir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
   };
-  const tipoRec = (r) => r.url ? 'compartir' : 'presentacion';
+  const tipoRec = (r) => r.tipo || (r.url ? 'compartir' : 'presentacion');
 
   function renderRecursos(){
     const grupos = [...new Set(RECURSOS.map(r => r.grupo))];
