@@ -487,6 +487,13 @@
   .modal-card.utm-card{ max-width:440px; text-align:left; max-height:88vh; overflow-y:auto; }
   .utm-field{ display:flex; flex-direction:column; gap:6px; }
   .utm-field label{ font-size:12px; color:var(--text-dim); font-weight:600; }
+  .utm-meta{ display:flex; flex-direction:column; gap:6px; padding:14px; border-radius:12px; background:rgba(240,168,190,0.08); border:1px solid rgba(240,168,190,0.35); }
+  .utm-meta-titulo{ font-size:13px; font-weight:700; color:var(--cream); }
+  .utm-meta p{ margin:0 0 4px; font-size:12px; color:var(--text-dim); line-height:1.5; }
+  .utm-meta label{ font-size:11.5px; color:var(--text-dim); font-weight:600; margin-top:4px; }
+  .utm-meta-fila{ display:flex; gap:8px; align-items:flex-start; }
+  .utm-meta-fila code{ flex:1; min-width:0; font-size:11.5px; word-break:break-all; background:rgba(0,0,0,0.28); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--cream); }
+  .utm-meta-fila .chart-chip{ flex:none; }
   .utm-chips{ display:flex; flex-wrap:wrap; gap:8px; }
   .utm-chips-suave .chart-chip{ padding:4px 11px; font-size:12px; font-weight:500; }
   .utm-result-wrap{ display:none; flex-direction:column; gap:8px; }
@@ -1090,6 +1097,15 @@
           <button type="button" class="chart-chip" data-valor="otro">Otro…</button>
         </div>
         <input type="text" id="utmMediumOtro" class="modal-input" placeholder="Escribe el medio" style="display:none;">
+      </div>
+
+      <div class="utm-meta" id="utmMetaBox" style="display:none;">
+        <div class="utm-meta-titulo">Para anuncios de Meta no hace falta un link por anuncio</div>
+        <p>Pega estos dos datos una sola vez en el anuncio (o duplica uno que ya los tenga). Meta completa sola la campaña y el anuncio, y esos nombres son los que ves en el dashboard.</p>
+        <label>URL del sitio web</label>
+        <div class="utm-meta-fila"><code id="utmMetaUrl">https://dash.stepherup.com/go/</code><button type="button" class="chart-chip" data-copiar="utmMetaUrl">Copiar</button></div>
+        <label>Parámetros de URL (Seguimiento)</label>
+        <div class="utm-meta-fila"><code id="utmMetaParams">utm_source=facebook&amp;utm_medium=cpc&amp;utm_campaign={{campaign.name}}&amp;utm_content={{ad.name}}</code><button type="button" class="chart-chip" data-copiar="utmMetaParams">Copiar</button></div>
       </div>
 
       <div class="utm-field">
@@ -2418,6 +2434,7 @@
     utmBaseLink.style.display = utmSel.destino === 'otro' ? 'block' : 'none';
     utmSourceOtro.style.display = utmSel.source === 'otro' ? 'block' : 'none';
     utmMediumOtro.style.display = utmSel.medium === 'otro' ? 'block' : 'none';
+    document.getElementById('utmMetaBox').style.display = utmSel.medium === 'paid' ? 'flex' : 'none';
   }
   function abrirUtmBuilder(){
     utmSel.destino = 'vsl'; utmSel.source = 'instagram'; utmSel.medium = 'bio';
@@ -2945,6 +2962,17 @@
       utmRefrescarOtros();
       if(b.dataset.valor === 'otro'){ (clave === 'destino' ? utmBaseLink : clave === 'source' ? utmSourceOtro : utmMediumOtro).focus(); }
     });
+  });
+  document.getElementById('utmMetaBox').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-copiar]');
+    if(!b) return;
+    const texto = document.getElementById(b.dataset.copiar).textContent;
+    try{ await navigator.clipboard.writeText(texto); } catch(err){
+      const ta = document.createElement('textarea'); ta.value = texto; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); } catch(e2){}
+      document.body.removeChild(ta);
+    }
+    const antes = b.textContent; b.textContent = 'Copiado ✓'; setTimeout(() => { b.textContent = antes; }, 1500);
   });
   // Campaña y setter: las opciones rellenan el campo (se puede escribir otra cosa).
   [['utmCampaignChips', utmCampaign], ['utmContentChips', utmContent]].forEach(([id, campo]) => {
