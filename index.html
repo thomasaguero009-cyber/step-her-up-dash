@@ -1070,6 +1070,7 @@
         <label>Destino</label>
         <div class="utm-chips" id="utmDestinoChips">
           <button type="button" class="chart-chip active" data-valor="vsl">VSL</button>
+          <button type="button" class="chart-chip" data-valor="webinar">Webinar</button>
           <button type="button" class="chart-chip" data-valor="otro">Otro…</button>
         </div>
         <input type="text" id="utmBaseLink" class="modal-input" placeholder="https://… (el link al que quieres mandar)" autocomplete="off" style="display:none;">
@@ -2432,6 +2433,7 @@
   // y sigue a class.stepherup.com). Cuando estén el formulario y el calendario
   // se suman como opciones acá.
   const UTM_LINK_VSL = 'https://dash.stepherup.com/go/';
+  const UTM_LINK_WEBINAR = 'https://dash.stepherup.com/webinar/';
   const utmSel = { destino: 'vsl', source: 'instagram', medium: 'bio' };
   function utmMarcar(contenedor, valor){
     document.querySelectorAll('#' + contenedor + ' .chart-chip').forEach(b => b.classList.toggle('active', b.dataset.valor === valor));
@@ -2997,7 +2999,7 @@
   function utmArmar(){
     const campania = utmCampaign.value.trim();
     const contenido = utmContent.value.trim();
-    let base = utmSel.destino === 'vsl' ? UTM_LINK_VSL : utmBaseLink.value.trim();
+    let base = (utmSel.destino === 'vsl' ? UTM_LINK_VSL : utmSel.destino === 'webinar' ? UTM_LINK_WEBINAR : utmBaseLink.value.trim());
     let falta = null;
     if(!base){ falta = 'Pega el link de destino.'; base = 'https://…'; }
     else {
