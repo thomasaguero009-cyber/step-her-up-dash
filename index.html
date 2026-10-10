@@ -635,16 +635,33 @@
   .quick-nav-btn:hover{ background:rgba(255,255,255,0.12); border-color:var(--border); }
   .quick-nav-btn.active{ background:rgba(240,168,190,0.14); border-color:var(--blush-2); color:var(--cream); }
 
-  /* Segunda fila — accesos directos DENTRO de "Vista General" (hacen
-     scroll a una sección, no aíslan un panel como la fila de arriba),
-     por eso van más chicos y tenues: se nota que son otra cosa. */
-  .quick-nav-row-jump{ padding:8px 12px; margin:-20px 0 30px; background:transparent; border:none; }
-  .quick-nav-btn-jump{
-    flex:1; min-width:100px; text-align:center; text-decoration:none; cursor:pointer; font-family:inherit;
-    background:transparent; border:1px solid var(--border); border-radius:9px; color:var(--text-dim);
-    padding:7px 10px; font-size:12px; font-weight:600; transition:background .15s ease, border-color .15s ease, color .15s ease;
+  /* ===== Panel general: "Cómo va la empresa" — resumen de facturación
+     (barras por mes) con 4 cifras arriba. Las barras son HTML, no SVG,
+     para que los textos no se deformen al cambiar el ancho. ===== */
+  .fact-resumen{ display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:14px; margin-bottom:22px; }
+  .fact-stat{ background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:14px; padding:14px 16px; }
+  .fact-stat.principal{ border-color:var(--blush-2); background:rgba(240,168,190,0.08); }
+  .fact-stat-label{ font-size:12px; color:var(--text-dim); margin-bottom:6px; }
+  .fact-stat-value{ font-size:26px; font-weight:700; color:var(--cream); font-variant-numeric:lining-nums tabular-nums; }
+  .fact-stat.principal .fact-stat-value{ font-size:32px; }
+  .fact-stat-nota{ font-size:11px; color:var(--text-dim); margin-top:4px; }
+  .fact-sube{ color:#5fd39a; } .fact-baja{ color:#f0716c; }
+  .fact-bars{ display:grid; grid-template-columns:repeat(var(--n, 6), 1fr); gap:14px; height:250px; align-items:stretch; }
+  .fact-col{ display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; cursor:default; }
+  .fact-val{ font-size:12px; font-weight:600; color:var(--text-dim); font-variant-numeric:lining-nums tabular-nums; white-space:nowrap; }
+  .fact-barra-zona{ flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center; }
+  .fact-barra{ position:relative; width:min(100%, 90px); min-height:3px; border-radius:10px 10px 3px 3px; background:rgba(240,168,190,0.32); transition:height .35s ease; }
+  .fact-col.activo .fact-barra{ background:linear-gradient(180deg, var(--blush), var(--blush-2)); }
+  .fact-col.activo .fact-val{ color:var(--cream); }
+  .fact-proy{ position:absolute; left:-1px; right:-1px; bottom:100%; border:1.5px dashed var(--blush-2); border-bottom:none; border-radius:10px 10px 0 0; background:rgba(240,168,190,0.1); }
+  .fact-mes{ font-size:12px; color:var(--text-dim); text-transform:capitalize; }
+  .fact-col.activo .fact-mes{ color:var(--cream); font-weight:700; }
+  .fact-sub{ font-size:11px; color:var(--text-dim); opacity:.8; min-height:14px; }
+  @media(max-width:760px){
+    .fact-resumen{ grid-template-columns:1fr 1fr; }
+    .fact-bars{ gap:8px; height:210px; }
+    .fact-val{ font-size:10.5px; }
   }
-  .quick-nav-btn-jump:hover{ background:rgba(240,168,190,0.1); border-color:var(--blush-2); color:var(--cream); }
 
   /* Cada botón de arriba muestra un solo panel a la vez, en vez de
      hacer scroll a un ancla — los datos se siguen cargando igual para
@@ -1267,22 +1284,6 @@
         <button type="button" class="quick-nav-btn" data-tab="utm">Campañas (UTM)</button>
       </div>
 
-      <!-- Segunda fila, más chica/tenue a propósito — no aísla una
-           sección como la fila de arriba: te deja en "Vista General"
-           (se ven todos los bloques) y solo hace scroll hasta esa
-           sección, para ir más rápido sin perder el resto de vista. -->
-      <div class="quick-nav-row quick-nav-row-jump" id="dashJumpNav">
-        <button type="button" class="quick-nav-btn-jump" data-jump="ghl">GHL en vivo</button>
-        <button type="button" class="quick-nav-btn-jump" data-jump="leads">Leads</button>
-        <button type="button" class="quick-nav-btn-jump" data-jump="ads">Ads</button>
-        <button type="button" class="quick-nav-btn-jump" data-jump="ventas">Ventas</button>
-        <button type="button" class="quick-nav-btn-jump" data-jump="llamadas">Llamadas</button>
-        <button type="button" class="quick-nav-btn-jump" data-jump="matematica">Matemática</button>
-        <button type="button" class="quick-nav-btn-jump" data-jump="setters">Setters</button>
-        <button type="button" class="quick-nav-btn-jump" data-jump="closers">Closers</button>
-        <button type="button" class="quick-nav-btn-jump" data-jump="utm">Campañas</button>
-      </div>
-
       <!-- Cluster único de "números de arriba" — antes eran 3 bloques
            separados (Kpis manual del Sheet, GHL en vivo, Ads/ROAS) con
            su propio título cada uno; ahora es uno solo sin nombres por
@@ -1298,8 +1299,36 @@
            fila; ahora todas miden exactamente lo mismo, con huecos
            vacíos al final de la última fila en vez de tarjetas más
            anchas (pedido del dueño del negocio). -->
-      <div class="tab-panel active" data-tab-panel="ghl" id="ghl">
-        <div class="kpi-grid">
+      <!-- ===== Vista General: cómo va la empresa (facturación) + los
+           cuadrados de datos de siempre. Cada sección de abajo (GHL en
+           vivo, Leads, Ads…) tiene sus propios datos en su pestaña. ===== -->
+      <div class="tab-panel active" data-tab-panel="general">
+        <div class="section-label" id="empresa">Cómo va la empresa</div>
+        <div class="chart-panel">
+          <div class="fact-resumen">
+            <div class="fact-stat principal">
+              <div class="fact-stat-label" id="factMesLabel">Facturado este mes</div>
+              <div class="fact-stat-value" id="factMes">–</div>
+              <div class="fact-stat-nota" id="factProy"></div>
+            </div>
+            <div class="fact-stat">
+              <div class="fact-stat-label">vs. mes anterior</div>
+              <div class="fact-stat-value" id="factVs">–</div>
+            </div>
+            <div class="fact-stat">
+              <div class="fact-stat-label">Cierres del mes</div>
+              <div class="fact-stat-value" id="factCierres">–</div>
+            </div>
+            <div class="fact-stat">
+              <div class="fact-stat-label">Promedio por mes</div>
+              <div class="fact-stat-value" id="factPromedio">–</div>
+            </div>
+          </div>
+          <div class="fact-bars" id="factBars"></div>
+          <div class="chart-status" id="statusFact">Conectando con GHL…</div>
+        </div>
+
+        <div class="kpi-grid" style="margin-top:28px;">
           <div class="kpi-card">
             <div class="kpi-label">Llamadas</div>
             <div class="kpi-value" id="ghlLlamadas">–</div>
@@ -1361,6 +1390,38 @@
 
         <p style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin:16px 0 0;">GHL en vivo</p>
         <div class="chart-status" id="statusGhl" style="margin-top:4px;">Conectando con GHL…</div>
+      </div>
+
+      <!-- GHL en vivo: lo que sale directo de los pipelines de GHL —
+           los totales del mes, de qué fuente vienen y cómo van día a día. -->
+      <div class="tab-panel" data-tab-panel="ghl" id="ghl">
+        <div class="section-label">GHL en vivo</div>
+        <div class="kpi-grid">
+          <div class="kpi-card" data-espejo="ghlLlamadas">
+            <div class="kpi-label">Llamadas</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="ghlAgendadas">
+            <div class="kpi-label">Agendadas</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="ghlShows">
+            <div class="kpi-label">Shows</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="ghlCierres">
+            <div class="kpi-label">Cierres</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="ghlVentas">
+            <div class="kpi-label">Cash collected</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="ghlAov">
+            <div class="kpi-label">AOV (ticket promedio)</div>
+            <div class="kpi-value">–</div>
+          </div>
+        </div>
 
         <div class="section-label" id="ghlFuentes" style="margin-top:32px; font-size:18px;">Por fuente (pipeline de GHL)</div>
         <div class="breakdown-grid" id="ghlFuentesGrid"></div>
@@ -1395,8 +1456,14 @@
            /leads-por-dia en el Worker). El gráfico se fusionó con
            "Tendencia diaria del funnel" (arriba, panel "ghl") como una
            serie más — acá solo quedan los 3 totales del mes. -->
-      <div class="tab-panel active" data-tab-panel="leads">
+      <div class="tab-panel" data-tab-panel="leads">
         <div class="section-label" id="leads">Leads por día</div>
+        <div class="chart-panel">
+          <div class="chart-wrap">
+            <svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartLeads"></svg>
+            <div class="chart-tooltip" id="tooltipLeads"></div>
+          </div>
+        </div>
         <div class="kpi-grid">
           <div class="kpi-card">
             <div class="kpi-label">Leads del mes</div>
@@ -1410,6 +1477,10 @@
             <div class="kpi-label">Mejor día</div>
             <div class="kpi-value" id="leadsMejor">–</div>
           </div>
+          <div class="kpi-card" data-espejo="mateConversionFunnel">
+            <div class="kpi-label">Conversión del funnel completo (lead → venta)</div>
+            <div class="kpi-value">–</div>
+          </div>
         </div>
         <div class="chart-status" id="statusLeads" style="margin-top:10px;">Cargando leads desde GHL…</div>
       </div>
@@ -1417,7 +1488,7 @@
       <!-- Ads: gasto diario + costo por lead + ROAS. Todo depende de la
            pestaña "Ads" del Sheet (Fecha | Gasto, SHEET_ADS_CSV_URL): hasta
            que se conecte, muestra "Falta conectar" y se llena solo después. -->
-      <div class="tab-panel active" data-tab-panel="ads">
+      <div class="tab-panel" data-tab-panel="ads">
         <div class="section-label" id="ads">Ads</div>
         <div class="chart-panel">
           <div class="chart-wrap">
@@ -1462,7 +1533,7 @@
         </div>
       </div>
 
-      <div class="tab-panel active" data-tab-panel="ventas">
+      <div class="tab-panel" data-tab-panel="ventas">
         <div class="section-label" id="ventas">Ventas</div>
         <div class="chart-panel">
           <div class="chart-wrap">
@@ -1470,6 +1541,20 @@
             <div class="chart-tooltip" id="tooltipVentas"></div>
           </div>
           <div class="chart-status" id="statusVentas">Sin datos todavía — se va a conectar a un Google Sheet</div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card" data-espejo="ghlVentas">
+            <div class="kpi-label">Cash collected</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="ghlCierres">
+            <div class="kpi-label">Cierres</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="ghlAov">
+            <div class="kpi-label">AOV (ticket promedio)</div>
+            <div class="kpi-value">–</div>
+          </div>
         </div>
         <div class="value-grid">
           <div class="kpi-card">
@@ -1483,8 +1568,30 @@
         </div>
       </div>
 
-      <div class="tab-panel active" data-tab-panel="llamadas">
+      <div class="tab-panel" data-tab-panel="llamadas">
         <div class="section-label" id="llamadas">Llamadas</div>
+        <div class="kpi-grid">
+          <div class="kpi-card" data-espejo="ghlLlamadas">
+            <div class="kpi-label">Llamadas</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="ghlAgendadas">
+            <div class="kpi-label">Agendadas</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="ghlShows">
+            <div class="kpi-label">Shows</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="mateAgendado">
+            <div class="kpi-label">Tasa de agendado</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="mateShowRate">
+            <div class="kpi-label">Show rate</div>
+            <div class="kpi-value">–</div>
+          </div>
+        </div>
         <div class="chart-panel">
           <div class="chart-wrap">
             <svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartLlamadas"></svg>
@@ -1494,8 +1601,30 @@
         </div>
       </div>
 
-      <div class="tab-panel active" data-tab-panel="matematica">
+      <div class="tab-panel" data-tab-panel="matematica">
         <div class="section-label" id="matematica">Matemática del éxito</div>
+        <div class="kpi-grid">
+          <div class="kpi-card" data-espejo="mateAgendado">
+            <div class="kpi-label">Tasa de agendado</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="mateShowRate">
+            <div class="kpi-label">Show rate</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="mateCierre">
+            <div class="kpi-label">Tasa de cierre</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="mateConversion">
+            <div class="kpi-label">Conversión de la llamada (show → venta)</div>
+            <div class="kpi-value">–</div>
+          </div>
+          <div class="kpi-card" data-espejo="mateConversionFunnel">
+            <div class="kpi-label">Conversión del funnel completo (lead → venta)</div>
+            <div class="kpi-value">–</div>
+          </div>
+        </div>
 
         <div class="chart-panel">
           <div class="proj-legend">
@@ -1526,7 +1655,7 @@
         <div class="chart-status" id="statusMatematica" style="margin-bottom:44px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
       </div>
 
-      <div class="tab-panel active" data-tab-panel="setters">
+      <div class="tab-panel" data-tab-panel="setters">
         <div class="section-label" id="setters">Performance por setter</div>
         <div class="chart-panel">
           <div class="chart-chips" id="settersMetrica"></div>
@@ -1544,7 +1673,7 @@
       <!-- Campañas (UTM): de dónde vienen los leads, las agendas y las ventas.
            Sale de las etiquetas src-/med-/camp-/cont- que el Worker le pone a
            cada contacto en GHL según las UTMs del link por el que entró. -->
-      <div class="tab-panel active" data-tab-panel="utm">
+      <div class="tab-panel" data-tab-panel="utm">
         <div class="section-label" id="utm">De dónde vienen los leads y las agendas</div>
         <div class="chart-panel">
           <div class="chart-chips" id="utmDimension"></div>
@@ -1561,7 +1690,7 @@
 
       <!-- Closers: sale de la pestaña "Ranking" del Sheet (Fecha | Closer | Monto),
            la misma que ya alimenta el Ranking de cash cobrado. -->
-      <div class="tab-panel active" data-tab-panel="closers">
+      <div class="tab-panel" data-tab-panel="closers">
         <div class="section-label" id="closers">Performance por closer</div>
         <div class="chart-panel">
           <div class="chart-chips" id="closersMetrica"></div>
@@ -2256,31 +2385,29 @@
 
   renderContadores();
 
-  // ===== Botones de arriba del dashboard — "Vista General" muestra
-  // todo seguido, como estaba antes (un solo scroll con las 6
-  // secciones). Los demás (Kpis / Llamadas / Ventas / Matemática /
-  // Setters / Fuentes) aíslan un solo bloque a la vez, como pestañas.
-  // Los datos se siguen cargando igual para todos aunque estén ocultos. =====
+  // ===== Botones de arriba del dashboard — cada uno muestra solo su
+  // sección: "Vista General" es el resumen de la empresa (facturación +
+  // cuadrados) y las demás tienen sus propios datos. Los datos se
+  // cargan igual para todas aunque estén ocultas. =====
   const dashTabNav = document.getElementById('dashTabNav');
   dashTabNav.querySelectorAll('.quick-nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
       dashTabNav.querySelectorAll('.quick-nav-btn').forEach(b => b.classList.toggle('active', b === btn));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', tab === 'general' || p.dataset.tabPanel === tab));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === tab));
     });
   });
 
-  // ===== Segunda fila ("dashJumpNav") — NO aísla un panel: siempre te
-  // deja en "Vista General" (todo visible) y solo hace scroll a esa
-  // sección, para ir más rápido sin perder el resto de vista. =====
-  const dashJumpNav = document.getElementById('dashJumpNav');
-  dashJumpNav.querySelectorAll('.quick-nav-btn-jump').forEach(btn => {
-    btn.addEventListener('click', () => {
-      dashTabNav.querySelectorAll('.quick-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === 'general'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('active'));
-      const destino = document.getElementById(btn.dataset.jump);
-      if(destino) destino.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+  // ===== Tarjetas "espejo": una cifra que ya se calcula en otro lado
+  // (ej. Cash collected) se repite en la sección que la usa. Se copia
+  // sola cada vez que cambia el original, así no hay dos cálculos. =====
+  document.querySelectorAll('[data-espejo]').forEach(card => {
+    const origen = document.getElementById(card.dataset.espejo);
+    const destino = card.querySelector('.kpi-value');
+    if(!origen || !destino) return;
+    const copiar = () => { destino.innerHTML = origen.innerHTML; };
+    copiar();
+    new MutationObserver(copiar).observe(origen, { childList: true, characterData: true, subtree: true });
   });
 
   // ===== Lecciones del onboarding — la fuente de verdad es una pestaña
@@ -4457,6 +4584,7 @@
     const diasAMostrar = (anio === hoy.getFullYear() && mes === hoy.getMonth()) ? hoy.getDate() : dias;
     if(!leadsData){
       ['leadsTotal', 'leadsPromedio', 'leadsMejor'].forEach(mostrarCargandoNumero);
+      document.getElementById('chartLeads').innerHTML = '';
       return;
     }
     const serie = [];
@@ -4466,6 +4594,7 @@
     }
     const total = serie.reduce((a, b) => a + b, 0);
     const mejor = Math.max(0, ...serie);
+    drawChart('chartLeads', 'tooltipLeads', serie, '#ffd166', anio, mes, { conteo: true, vacio: 'Sin leads este mes' });
     fijarValorNumero('leadsTotal', total.toLocaleString('es-AR'));
     fijarValorNumero('leadsPromedio', diasAMostrar > 0 ? (total / diasAMostrar).toLocaleString('es-AR', { maximumFractionDigits: 1 }) : '–');
     fijarValorNumero('leadsMejor', mejor > 0 ? `${mejor} · día ${serie.indexOf(mejor) + 1}` : '–');
@@ -4698,10 +4827,18 @@
   async function cargarYPintarFunnelPorDia(silencioso = false){
     const pedido = ++funnelPedidoActual;
     const { anio, mes } = mesElegidoAYyyyMm();
-    const start = new Date(anio, mes, 1).getTime();
+    // Se piden 6 meses (hasta el elegido) en una sola llamada: el Worker
+    // recorre lo mismo igual, y así sirve para el gráfico diario de abajo
+    // y para las barras de facturación del panel general.
+    const start = new Date(anio, mes - (MESES_FACTURACION - 1), 1).getTime();
     const end = new Date(anio, mes + 1, 1).getTime();
     const statusEl = document.getElementById('statusFunnel');
-    if(!silencioso) statusEl.textContent = 'Conectando con GHL…';
+    if(!silencioso){
+      statusEl.textContent = 'Conectando con GHL…';
+      document.getElementById('statusFact').textContent = 'Conectando con GHL…';
+      funnelPorDiaDatos = null;
+      renderFacturacion();
+    }
 
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 20000);
@@ -4717,12 +4854,15 @@
 
       const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
       statusEl.textContent = 'Datos en vivo desde GHL — ' + mesElegido + ' · actualizado ' + hora;
+      document.getElementById('statusFact').textContent = 'Datos en vivo desde GHL · actualizado ' + hora;
     } catch(e){
       if(pedido !== funnelPedidoActual) return;
       const motivo = e.name === 'AbortError' ? 'tardó demasiado, probá de nuevo' : e.message;
-      statusEl.textContent = silencioso
+      const msg = silencioso
         ? 'No se pudo actualizar desde GHL (' + motivo + ') — se muestra lo último cargado'
         : 'No se pudo conectar con GHL: ' + motivo;
+      statusEl.textContent = msg;
+      document.getElementById('statusFact').textContent = msg;
     } finally {
       clearTimeout(t);
     }
@@ -4732,7 +4872,10 @@
     const dias = ctxMes.dias || new Date(mesElegidoAYyyyMm().anio, mesElegidoAYyyyMm().mes + 1, 0).getDate();
     const out = { leads: new Array(dias).fill(0), llamadas: new Array(dias).fill(0), agendadas: new Array(dias).fill(0), shows: new Array(dias).fill(0), cierres: new Array(dias).fill(0) };
     if(funnelPorDiaDatos){
+      const elegido = mesElegidoAYyyyMm();
+      const prefijoMes = `${elegido.anio}-${String(elegido.mes + 1).padStart(2, '0')}-`;
       for(const [fecha, fila] of Object.entries(funnelPorDiaDatos.dias)){
+        if(!fecha.startsWith(prefijoMes)) continue;
         const d = parseInt(fecha.slice(8, 10), 10) - 1;
         if(d < 0 || d >= dias) continue;
         const origen = filtro === 'Todas' ? fila : fila.porFuente[filtro];
@@ -4756,10 +4899,87 @@
     return out;
   }
 
+  // ===== Panel general — facturación por mes (cash collected de GHL,
+  // mismo criterio que la tarjeta "Cash collected": oportunidades en
+  // etapa de cierre según su último cambio de etapa). Barras de los
+  // últimos 6 meses terminando en el mes activo; en el mes en curso
+  // se dibuja además la proyección a fin de mes (ritmo actual). =====
+  const MESES_FACTURACION = 6;
+  function facturacionPorMes(){
+    const { anio, mes } = mesElegidoAYyyyMm();
+    const out = [];
+    for(let i = MESES_FACTURACION - 1; i >= 0; i--){
+      const f = new Date(anio, mes - i, 1);
+      out.push({ anio: f.getFullYear(), mes: f.getMonth(), ventas: 0, cierres: 0 });
+    }
+    if(!funnelPorDiaDatos) return out;
+    for(const [fecha, fila] of Object.entries(funnelPorDiaDatos.dias)){
+      const a = parseInt(fecha.slice(0, 4), 10), m = parseInt(fecha.slice(5, 7), 10) - 1;
+      const celda = out.find(x => x.anio === a && x.mes === m);
+      if(!celda) continue;
+      celda.ventas += fila.ventas || 0;
+      celda.cierres += fila.cierres || 0;
+    }
+    return out;
+  }
+  function renderFacturacion(){
+    const cont = document.getElementById('factBars');
+    if(!cont) return;
+    const dinero = n => '$' + Math.round(n).toLocaleString('es-AR');
+    const cuenta = n => n >= 10000 ? '$' + (n / 1000).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + 'k' : dinero(n);
+    if(!funnelPorDiaDatos){
+      cont.innerHTML = '';
+      ['factMes', 'factVs', 'factCierres', 'factPromedio'].forEach(mostrarCargandoNumero);
+      document.getElementById('factProy').textContent = '';
+      return;
+    }
+    const meses = facturacionPorMes();
+    const actual = meses[meses.length - 1];
+    const previo = meses[meses.length - 2];
+    const hoy = new Date();
+    const enCurso = actual.anio === hoy.getFullYear() && actual.mes === hoy.getMonth();
+    const diasMes = new Date(actual.anio, actual.mes + 1, 0).getDate();
+    const proy = enCurso && actual.ventas > 0 ? actual.ventas / hoy.getDate() * diasMes : 0;
+
+    document.getElementById('factMesLabel').textContent = 'Facturado en ' + MESES_ES[actual.mes].toLowerCase();
+    fijarValorNumero('factMes', dinero(actual.ventas));
+    document.getElementById('factProy').textContent = proy > 0 ? 'A este ritmo cierra el mes en ' + dinero(proy) : '';
+    const vs = document.getElementById('factVs');
+    if(previo.ventas > 0){
+      const dif = (actual.ventas - previo.ventas) / previo.ventas * 100;
+      vs.innerHTML = `<span class="${dif >= 0 ? 'fact-sube' : 'fact-baja'}">${dif >= 0 ? '▲' : '▼'} ${Math.abs(dif).toFixed(0)}%</span>`;
+    } else {
+      vs.textContent = '–';
+    }
+    fijarValorNumero('factCierres', actual.cierres.toLocaleString('es-AR'));
+    const conVentas = meses.filter(m => m.ventas > 0);
+    fijarValorNumero('factPromedio', conVentas.length ? dinero(conVentas.reduce((a, m) => a + m.ventas, 0) / conVentas.length) : '–');
+
+    const max = Math.max(1, ...meses.map(m => m.ventas), proy);
+    cont.style.setProperty('--n', meses.length);
+    cont.innerHTML = meses.map((m, i) => {
+      const esActual = i === meses.length - 1;
+      const alto = m.ventas / max * 100;
+      const altoProy = esActual && proy > m.ventas ? (proy - m.ventas) / max * 100 : 0;
+      const nombre = MESES_ES[m.mes].slice(0, 3);
+      const tip = `${MESES_ES[m.mes]} ${m.anio}: ${dinero(m.ventas)} · ${m.cierres} cierre${m.cierres === 1 ? '' : 's'}` + (altoProy ? ` · proyección ${dinero(proy)}` : '');
+      return `
+        <div class="fact-col${esActual ? ' activo' : ''}" title="${escapeHtml(tip)}">
+          <div class="fact-val">${m.ventas > 0 ? cuenta(m.ventas) : '$0'}</div>
+          <div class="fact-barra-zona">
+            <div class="fact-barra" style="height:${alto}%">${altoProy ? `<div class="fact-proy" style="height:${altoProy / Math.max(alto, 0.5) * 100}%"></div>` : ''}</div>
+          </div>
+          <div class="fact-mes">${nombre}</div>
+          <div class="fact-sub">${m.cierres} cierre${m.cierres === 1 ? '' : 's'}</div>
+        </div>`;
+    }).join('');
+  }
+
   function renderFunnelChart(){
     if(funnelPorDiaDatos){
       pintarChips('funnelChips', ['Todas', ...funnelPorDiaDatos.fuentes].map(f => ({ valor: f, texto: f })), funnelFiltro, v => { funnelFiltro = v; renderFunnelChart(); });
     }
+    renderFacturacion();
     const s = seriesFunnel(funnelFiltro);
     drawFunnelChart('chartFunnel', 'tooltipFunnel', s, ctxMes.anio, ctxMes.mes);
   }
