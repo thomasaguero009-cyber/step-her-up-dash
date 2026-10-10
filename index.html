@@ -1303,32 +1303,7 @@
            cuadrados de datos de siempre. Cada sección de abajo (GHL en
            vivo, Leads, Ads…) tiene sus propios datos en su pestaña. ===== -->
       <div class="tab-panel active" data-tab-panel="general">
-        <div class="section-label" id="empresa">Cómo va la empresa</div>
-        <div class="chart-panel">
-          <div class="fact-resumen">
-            <div class="fact-stat principal">
-              <div class="fact-stat-label" id="factMesLabel">Facturado este mes</div>
-              <div class="fact-stat-value" id="factMes">–</div>
-              <div class="fact-stat-nota" id="factProy"></div>
-            </div>
-            <div class="fact-stat">
-              <div class="fact-stat-label">vs. mes anterior</div>
-              <div class="fact-stat-value" id="factVs">–</div>
-            </div>
-            <div class="fact-stat">
-              <div class="fact-stat-label">Cierres del mes</div>
-              <div class="fact-stat-value" id="factCierres">–</div>
-            </div>
-            <div class="fact-stat">
-              <div class="fact-stat-label">Promedio por mes</div>
-              <div class="fact-stat-value" id="factPromedio">–</div>
-            </div>
-          </div>
-          <div class="fact-bars" id="factBars"></div>
-          <div class="chart-status" id="statusFact">Conectando con GHL…</div>
-        </div>
-
-        <div class="kpi-grid" style="margin-top:28px;">
+        <div class="kpi-grid">
           <div class="kpi-card">
             <div class="kpi-label">Llamadas</div>
             <div class="kpi-value" id="ghlLlamadas">–</div>
@@ -1390,6 +1365,31 @@
 
         <p style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin:16px 0 0;">GHL en vivo</p>
         <div class="chart-status" id="statusGhl" style="margin-top:4px;">Conectando con GHL…</div>
+
+        <div class="section-label" id="empresa" style="margin-top:36px;">Cómo va la empresa</div>
+        <div class="chart-panel">
+          <div class="fact-resumen">
+            <div class="fact-stat principal">
+              <div class="fact-stat-label" id="factMesLabel">Facturado este mes</div>
+              <div class="fact-stat-value" id="factMes">–</div>
+              <div class="fact-stat-nota" id="factProy"></div>
+            </div>
+            <div class="fact-stat">
+              <div class="fact-stat-label">vs. mes anterior</div>
+              <div class="fact-stat-value" id="factVs">–</div>
+            </div>
+            <div class="fact-stat">
+              <div class="fact-stat-label">Cierres del mes</div>
+              <div class="fact-stat-value" id="factCierres">–</div>
+            </div>
+            <div class="fact-stat">
+              <div class="fact-stat-label">Promedio por mes</div>
+              <div class="fact-stat-value" id="factPromedio">–</div>
+            </div>
+          </div>
+          <div class="fact-bars" id="factBars"></div>
+          <div class="chart-status" id="statusFact">Conectando con GHL…</div>
+        </div>
       </div>
 
       <!-- GHL en vivo: lo que sale directo de los pipelines de GHL —
