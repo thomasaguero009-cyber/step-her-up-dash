@@ -2590,6 +2590,9 @@
     utmSourceOtro.style.display = utmSel.source === 'otro' ? 'block' : 'none';
     utmMediumOtro.style.display = utmSel.medium === 'otro' ? 'block' : 'none';
     document.getElementById('utmMetaBox').style.display = utmSel.medium === 'paid' ? 'flex' : 'none';
+    // La URL para Meta sigue al destino elegido (VSL o webinar).
+    document.getElementById('utmMetaUrl').textContent = utmSel.destino === 'webinar' ? UTM_LINK_WEBINAR
+      : utmSel.destino === 'otro' && utmBaseLink.value.trim() ? utmBaseLink.value.trim() : UTM_LINK_VSL;
     utmRefrescarLink();
   }
   function abrirUtmBuilder(){
@@ -3114,6 +3117,11 @@
       if(!b) return;
       utmSel[clave] = b.dataset.valor;
       utmMarcar(id, b.dataset.valor);
+      // Al elegir Webinar, la campaña se completa sola con la del webinar (se puede cambiar).
+      if(clave === 'destino' && b.dataset.valor === 'webinar' && !utmCampaign.value.trim()){
+        utmCampaign.value = 'webinar-21-oct';
+        utmMarcar('utmCampaignChips', 'webinar-21-oct');
+      }
       utmRefrescarOtros();
       if(b.dataset.valor === 'otro'){ (clave === 'destino' ? utmBaseLink : clave === 'source' ? utmSourceOtro : utmMediumOtro).focus(); }
     });
