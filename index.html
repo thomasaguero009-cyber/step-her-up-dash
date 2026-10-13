@@ -1088,7 +1088,8 @@
         <label>Destino</label>
         <div class="utm-chips" id="utmDestinoChips">
           <button type="button" class="chart-chip active" data-valor="vsl">VSL</button>
-          <button type="button" class="chart-chip" data-valor="webinar">Webinar</button>
+          <button type="button" class="chart-chip" data-valor="webinar">Webinar · Marca personal</button>
+          <button type="button" class="chart-chip" data-valor="webinar2">Webinar · Instagram</button>
           <button type="button" class="chart-chip" data-valor="otro">Otro…</button>
         </div>
         <input type="text" id="utmBaseLink" class="modal-input" placeholder="https://… (el link al que quieres mandar)" autocomplete="off" style="display:none;">
@@ -2583,7 +2584,9 @@
   // y sigue a class.stepherup.com). Cuando estén el formulario y el calendario
   // se suman como opciones acá.
   const UTM_LINK_VSL = 'https://shu.stepherup.com/vsl/';
-  const UTM_LINK_WEBINAR = 'https://shu.stepherup.com/masterclass/';
+  const UTM_LINK_WEBINAR = 'https://shu.stepherup.com/masterclass/';   // landing A: "El sistema para crecer tu marca personal…"
+  const UTM_LINK_WEBINAR2 = 'https://shu.stepherup.com/clase/';        // landing B: "El sistema de contenido + anuncios…"
+  const utmLinkDestino = d => d === 'vsl' ? UTM_LINK_VSL : d === 'webinar' ? UTM_LINK_WEBINAR : d === 'webinar2' ? UTM_LINK_WEBINAR2 : '';
   const utmSel = { destino: 'vsl', source: 'instagram', medium: 'bio' };
   function utmMarcar(contenedor, valor){
     document.querySelectorAll('#' + contenedor + ' .chart-chip').forEach(b => b.classList.toggle('active', b.dataset.valor === valor));
@@ -2594,8 +2597,8 @@
     utmMediumOtro.style.display = utmSel.medium === 'otro' ? 'block' : 'none';
     document.getElementById('utmMetaBox').style.display = utmSel.medium === 'paid' ? 'flex' : 'none';
     // La URL para Meta sigue al destino elegido (VSL o webinar).
-    document.getElementById('utmMetaUrl').textContent = utmSel.destino === 'webinar' ? UTM_LINK_WEBINAR
-      : utmSel.destino === 'otro' && utmBaseLink.value.trim() ? utmBaseLink.value.trim() : UTM_LINK_VSL;
+    document.getElementById('utmMetaUrl').textContent = utmLinkDestino(utmSel.destino)
+      || (utmSel.destino === 'otro' && utmBaseLink.value.trim() ? utmBaseLink.value.trim() : UTM_LINK_VSL);
     utmRefrescarLink();
   }
   function abrirUtmBuilder(){
@@ -3121,7 +3124,7 @@
       utmSel[clave] = b.dataset.valor;
       utmMarcar(id, b.dataset.valor);
       // Al elegir Webinar, la campaña se completa sola con la del webinar (se puede cambiar).
-      if(clave === 'destino' && b.dataset.valor === 'webinar' && !utmCampaign.value.trim()){
+      if(clave === 'destino' && (b.dataset.valor === 'webinar' || b.dataset.valor === 'webinar2') && !utmCampaign.value.trim()){
         utmCampaign.value = 'webinar-21-oct';
         utmMarcar('utmCampaignChips', 'webinar-21-oct');
       }
@@ -3157,7 +3160,7 @@
   function utmArmar(){
     const campania = utmCampaign.value.trim();
     const contenido = utmContent.value.trim();
-    let base = (utmSel.destino === 'vsl' ? UTM_LINK_VSL : utmSel.destino === 'webinar' ? UTM_LINK_WEBINAR : utmBaseLink.value.trim());
+    let base = utmLinkDestino(utmSel.destino) || utmBaseLink.value.trim();
     let falta = null;
     if(!base){ falta = 'Pega el link de destino.'; base = 'https://…'; }
     else {
