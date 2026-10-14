@@ -1149,6 +1149,7 @@
         <div class="utm-chips utm-chips-suave" id="utmContentChips">
           <button type="button" class="chart-chip" data-valor="paula">Paula</button>
           <button type="button" class="chart-chip" data-valor="mia">Mia</button>
+          <button type="button" class="chart-chip" data-valor="belen">Belen</button>
         </div>
         <input type="text" id="utmContent" class="modal-input" placeholder="Ej: version_a" autocomplete="off">
       </div>
@@ -1829,6 +1830,7 @@
             <option value="">Elegí tu nombre</option>
             <option value="Paula">Paula</option>
             <option value="Mia">Mia</option>
+            <option value="Belen">Belen</option>
           </select>
         </div>
 
@@ -4509,12 +4511,12 @@
     { valor: 'cierres', texto: 'Cierres', color: '#f0c674' },
   ];
   // Los setters del equipo aparecen siempre (aunque todavía no hayan cargado nada).
-  const SETTERS_FIJOS = ['Paula', 'Mia'];
+  const SETTERS_FIJOS = ['Paula', 'Mia', 'Belen'];
   // Setters que ya no están en el equipo: no aparecen en tarjetas, gráficos ni ranking. Sus números
   // anteriores siguen en el Sheet y en los totales del mes; solo se ocultan como persona.
   const SETTERS_INACTIVOS = ['paola'];
   const esSetterInactivo = n => SETTERS_INACTIVOS.includes(String(n || '').trim().toLowerCase());
-  const COLORES_SETTER = { Paula: '#f0a8be', Mia: '#f0c674' };
+  const COLORES_SETTER = { Paula: '#f0a8be', Mia: '#f0c674', Belen: '#8fb8f0' };
   const COLORES_EXTRA = ['#5fd39a', '#d9b4ff', '#ffb08a'];
   const colorDeSetter = (nombre, i) => COLORES_SETTER[nombre] || COLORES_EXTRA[i % COLORES_EXTRA.length];
   const nombresSetters = () => [...new Set([...SETTERS_FIJOS, ...datosSetters.keys()])].filter(n => !esSetterInactivo(n));
