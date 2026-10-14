@@ -1148,7 +1148,6 @@
         <label for="utmContent">Setter o detalle (opcional)</label>
         <div class="utm-chips utm-chips-suave" id="utmContentChips">
           <button type="button" class="chart-chip" data-valor="paula">Paula</button>
-          <button type="button" class="chart-chip" data-valor="paola">Paola</button>
           <button type="button" class="chart-chip" data-valor="mia">Mia</button>
         </div>
         <input type="text" id="utmContent" class="modal-input" placeholder="Ej: version_a" autocomplete="off">
@@ -1829,7 +1828,6 @@
           <select id="metricasNombre">
             <option value="">Elegí tu nombre</option>
             <option value="Paula">Paula</option>
-            <option value="Paola">Paola</option>
             <option value="Mia">Mia</option>
           </select>
         </div>
@@ -4511,11 +4509,15 @@
     { valor: 'cierres', texto: 'Cierres', color: '#f0c674' },
   ];
   // Los setters del equipo aparecen siempre (aunque todavía no hayan cargado nada).
-  const SETTERS_FIJOS = ['Paula', 'Paola', 'Mia'];
-  const COLORES_SETTER = { Paula: '#f0a8be', Paola: '#8fb8f0', Mia: '#f0c674' };
+  const SETTERS_FIJOS = ['Paula', 'Mia'];
+  // Setters que ya no están en el equipo: no aparecen en tarjetas, gráficos ni ranking. Sus números
+  // anteriores siguen en el Sheet y en los totales del mes; solo se ocultan como persona.
+  const SETTERS_INACTIVOS = ['paola'];
+  const esSetterInactivo = n => SETTERS_INACTIVOS.includes(String(n || '').trim().toLowerCase());
+  const COLORES_SETTER = { Paula: '#f0a8be', Mia: '#f0c674' };
   const COLORES_EXTRA = ['#5fd39a', '#d9b4ff', '#ffb08a'];
   const colorDeSetter = (nombre, i) => COLORES_SETTER[nombre] || COLORES_EXTRA[i % COLORES_EXTRA.length];
-  const nombresSetters = () => [...new Set([...SETTERS_FIJOS, ...datosSetters.keys()])];
+  const nombresSetters = () => [...new Set([...SETTERS_FIJOS, ...datosSetters.keys()])].filter(n => !esSetterInactivo(n));
   let datosSetters = new Map(), setterMetrica = 'ventas', setterFiltro = 'Comparar', setterMetricaElegida = false;
   // Si nadie eligió una métrica a mano y la de entrada no tiene datos este mes (por ejemplo, todavía
   // no hay cash cargado), se muestra la primera que sí tenga, en vez de un gráfico vacío.
@@ -5125,7 +5127,7 @@
     const vacio = () => ({ llamadas: 0, noCalifica: 0, noRespondio: 0, agendadas: 0, shows: 0, cierres: 0, ventas: 0 });
     const todos = new Map(mapa);
     SETTERS_FIJOS.forEach(n => { if(!todos.has(n)) todos.set(n, vacio()); });
-    const nombres = [...todos.keys()].sort((a,b) => todos.get(b).ventas - todos.get(a).ventas);
+    const nombres = [...todos.keys()].filter(n => !esSetterInactivo(n)).sort((a,b) => todos.get(b).ventas - todos.get(a).ventas);
     const pct = (a, b) => b > 0 ? Math.round(a / b * 100) + '%' : '–';
     grid.innerHTML = nombres.map((nombre, i) => {
       const s = todos.get(nombre);
@@ -5185,7 +5187,7 @@
     const huboDatos = esCloser ? huboDatosCloserActual : huboDatosSetterActual;
     document.getElementById('rankingHeadNombre').textContent = esCloser ? 'Closer' : 'Setter';
 
-    const nombres = [...mapa.keys()].sort((a,b) => mapa.get(b) - mapa.get(a));
+    const nombres = [...mapa.keys()].filter(n => esCloser || !esSetterInactivo(n)).sort((a,b) => mapa.get(b) - mapa.get(a));
     const medallas = ['g1','g2','g3'];
     document.getElementById('rankingRows').innerHTML = nombres.map((nombre, i) => `
       <div class="ranking-row">
