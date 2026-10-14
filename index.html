@@ -1871,6 +1871,10 @@
             <label for="metricasVentas">Cash collected <span class="metricas-hint">(US$ cobrados)</span></label>
             <input type="number" min="0" step="any" inputmode="decimal" id="metricasVentas" placeholder="0" data-stepper="500">
           </div>
+          <div class="metricas-field" id="metricasCloserBloque" hidden>
+            <label for="metricasCloserCerro">¿Qué closer cerró la venta? <span class="metricas-hint">(se carga también en el Ranking; el closer no la vuelve a cargar)</span></label>
+            <select id="metricasCloserCerro"><option value="">Elegí al closer</option></select>
+          </div>
         </div>
 
         <div class="metricas-grid" id="metricasCamposCloser" hidden>
@@ -3904,6 +3908,24 @@
 
   const numeroDe = (id) => Number(document.getElementById(id).value) || 0;
 
+  // Cuando la setter anota cierres se pregunta qué closer cerró la venta, y esa venta se carga también
+  // en el Ranking de closers (así suma en "Cash del mes" y "Cash del día").
+  function actualizarBloqueCloser(){
+    const bloque = document.getElementById('metricasCloserBloque');
+    const sel = document.getElementById('metricasCloserCerro');
+    if(!bloque || !sel) return;
+    const hay = (Number(document.getElementById('metricasCierres').value) || 0) > 0;
+    bloque.hidden = !hay;
+    if(hay && sel.options.length <= 1){
+      let nombres = ['Gianie'];
+      try { nombres = nombres.concat(SETTERS_FIJOS); } catch(e) {}
+      try { nombres = nombres.concat((filasRankingCache || []).map(f => f.closer).filter(c => c && c !== 'Sin asignar')); } catch(e) {}
+      [...new Set(nombres.map(n => String(n).trim()).filter(Boolean))].forEach(n => {
+        const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o);
+      });
+    }
+  }
+
   // Los campos de conteo se convierten en contadores con − y + (se puede
   // tocar el número y escribirlo igual). Lo que vas contando se guarda en este
   // navegador durante el día, así no se pierde si cerrás la pestaña.
@@ -3913,12 +3935,14 @@
     const valores = {};
     METRICAS_CAMPOS_TODOS().forEach(id => { const v = document.getElementById(id).value; if(v !== '') valores[id] = v; });
     try { localStorage.setItem(METRICAS_BORRADOR_KEY, JSON.stringify({ fecha: formatearFechaHoy(), valores })); } catch(e) {}
+    actualizarBloqueCloser();
   }
   function restaurarBorradorMetricas(){
     try {
       const g = JSON.parse(localStorage.getItem(METRICAS_BORRADOR_KEY) || 'null');
       if(g && g.fecha === formatearFechaHoy()) Object.entries(g.valores || {}).forEach(([id, v]) => { const el = document.getElementById(id); if(el) el.value = v; });
     } catch(e) {}
+    actualizarBloqueCloser();
   }
   function borrarBorradorMetricas(){ try { localStorage.removeItem(METRICAS_BORRADOR_KEY); } catch(e) {} }
   document.querySelectorAll('#metricasScreen input[data-stepper]').forEach(input => {
@@ -3942,6 +3966,12 @@
     const nombre = document.getElementById('metricasNombre').value.trim();
     if(!nombre){ statusEl.textContent = 'Elegí tu nombre antes de guardar.'; return; }
     if(!metricasRol){ statusEl.textContent = 'Elegí si cargás como setter o como closer.'; return; }
+    const cierresN = numeroDe('metricasCierres');
+    let closerCerro = '';
+    if(metricasRol === 'setter' && cierresN > 0){
+      closerCerro = document.getElementById('metricasCloserCerro').value;
+      if(!closerCerro){ statusEl.textContent = 'Anotaste cierres: elegí qué closer cerró la venta.'; return; }
+    }
     try { localStorage.setItem(METRICAS_NOMBRE_KEY, nombre); } catch(e) {}
 
     const body = metricasRol === 'closer'
@@ -3967,8 +3997,19 @@
     statusEl.textContent = 'Guardando…';
     try {
       await escribirLecciones(body);
-      statusEl.textContent = '✓ Guardado — gracias ' + nombre + '. Se ve en el Dashboard en unos minutos.';
+      let avisoRanking = '';
+      if(closerCerro){
+        const cashVenta = numeroDe('metricasVentas');
+        try {
+          await escribirLecciones({ action: 'addMetricas', rol: 'closer', closer: closerCerro, fecha: formatearFechaHoy(), agendas: 0, shows: 0, noShows: 0, ventas: cashVenta, cierres: cierresN });
+          avisoRanking = ' La venta quedó cargada en el Ranking de ' + closerCerro + (cashVenta > 0 ? '.' : ' (sin cash: pusiste $0).');
+        } catch(e2) {
+          avisoRanking = ' OJO: tu reporte se guardó, pero la venta NO se cargó en el Ranking (' + e2.message + '). Avisale a Thomas.';
+        }
+      }
+      statusEl.textContent = '✓ Guardado — gracias ' + nombre + '. Se ve en el Dashboard en unos minutos.' + avisoRanking;
       [...METRICAS_CAMPOS_SETTER, ...METRICAS_CAMPOS_CLOSER].forEach(id => { document.getElementById(id).value = ''; });
+      document.getElementById('metricasCloserCerro').value = ''; actualizarBloqueCloser();
       borrarBorradorMetricas();
       filasTrackerCache = null; filasRankingCache = null; // para que el Dashboard vuelva a leer el Sheet
     } catch(e) {
