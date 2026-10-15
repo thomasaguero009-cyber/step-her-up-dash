@@ -4720,8 +4720,16 @@
     { k: 'med', texto: 'Por medio', col: 'Medio' },
   ];
   let utmDimension = 'camp';
+  // Nombres de campañas y anuncios de Meta. Meta manda un código numérico en el link del anuncio; acá se le pone
+  // el nombre que le toca. Para agregar uno: copiar el código completo y escribir al lado el nombre que se quiere ver.
+  const NOMBRES_META = {
+    // '120253475700070248': 'Webinar · Instagram',
+  };
   function utmNombreLindo(slug){
     if(!slug) return '';
+    if(NOMBRES_META[slug]) return NOMBRES_META[slug];
+    // un código numérico largo es un ID de Meta: se muestra corto y marcado, con el ID completo al pasar el mouse
+    if(/^\d{12,}$/.test(slug)) return 'Meta · …' + slug.slice(-6);
     const t = slug.replace(/-/g, ' ');
     return t.charAt(0).toUpperCase() + t.slice(1);
   }
@@ -4749,7 +4757,7 @@
     const n = x => x == null ? '–' : x.toLocaleString('es-AR');
     const mejor = filas.find(f => f.k && f.agendadas > 0);
     body.innerHTML = filas.map(f => `<tr class="${f === mejor ? 'utm-top' : ''}">
-      <td class="${f.k ? '' : 'utm-sin'}">${f.k ? escapeHtml(utmNombreLindo(f.k)) : 'Sin UTM (sin rastrear)'}</td>
+      <td class="${f.k ? '' : 'utm-sin'}" ${f.k && /^\d{12,}$/.test(f.k) ? 'title="ID de Meta: ' + escapeHtml(f.k) + '"' : ''}>${f.k ? escapeHtml(utmNombreLindo(f.k)) : 'Sin UTM (sin rastrear)'}</td>
       <td>${n(f.leads)}</td><td>${n(f.agendadas)}</td><td>${n(f.shows)}</td><td>${n(f.cierres)}</td>
       <td>$${Math.round(f.ventas).toLocaleString('es-AR')}</td>
       <td>${f.leads ? (f.agendadas / f.leads * 100).toFixed(1) + '%' : '–'}</td></tr>`).join('');
