@@ -1287,6 +1287,7 @@
         <button type="button" class="quick-nav-btn" data-tab="setters">Setters</button>
         <button type="button" class="quick-nav-btn" data-tab="closers">Closers</button>
         <button type="button" class="quick-nav-btn" data-tab="utm">Campañas (UTM)</button>
+        <button type="button" class="quick-nav-btn" data-tab="webinar">Webinar</button>
       </div>
 
       <!-- Cluster único de "números de arriba" — antes eran 3 bloques
@@ -1691,6 +1692,28 @@
           </div>
         </div>
         <div class="chart-status" id="statusUtm" style="margin-bottom:44px;">Cargando desde GHL…</div>
+      </div>
+
+      <!-- Webinar: inscripciones de la clase del 21 de octubre. Sale del pipeline "STEP HER UP - WEBINAR" de GHL
+           (una oportunidad por inscripta) y de las etiquetas lp-/src- del contacto. -->
+      <div class="tab-panel" data-tab-panel="webinar">
+        <div class="section-label" id="webinar">Webinar del 21 de octubre</div>
+        <div class="breakdown-grid" id="webinarCards"></div>
+        <div class="chart-panel" style="margin-top:18px;">
+          <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Etapas en GHL</div>
+          <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Etapa</th><th>Inscriptas</th><th>% del total</th></tr></thead><tbody id="webinarEtapas"></tbody></table></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr; gap:18px; margin-top:18px;">
+          <div class="chart-panel">
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Por fuente</div>
+            <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Fuente</th><th>Inscriptas</th><th>%</th></tr></thead><tbody id="webinarFuentes"></tbody></table></div>
+          </div>
+          <div class="chart-panel">
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Inscripciones por día</div>
+            <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Día</th><th>Inscriptas</th></tr></thead><tbody id="webinarDias"></tbody></table></div>
+          </div>
+        </div>
+        <div class="chart-status" id="statusWebinar" style="margin-bottom:44px;">Cargando desde GHL…</div>
       </div>
 
       <!-- Closers: sale de la pestaña "Ranking" del Sheet (Fecha | Closer | Monto),
@@ -2404,6 +2427,7 @@
       const tab = btn.dataset.tab;
       dashTabNav.querySelectorAll('.quick-nav-btn').forEach(b => b.classList.toggle('active', b === btn));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === tab));
+      if(tab === 'webinar') cargarWebinar();
     });
   });
 
@@ -4774,6 +4798,53 @@
     status.textContent = totalAg > 0
       ? `${agConUtm} de ${totalAg} agendadas del mes tienen UTM (${Math.round(agConUtm / totalAg * 100)}%) · agendas/cierres cuentan por la fecha del último movimiento en GHL, los leads por su fecha de ingreso`
       : 'Agendas, shows y cierres cuentan por la fecha del último movimiento en GHL; los leads por su fecha de ingreso';
+  }
+
+  // ===== Webinar — pide /webinar-resumen al Worker (pipeline "STEP HER UP - WEBINAR"). Las compras de la oferta
+  // todavía no se cuentan acá: se suman cuando se conecte Stripe. =====
+  const WEBINAR_FECHA = Date.UTC(2026, 9, 21, 23, 0);   // 21-oct-2026, 7:00 PM de Puerto Rico (UTC-4)
+  const WEBINAR_FUENTES = { ig: 'Instagram (anuncio)', fb: 'Facebook (anuncio)', th: 'Threads (anuncio)', an: 'Audience Network (anuncio)', msg: 'Messenger (anuncio)', instagram: 'Instagram (orgánico)', email: 'Email' };
+  const WEBINAR_LANDINGS = { 'sistema-marca': 'Landing A · Sistema de marca', 'sistema-instagram': 'Landing B · Sistema de Instagram' };
+  let webinarCargadoEn = 0, webinarTimer = null;
+  function webinarFalta(){
+    const ms = WEBINAR_FECHA - Date.now();
+    if(ms <= 0) return Date.now() - WEBINAR_FECHA < 2 * 3600 * 1000 ? 'En vivo' : 'Ya pasó';
+    const d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000);
+    return d ? `${d} d ${h} h` : `${h} h ${Math.floor(ms % 3600000 / 60000)} min`;
+  }
+  async function cargarWebinar(force){
+    if(!force && Date.now() - webinarCargadoEn < 120000) return;
+    const status = document.getElementById('statusWebinar');
+    if(!status) return;
+    try {
+      const r = await fetch(`${WORKER_URL}/webinar-resumen`);
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'error');
+      webinarCargadoEn = Date.now();
+      const n = x => (x || 0).toLocaleString('es-AR');
+      const pct = x => d.total ? (x / d.total * 100).toFixed(1) + '%' : '–';
+      const etapa = nom => (d.etapas.find(e => e.nombre === nom) || {}).cantidad || 0;
+      const lpA = d.landings['sistema-marca'] || 0, lpB = d.landings['sistema-instagram'] || 0;
+      const card = (t, v, sub) => `<div class="breakdown-card"><h4>${t}</h4><div style="font-size:34px;font-weight:700;line-height:1.1;">${v}</div>${sub ? `<div style="opacity:.7;font-size:13px;margin-top:6px;">${sub}</div>` : ''}</div>`;
+      document.getElementById('webinarCards').innerHTML =
+        card('Inscriptas', n(d.total), 'en el pipeline del webinar') +
+        card('Landing A', n(lpA), 'Sistema de marca · ' + pct(lpA)) +
+        card('Landing B', n(lpB), 'Sistema de Instagram · ' + pct(lpB)) +
+        card('Ya eran clientas', n(etapa('Already Purchased')), 'etapa Already Purchased en GHL') +
+        card('Faltan', webinarFalta(), 'miércoles 21 · 7:00 PM (Puerto Rico)');
+      document.getElementById('webinarEtapas').innerHTML = d.etapas.filter(e => e.cantidad > 0)
+        .map(e => `<tr><td>${escapeHtml(e.nombre)}</td><td>${n(e.cantidad)}</td><td>${pct(e.cantidad)}</td></tr>`).join('') || '<tr><td colspan="3">Sin datos todavía.</td></tr>';
+      document.getElementById('webinarFuentes').innerHTML = Object.entries(d.porFuente).sort((a, b) => b[1] - a[1])
+        .map(([k, v]) => `<tr><td class="${k ? '' : 'utm-sin'}">${k ? escapeHtml(WEBINAR_FUENTES[k] || utmNombreLindo(k)) : 'Sin fuente'}</td><td>${n(v)}</td><td>${pct(v)}</td></tr>`).join('');
+      document.getElementById('webinarDias').innerHTML = Object.entries(d.porDia).sort((a, b) => b[0].localeCompare(a[0]))
+        .map(([k, v]) => `<tr><td>${k.slice(8)}/${k.slice(5, 7)}</td><td>${n(v)}</td></tr>`).join('');
+      const sinLp = d.landings[''] || 0;
+      status.textContent = `Actualizado ${new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} · cuenta las inscriptas que tienen oportunidad en el pipeline del webinar${sinLp ? ` (${sinLp} sin etiqueta de landing)` : ''}`;
+    } catch(e){
+      status.textContent = 'No se pudo cargar el webinar. Probá de nuevo con Actualizar.';
+    }
+    clearTimeout(webinarTimer);
+    webinarTimer = setTimeout(() => { if(document.querySelector('[data-tab-panel="webinar"].active')) cargarWebinar(true); }, 300000);
   }
 
   const GHL_IDS = ['ghlLlamadas','ghlAgendadas','ghlShows','ghlCierres','ghlVentas','ghlAov','mateAgendado','mateShowRate','mateCierre','mateConversion','mateConversionFunnel'];
