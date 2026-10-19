@@ -1288,6 +1288,7 @@
         <button type="button" class="quick-nav-btn" data-tab="closers">Closers</button>
         <button type="button" class="quick-nav-btn" data-tab="utm">Campañas (UTM)</button>
         <button type="button" class="quick-nav-btn" data-tab="webinar">Webinar</button>
+        <button type="button" class="quick-nav-btn" data-tab="email">Email</button>
       </div>
 
       <!-- Cluster único de "números de arriba" — antes eran 3 bloques
@@ -1714,6 +1715,18 @@
           </div>
         </div>
         <div class="chart-status" id="statusWebinar" style="margin-bottom:44px;">Cargando desde GHL…</div>
+      </div>
+
+      <!-- Email: resultados de cada envío masivo de GHL. Salen de email-envios.json (una fila por envío,
+           copiada de "Bulk email stats"). -->
+      <div class="tab-panel" data-tab-panel="email">
+        <div class="section-label" id="email">Email marketing</div>
+        <div class="breakdown-grid" id="emailCards"></div>
+        <div class="chart-panel" style="margin-top:18px;">
+          <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Envíos</div>
+          <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Envío</th><th>Fecha</th><th>Enviados</th><th>Entregados</th><th>Abiertos</th><th>Clics</th><th>Rebotados</th><th>Fallidos</th><th>Omitidos</th></tr></thead><tbody id="emailEnvios"></tbody></table></div>
+        </div>
+        <div class="chart-status" id="statusEmail" style="margin-bottom:44px;">Cargando…</div>
       </div>
 
       <!-- Closers: sale de la pestaña "Ranking" del Sheet (Fecha | Closer | Monto),
@@ -2428,6 +2441,7 @@
       dashTabNav.querySelectorAll('.quick-nav-btn').forEach(b => b.classList.toggle('active', b === btn));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === tab));
       if(tab === 'webinar') cargarWebinar();
+      if(tab === 'email') cargarEmail();
     });
   });
 
@@ -4845,6 +4859,39 @@
     }
     clearTimeout(webinarTimer);
     webinarTimer = setTimeout(() => { if(document.querySelector('[data-tab-panel="webinar"].active')) cargarWebinar(true); }, 300000);
+  }
+
+  // ===== Email — lee email-envios.json (una fila por envío masivo de GHL). Abiertos y clics se miden sobre los
+  // entregados; los fallidos son los que GHL no llegó a enviar (por ejemplo, por el tope diario). =====
+  let emailCargadoEn = 0;
+  async function cargarEmail(force){
+    if(!force && Date.now() - emailCargadoEn < 120000) return;
+    const status = document.getElementById('statusEmail');
+    if(!status) return;
+    try {
+      const r = await fetch('email-envios.json?t=' + Date.now());
+      const d = await r.json();
+      const envios = (d.envios || []).slice().sort((a, b) => b.fecha.localeCompare(a.fecha));
+      emailCargadoEn = Date.now();
+      const n = x => (x || 0).toLocaleString('es-AR');
+      const pc = (x, base) => base ? (x / base * 100).toFixed(1) + '%' : '–';
+      const fecha = f => `${f.slice(8)}/${f.slice(5, 7)}`;
+      const card = (t, v, sub) => `<div class="breakdown-card"><h4>${t}</h4><div style="font-size:34px;font-weight:700;line-height:1.1;">${v}</div>${sub ? `<div style="opacity:.7;font-size:13px;margin-top:6px;">${sub}</div>` : ''}</div>`;
+      const u = envios[0];
+      document.getElementById('emailCards').innerHTML = u ?
+        card('Último envío', escapeHtml(u.nombre), fecha(u.fecha) + ' · ' + n(u.total) + ' contactos') +
+        card('Entregados', n(u.entregados), pc(u.entregados, u.total) + ' del total') +
+        card('Abiertos', pc(u.abiertos, u.entregados), n(u.abiertos) + ' de ' + n(u.entregados) + ' entregados') +
+        card('Clics', pc(u.clics, u.entregados), n(u.clics) + ' de ' + n(u.entregados) + ' entregados') +
+        card('Fallidos', n(u.fallidos), pc(u.fallidos, u.total) + ' no salieron') +
+        card('Rebotados', n(u.rebotados), 'direcciones que no existen')
+        : card('Sin envíos', '–', 'todavía no hay datos');
+      document.getElementById('emailEnvios').innerHTML = envios.map(e =>
+        `<tr><td>${escapeHtml(e.nombre)}</td><td>${fecha(e.fecha)}</td><td>${n(e.total)}</td><td>${n(e.entregados)} · ${pc(e.entregados, e.total)}</td><td>${n(e.abiertos)} · ${pc(e.abiertos, e.entregados)}</td><td>${n(e.clics)} · ${pc(e.clics, e.entregados)}</td><td>${n(e.rebotados)}</td><td>${n(e.fallidos)}</td><td>${n(e.omitidos)}</td></tr>`).join('') || '<tr><td colspan="9">Sin envíos todavía.</td></tr>';
+      status.textContent = `Datos al ${d.actualizado ? fecha(d.actualizado) : '–'} · abiertos y clics se miden sobre los entregados`;
+    } catch(e){
+      status.textContent = 'No se pudo cargar el email. Probá de nuevo con Actualizar.';
+    }
   }
 
   const GHL_IDS = ['ghlLlamadas','ghlAgendadas','ghlShows','ghlCierres','ghlVentas','ghlAov','mateAgendado','mateShowRate','mateCierre','mateConversion','mateConversionFunnel'];

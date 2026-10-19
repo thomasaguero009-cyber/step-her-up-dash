@@ -1,0 +1,7 @@
+{
+  "actualizado": "2026-10-19",
+  "nota": "Cifras copiadas de Bulk email stats de GHL. Se agrega una fila por envío.",
+  "envios": [
+    { "nombre": "Invitación al webinar", "fecha": "2026-10-17", "total": 1950, "aceptados": 733, "entregados": 707, "abiertos": 261, "clics": 14, "respuestas": 1, "bajas": 0, "quejas": 0, "rebotados": 26, "fallidos": 1175, "omitidos": 42, "nota": "Los fallidos no salieron por el tope diario de envíos. Se reenvía." }
+  ]
+}
