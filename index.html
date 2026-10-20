@@ -2098,6 +2098,8 @@
       desc: 'La consultoría individual de Step Her Up: el sistema, el acompañamiento, los bonos y la inversión.' },
     { grupo: 'Presentaciones', id: 'low-ticket', etiqueta: 'Low Ticket', titulo: 'Sistema de crecimiento en Skool',
       desc: 'El programa en Skool con más de 100 videos: posicionamiento, contenido, grabación y edición, Meta Business y ventas.' },
+    { grupo: 'Presentaciones', id: 'upsell', etiqueta: 'Upsell', titulo: 'Estrategia con Gianie',
+      desc: 'Para la llamada de consulta con las compradoras: 3 llamadas 1:1 con Gianie, estrategia de marca personal y 3 meses más de acceso. Inversión $2,997.' },
     { grupo: 'Para compartir con las leads', id: 'vsl', etiqueta: 'VSL', titulo: 'Video de ventas de Gianie',
       desc: 'La página del video de ventas, para mandársela a una lead por WhatsApp.',
       url: 'https://class.stepherup.com/step-her-up-c', externo: true, },
@@ -4819,6 +4821,8 @@
   const WEBINAR_FECHA = Date.UTC(2026, 9, 21, 23, 0);   // 21-oct-2026, 7:00 PM de Puerto Rico (UTC-4)
   const WEBINAR_FUENTES = { ig: 'Instagram (anuncio)', fb: 'Facebook (anuncio)', th: 'Threads (anuncio)', an: 'Audience Network (anuncio)', msg: 'Messenger (anuncio)', instagram: 'Instagram (orgánico)', email: 'Email' };
   const WEBINAR_LANDINGS = { 'sistema-marca': 'Landing A · Sistema de marca', 'sistema-instagram': 'Landing B · Sistema de Instagram' };
+  const WEBINAR_META = 1000, WEBINAR_ASISTE = 0.3;   // meta de Gianie: 1.000 inscriptas y alrededor de un 30% que se presenta
+  const pctMeta = t => (t / WEBINAR_META * 100).toFixed(0) + '%';
   let webinarCargadoEn = 0, webinarTimer = null;
   function webinarFalta(){
     const ms = WEBINAR_FECHA - Date.now();
@@ -4842,6 +4846,8 @@
       const card = (t, v, sub) => `<div class="breakdown-card"><h4>${t}</h4><div style="font-size:34px;font-weight:700;line-height:1.1;">${v}</div>${sub ? `<div style="opacity:.7;font-size:13px;margin-top:6px;">${sub}</div>` : ''}</div>`;
       document.getElementById('webinarCards').innerHTML =
         card('Inscriptas', n(d.total), 'en el pipeline del webinar') +
+        card('Meta de inscriptas', pctMeta(d.total), 'de ' + n(WEBINAR_META) + ' · faltan ' + n(Math.max(0, WEBINAR_META - d.total))) +
+        card('Asistencia estimada', n(Math.round(d.total * WEBINAR_ASISTE)), (WEBINAR_ASISTE * 100) + '% de las inscriptas · con la meta, ' + n(Math.round(WEBINAR_META * WEBINAR_ASISTE))) +
         card('Landing A', n(lpA), 'Sistema de marca · ' + pct(lpA)) +
         card('Landing B', n(lpB), 'Sistema de Instagram · ' + pct(lpB)) +
         card('Ya eran clientas', n(etapa('Already Purchased')), 'etapa Already Purchased en GHL') +
