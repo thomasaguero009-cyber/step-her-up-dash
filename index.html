@@ -1706,6 +1706,10 @@
         </div>
         <div style="display:grid; grid-template-columns:1fr; gap:18px; margin-top:18px;">
           <div class="chart-panel">
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">De dónde vienen las inscriptas</div>
+            <div id="webinarTorta" style="display:flex;flex-wrap:wrap;align-items:center;gap:28px;"></div>
+          </div>
+          <div class="chart-panel">
             <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Por fuente</div>
             <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Fuente</th><th>Inscriptas</th><th>%</th></tr></thead><tbody id="webinarFuentes"></tbody></table></div>
           </div>
@@ -4854,6 +4858,31 @@
         card('Faltan', webinarFalta(), 'miércoles 21 · 7:00 PM (Puerto Rico)');
       document.getElementById('webinarEtapas').innerHTML = d.etapas.filter(e => e.cantidad > 0)
         .map(e => `<tr><td>${escapeHtml(e.nombre)}</td><td>${n(e.cantidad)}</td><td>${pct(e.cantidad)}</td></tr>`).join('') || '<tr><td colspan="3">Sin datos todavía.</td></tr>';
+      const ORIGENES = [
+        { nombre: 'Ads (Meta)', color: '#f0a8be', claves: ['ig', 'fb', 'an', 'th', 'msg'] },
+        { nombre: 'Orgánico (Instagram)', color: '#C9A56A', claves: ['instagram'] },
+        { nombre: 'Email', color: '#5fd39a', claves: ['email'] }
+      ];
+      const origenes = ORIGENES.map(o => ({ ...o, v: 0 }));
+      let otrosOrigen = 0;
+      Object.entries(d.porFuente).forEach(([k, v]) => {
+        const o = origenes.find(x => x.claves.includes(k));
+        if(o) o.v += v; else otrosOrigen += v;
+      });
+      origenes.push({ nombre: 'Sin origen / otras', color: '#8a7a80', v: otrosOrigen });
+      const totalOrigen = origenes.reduce((t, o) => t + o.v, 0);
+      const R = 70, C = 2 * Math.PI * R;
+      let acum = 0;
+      const arcos = origenes.filter(o => o.v > 0).map(o => {
+        const largo = totalOrigen ? o.v / totalOrigen * C : 0;
+        const arco = `<circle cx="100" cy="100" r="${R}" fill="none" stroke="${o.color}" stroke-width="34" stroke-dasharray="${largo} ${C - largo}" stroke-dashoffset="${-acum}" transform="rotate(-90 100 100)"><title>${o.nombre}: ${n(o.v)}</title></circle>`;
+        acum += largo;
+        return arco;
+      }).join('');
+      const leyenda = origenes.map(o => `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;"><span style="width:14px;height:14px;border-radius:50%;background:${o.color};flex:none;"></span><span style="flex:1;">${o.nombre}</span><b style="margin-left:14px;">${n(o.v)}</b><span style="opacity:.7;min-width:48px;text-align:right;">${totalOrigen ? (o.v / totalOrigen * 100).toFixed(1) + '%' : '–'}</span></div>`).join('');
+      document.getElementById('webinarTorta').innerHTML =
+        `<svg viewBox="0 0 200 200" width="220" height="220" style="flex:none;max-width:100%;"><circle cx="100" cy="100" r="${R}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="34"></circle>${arcos}<text x="100" y="98" text-anchor="middle" font-size="30" font-weight="700" fill="currentColor">${n(totalOrigen)}</text><text x="100" y="118" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">inscriptas</text></svg>` +
+        `<div style="flex:1;min-width:230px;">${leyenda}<div style="opacity:.55;font-size:12px;margin-top:8px;">Ads = ig, fb, an, th, msg · Orgánico = utm_source instagram</div></div>`;
       document.getElementById('webinarFuentes').innerHTML = Object.entries(d.porFuente).sort((a, b) => b[1] - a[1])
         .map(([k, v]) => `<tr><td class="${k ? '' : 'utm-sin'}">${k ? escapeHtml(WEBINAR_FUENTES[k] || utmNombreLindo(k)) : 'Sin fuente'}</td><td>${n(v)}</td><td>${pct(v)}</td></tr>`).join('');
       document.getElementById('webinarDias').innerHTML = Object.entries(d.porDia).sort((a, b) => b[0].localeCompare(a[0]))
