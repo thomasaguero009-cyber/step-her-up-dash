@@ -48,6 +48,24 @@
   }
   @keyframes titilar{ 0%,100%{ opacity:.25; } 50%{ opacity:.95; } }
   @media (prefers-reduced-motion:reduce){ html::after{ animation:none; opacity:.6; } }
+
+  /* ===== Entrada suave: las pantallas y tarjetas aparecen de a poco y los números cuentan hasta su valor ===== */
+  @keyframes aparecer{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes subir{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
+  @keyframes brillo{ 0%{ background-position:120% 0; } 100%{ background-position:-120% 0; } }
+  .screen.active{ animation:aparecer .5s ease both; }
+  .tab-panel.active > *, .kpi-grid > *, .breakdown-grid > *{ animation:subir .65s cubic-bezier(.2,.7,.2,1) both; }
+  .tab-panel.active > *:nth-child(2), .kpi-grid > *:nth-child(2), .breakdown-grid > *:nth-child(2){ animation-delay:.07s; }
+  .tab-panel.active > *:nth-child(3), .kpi-grid > *:nth-child(3), .breakdown-grid > *:nth-child(3){ animation-delay:.14s; }
+  .tab-panel.active > *:nth-child(4), .kpi-grid > *:nth-child(4), .breakdown-grid > *:nth-child(4){ animation-delay:.21s; }
+  .tab-panel.active > *:nth-child(5), .kpi-grid > *:nth-child(5), .breakdown-grid > *:nth-child(5){ animation-delay:.28s; }
+  .tab-panel.active > *:nth-child(6), .kpi-grid > *:nth-child(6), .breakdown-grid > *:nth-child(6){ animation-delay:.35s; }
+  .tab-panel.active > *:nth-child(n+7), .kpi-grid > *:nth-child(n+7), .breakdown-grid > *:nth-child(n+7){ animation-delay:.42s; }
+  /* mientras llegan los datos, el guion se vuelve un brillo suave en vez de un "–" seco */
+  .cargando-dato{ color:transparent !important; border-radius:10px; min-width:64px; display:inline-block;
+    background:linear-gradient(100deg, rgba(255,255,255,.05) 20%, rgba(240,168,190,.22) 50%, rgba(255,255,255,.05) 80%);
+    background-size:220% 100%; animation:brillo 1.5s linear infinite; }
+  @media (prefers-reduced-motion:reduce){ .screen.active, .tab-panel.active > *, .kpi-grid > *, .breakdown-grid > *{ animation:none; } .cargando-dato{ animation:none; } }
   h1,h2,h3{ font-family:"Playfair Display", Georgia, serif; margin:0; }
   .wrap{ max-width:1080px; margin:0 auto; padding:0 24px; }
 
@@ -5800,6 +5818,59 @@
       tooltip.classList.add('show');
     }
   }
+</script>
+
+<script>
+// Números que cuentan hasta su valor y guiones que brillan mientras cargan. Solo cambia cómo se ven: el texto final es siempre el mismo.
+(function () {
+  var SEL = '.kpi-value, .fact-stat-value, .proj-stat-value, .gauge-value, .breakdown-card > div[style*="34px"]';
+  var reducido = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function esVacio(t) { t = (t || '').trim(); return t === '' || t === '–' || t === '-' || t === '…' || t === '...'; }
+  function parsear(t) {
+    var m = /^(\D*?)(-?\d[\d.,]*)(\D*)$/.exec(t.trim());
+    if (!m) return null;
+    var num = m[2], dec = 0, v;
+    if (num.indexOf(',') > -1) { dec = num.length - num.lastIndexOf(',') - 1; v = parseFloat(num.replace(/\./g, '').replace(',', '.')); }
+    else if (/^\d{1,3}(\.\d{3})+$/.test(num)) { v = parseFloat(num.replace(/\./g, '')); }
+    else { var p = num.split('.'); dec = p.length > 1 ? p[1].length : 0; v = parseFloat(num); }
+    if (!isFinite(v)) return null;
+    return { pre: m[1], suf: m[3], v: v, dec: dec };
+  }
+  function animar(el, final) {
+    var d = parsear(final);
+    if (reducido || !d || d.v <= 0 || !el.offsetParent) { return; }
+    var t0 = performance.now(), dur = 900;
+    el._w = null;
+    function paso(t) {
+      if (el._final !== final) return;
+      var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      var txt = k >= 1 ? final : d.pre + (d.v * e).toLocaleString('es-AR', { minimumFractionDigits: d.dec, maximumFractionDigits: d.dec }) + d.suf;
+      el._w = txt; el.textContent = txt;
+      if (k < 1) requestAnimationFrame(paso);
+    }
+    requestAnimationFrame(paso);
+  }
+  function revisar(el) {
+    var t = el.textContent;
+    if (t === el._w) return;
+    if (esVacio(t)) { el.classList.add('cargando-dato'); el._final = null; return; }
+    el.classList.remove('cargando-dato');
+    if (t === el._final) return;
+    el._final = t;
+    animar(el, t);
+  }
+  function todos(root) { (root.querySelectorAll ? root.querySelectorAll(SEL) : []).forEach(revisar); }
+  new MutationObserver(function (muts) {
+    muts.forEach(function (m) {
+      var n = m.target.nodeType === 3 ? m.target.parentNode : m.target;
+      if (!n || !n.closest) return;
+      var el = n.closest(SEL);
+      if (el) revisar(el); else if (m.addedNodes && m.addedNodes.length) m.addedNodes.forEach(function (a) { if (a.nodeType === 1) todos(a); });
+    });
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  document.addEventListener('DOMContentLoaded', function () { todos(document); });
+  window.addEventListener('load', function () { todos(document); });
+})();
 </script>
 </body>
 </html>
