@@ -52,7 +52,6 @@
   /* ===== Entrada suave: las pantallas y tarjetas aparecen de a poco y los números cuentan hasta su valor ===== */
   @keyframes aparecer{ from{ opacity:0; } to{ opacity:1; } }
   @keyframes subir{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
-  @keyframes brillo{ 0%{ background-position:120% 0; } 100%{ background-position:-120% 0; } }
   .screen.active{ animation:aparecer .5s ease both; }
   .tab-panel.active > *, .kpi-grid > *, .breakdown-grid > *{ animation:subir .65s cubic-bezier(.2,.7,.2,1) both; }
   .tab-panel.active > *:nth-child(2), .kpi-grid > *:nth-child(2), .breakdown-grid > *:nth-child(2){ animation-delay:.07s; }
@@ -61,11 +60,7 @@
   .tab-panel.active > *:nth-child(5), .kpi-grid > *:nth-child(5), .breakdown-grid > *:nth-child(5){ animation-delay:.28s; }
   .tab-panel.active > *:nth-child(6), .kpi-grid > *:nth-child(6), .breakdown-grid > *:nth-child(6){ animation-delay:.35s; }
   .tab-panel.active > *:nth-child(n+7), .kpi-grid > *:nth-child(n+7), .breakdown-grid > *:nth-child(n+7){ animation-delay:.42s; }
-  /* mientras llegan los datos, el guion se vuelve un brillo suave en vez de un "–" seco */
-  .cargando-dato{ color:transparent !important; border-radius:10px; min-width:64px; display:inline-block;
-    background:linear-gradient(100deg, rgba(255,255,255,.05) 20%, rgba(240,168,190,.22) 50%, rgba(255,255,255,.05) 80%);
-    background-size:220% 100%; animation:brillo 1.5s linear infinite; }
-  @media (prefers-reduced-motion:reduce){ .screen.active, .tab-panel.active > *, .kpi-grid > *, .breakdown-grid > *{ animation:none; } .cargando-dato{ animation:none; } }
+  @media (prefers-reduced-motion:reduce){ .screen.active, .tab-panel.active > *, .kpi-grid > *, .breakdown-grid > *{ animation:none; } }
   h1,h2,h3{ font-family:"Playfair Display", Georgia, serif; margin:0; }
   .wrap{ max-width:1080px; margin:0 auto; padding:0 24px; }
 
@@ -5821,7 +5816,7 @@
 </script>
 
 <script>
-// Números que cuentan hasta su valor y guiones que brillan mientras cargan. Solo cambia cómo se ven: el texto final es siempre el mismo.
+// Números que cuentan hasta su valor. Solo cambia cómo se ven: el texto final es siempre el mismo.
 (function () {
   var SEL = '.kpi-value, .fact-stat-value, .proj-stat-value, .gauge-value, .breakdown-card > div[style*="34px"]';
   var reducido = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -5853,8 +5848,7 @@
   function revisar(el) {
     var t = el.textContent;
     if (t === el._w) return;
-    if (esVacio(t)) { el.classList.add('cargando-dato'); el._final = null; return; }
-    el.classList.remove('cargando-dato');
+    if (esVacio(t)) { el._final = null; return; }
     if (t === el._final) return;
     el._final = t;
     animar(el, t);
