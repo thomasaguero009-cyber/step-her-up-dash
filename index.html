@@ -1783,22 +1783,18 @@
           <div id="webinarDiasResumen" style="opacity:.7;font-size:13px;margin-bottom:10px;"></div>
           <div id="webinarDiasGrafico"></div>
         </div>
-        <div class="chart-panel" style="margin-top:18px;">
-          <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Etapas en GHL</div>
-          <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Etapa</th><th>Inscriptas</th><th>% del total</th></tr></thead><tbody id="webinarEtapas"></tbody></table></div>
-        </div>
         <div style="display:grid; grid-template-columns:1fr; gap:18px; margin-top:18px;">
           <div class="chart-panel">
             <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">De dónde vienen las inscriptas</div>
             <div id="webinarTorta" style="display:flex;flex-wrap:wrap;align-items:center;gap:28px;"></div>
           </div>
           <div class="chart-panel">
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Por fuente</div>
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Desglose</div>
             <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Fuente</th><th>Inscriptas</th><th>%</th></tr></thead><tbody id="webinarFuentes"></tbody></table></div>
           </div>
           <div class="chart-panel">
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Inscripciones por día</div>
-            <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Día</th><th>Inscriptas</th></tr></thead><tbody id="webinarDias"></tbody></table></div>
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Etapas en GHL</div>
+            <div id="webinarEtapas"></div>
           </div>
         </div>
         <div class="chart-status" id="statusWebinar" style="margin-bottom:44px;">Cargando desde GHL…</div>
@@ -4950,8 +4946,13 @@
         card('Asistieron', n(asistieron), d.total ? pct(asistieron) + ' de las inscriptas · entraron a la página previa al Zoom' : 'entraron a la página previa al Zoom') +
         card('Ya eran clientas', n(etapa('Already Purchased')), 'etapa Already Purchased en GHL') +
         card('Faltan', webinarFalta(), 'miércoles 21 · 7:00 PM (Puerto Rico)');
-      document.getElementById('webinarEtapas').innerHTML = d.etapas.filter(e => e.cantidad > 0)
-        .map(e => `<tr><td>${escapeHtml(e.nombre)}</td><td>${n(e.cantidad)}</td><td>${pct(e.cantidad)}</td></tr>`).join('') || '<tr><td colspan="3">Sin datos todavía.</td></tr>';
+      const etapasConDatos = d.etapas.filter(e => e.cantidad > 0), maxEtapa = Math.max(1, ...etapasConDatos.map(e => e.cantidad));
+      document.getElementById('webinarEtapas').innerHTML = etapasConDatos.map(e =>
+        `<div style="display:flex;align-items:center;gap:12px;padding:6px 0;" title="${escapeHtml(e.nombre)}: ${n(e.cantidad)} (${pct(e.cantidad)})">` +
+        `<span style="flex:0 0 150px;font-size:13px;">${escapeHtml(e.nombre)}</span>` +
+        `<span style="flex:1;height:18px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;"><span style="display:block;height:100%;width:${Math.max(1.5, e.cantidad / maxEtapa * 100)}%;background:#f0a8be;border-radius:4px;"></span></span>` +
+        `<b style="flex:0 0 auto;min-width:92px;text-align:right;font-size:13px;">${n(e.cantidad)} <span style="opacity:.6;font-weight:400;">· ${pct(e.cantidad)}</span></b></div>`
+      ).join('') || '<div style="opacity:.6;">Sin datos todavía.</div>';
       const ORIGENES = [
         { nombre: 'Ads (Meta)', color: '#f0a8be', claves: ['ig', 'fb', 'an', 'th', 'msg'] },
         { nombre: 'Orgánico (Instagram)', color: '#C9A56A', claves: ['instagram'] },
@@ -4979,8 +4980,6 @@
         `<div style="flex:1;min-width:230px;">${leyenda}<div style="opacity:.55;font-size:12px;margin-top:8px;">Ads = ig, fb, an, th, msg · Orgánico = utm_source instagram</div></div>`;
       document.getElementById('webinarFuentes').innerHTML = Object.entries(d.porFuente).sort((a, b) => b[1] - a[1])
         .map(([k, v]) => `<tr><td class="${k ? '' : 'utm-sin'}">${k ? escapeHtml(WEBINAR_FUENTES[k] || utmNombreLindo(k)) : 'Sin fuente'}</td><td>${n(v)}</td><td>${pct(v)}</td></tr>`).join('');
-      document.getElementById('webinarDias').innerHTML = Object.entries(d.porDia).sort((a, b) => b[0].localeCompare(a[0]))
-        .map(([k, v]) => `<tr><td>${k.slice(8)}/${k.slice(5, 7)}</td><td>${n(v)}</td></tr>`).join('');
       // Gráfico de barras: inscriptas por día del mes (hora de Puerto Rico), con los días sin inscripciones en cero.
       const diasKeys = Object.keys(d.porDia).sort();
       const grafico = document.getElementById('webinarDiasGrafico'), resumen = document.getElementById('webinarDiasResumen');
