@@ -4847,6 +4847,7 @@
       const pct = x => d.total ? (x / d.total * 100).toFixed(1) + '%' : '–';
       const etapa = nom => (d.etapas.find(e => e.nombre === nom) || {}).cantidad || 0;
       const lpA = d.landings['sistema-marca'] || 0, lpB = d.landings['sistema-instagram'] || 0;
+      const asistieron = (d.etapas.find(e => /^asisti/.test((e.nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase())) || {}).cantidad || 0;
       const card = (t, v, sub) => `<div class="breakdown-card"><h4>${t}</h4><div style="font-size:34px;font-weight:700;line-height:1.1;">${v}</div>${sub ? `<div style="opacity:.7;font-size:13px;margin-top:6px;">${sub}</div>` : ''}</div>`;
       document.getElementById('webinarCards').innerHTML =
         card('Inscriptas', n(d.total), 'en el pipeline del webinar') +
@@ -4854,6 +4855,7 @@
         card('Asistencia estimada', n(Math.round(d.total * WEBINAR_ASISTE)), (WEBINAR_ASISTE * 100) + '% de las inscriptas · con la meta, ' + n(Math.round(WEBINAR_META * WEBINAR_ASISTE))) +
         card('Landing A', n(lpA), 'Sistema de marca · ' + pct(lpA)) +
         card('Landing B', n(lpB), 'Sistema de Instagram · ' + pct(lpB)) +
+        card('Asistieron', n(asistieron), d.total ? pct(asistieron) + ' de las inscriptas · entraron a la página previa al Zoom' : 'entraron a la página previa al Zoom') +
         card('Ya eran clientas', n(etapa('Already Purchased')), 'etapa Already Purchased en GHL') +
         card('Faltan', webinarFalta(), 'miércoles 21 · 7:00 PM (Puerto Rico)');
       document.getElementById('webinarEtapas').innerHTML = d.etapas.filter(e => e.cantidad > 0)
