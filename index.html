@@ -1779,6 +1779,11 @@
         <div class="section-label" id="webinar">Webinar del 21 de octubre</div>
         <div class="breakdown-grid" id="webinarCards"></div>
         <div class="chart-panel" style="margin-top:18px;">
+          <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:4px;">Leads por día en el mes</div>
+          <div id="webinarDiasResumen" style="opacity:.7;font-size:13px;margin-bottom:10px;"></div>
+          <div id="webinarDiasGrafico"></div>
+        </div>
+        <div class="chart-panel" style="margin-top:18px;">
           <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Etapas en GHL</div>
           <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Etapa</th><th>Inscriptas</th><th>% del total</th></tr></thead><tbody id="webinarEtapas"></tbody></table></div>
         </div>
@@ -4976,6 +4981,50 @@
         .map(([k, v]) => `<tr><td class="${k ? '' : 'utm-sin'}">${k ? escapeHtml(WEBINAR_FUENTES[k] || utmNombreLindo(k)) : 'Sin fuente'}</td><td>${n(v)}</td><td>${pct(v)}</td></tr>`).join('');
       document.getElementById('webinarDias').innerHTML = Object.entries(d.porDia).sort((a, b) => b[0].localeCompare(a[0]))
         .map(([k, v]) => `<tr><td>${k.slice(8)}/${k.slice(5, 7)}</td><td>${n(v)}</td></tr>`).join('');
+      // Gráfico de barras: inscriptas por día del mes (hora de Puerto Rico), con los días sin inscripciones en cero.
+      const diasKeys = Object.keys(d.porDia).sort();
+      const grafico = document.getElementById('webinarDiasGrafico'), resumen = document.getElementById('webinarDiasResumen');
+      if(!diasKeys.length){
+        grafico.innerHTML = '<div style="opacity:.6;padding:12px 0;">Sin datos todavía.</div>'; resumen.textContent = '';
+      } else {
+        const ym = diasKeys[diasKeys.length - 1].slice(0, 7);
+        const [yy, mm] = ym.split('-').map(Number);
+        const diasMes = new Date(yy, mm, 0).getDate();
+        const hoyPR = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Puerto_Rico' }).format(new Date());
+        const ultimo = hoyPR.slice(0, 7) === ym ? Number(hoyPR.slice(8)) : diasMes;
+        const diaWeb = new Date(WEBINAR_FECHA - 4 * 3600 * 1000).toISOString().slice(0, 10);
+        const serie = Array.from({ length: diasMes }, (_, i) => {
+          const k = `${ym}-${String(i + 1).padStart(2, '0')}`;
+          return { dia: i + 1, k, v: d.porDia[k] || 0, futuro: i + 1 > ultimo };
+        });
+        const totalMes = serie.reduce((t, x) => t + x.v, 0);
+        const mejor = serie.reduce((m, x) => x.v > m.v ? x : m, serie[0]);
+        const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        resumen.innerHTML = `${MESES[mm - 1][0].toUpperCase() + MESES[mm - 1].slice(1)}: <b>${n(totalMes)}</b> inscriptas · promedio ${n(Math.round(totalMes / Math.max(1, ultimo)))} por día · mejor día: ${mejor.dia}/${String(mm).padStart(2, '0')} con <b>${n(mejor.v)}</b>`;
+        const W = 720, H = 250, L = 40, Rm = 10, T = 22, B = 30, ph = H - T - B, pw = W - L - Rm;
+        const max = Math.max(...serie.map(x => x.v), 1);
+        const paso = max <= 10 ? 2 : max <= 50 ? 10 : max <= 100 ? 20 : max <= 250 ? 50 : max <= 500 ? 100 : 200;
+        const tope = Math.ceil(max / paso) * paso;
+        const yDe = v => T + ph - v / tope * ph;
+        const bw = pw / diasMes;
+        let svg = '';
+        for(let v = 0; v <= tope; v += paso){
+          svg += `<line x1="${L}" x2="${W - Rm}" y1="${yDe(v)}" y2="${yDe(v)}" stroke="rgba(255,255,255,0.08)"></line><text x="${L - 6}" y="${yDe(v) + 4}" text-anchor="end" font-size="11" fill="rgba(255,255,255,0.55)">${v}</text>`;
+        }
+        serie.forEach((x, i) => {
+          const h = x.v / tope * ph, bx = L + i * bw + bw * 0.14, w = bw * 0.72;
+          const esWeb = x.k === diaWeb;
+          const color = esWeb ? '#C9A56A' : '#f0a8be';
+          svg += `<g><rect x="${bx}" y="${T}" width="${w}" height="${ph}" fill="transparent"></rect>` +
+            (x.v ? `<rect x="${bx}" y="${yDe(x.v)}" width="${w}" height="${h}" rx="2" fill="${color}" opacity="${x.futuro ? 0.3 : 0.92}"></rect>` : '') +
+            (x.v && bw > 14 ? `<text x="${bx + w / 2}" y="${yDe(x.v) - 4}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.8)">${x.v}</text>` : '') +
+            `<title>${x.dia}/${String(mm).padStart(2, '0')}${esWeb ? ' · día del webinar' : ''}: ${n(x.v)} inscriptas</title></g>`;
+          if(diasMes <= 16 || x.dia === 1 || x.dia % 2 === 1 || esWeb)
+            svg += `<text x="${bx + w / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="${esWeb ? '#C9A56A' : 'rgba(255,255,255,0.55)'}"${esWeb ? ' font-weight="700"' : ''}>${x.dia}</text>`;
+        });
+        grafico.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:100%;display:block;" role="img" aria-label="Inscriptas por día del mes">${svg}</svg>` +
+          `<div style="opacity:.55;font-size:12px;margin-top:4px;">Días del mes, hora de Puerto Rico · en dorado, el día del webinar</div>`;
+      }
       const sinLp = d.landings[''] || 0;
       status.textContent = `Actualizado ${new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} · cuenta las inscriptas que tienen oportunidad en el pipeline del webinar${sinLp ? ` (${sinLp} sin etiqueta de landing)` : ''}`;
     } catch(e){
