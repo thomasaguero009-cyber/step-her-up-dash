@@ -2235,7 +2235,8 @@
       desc: 'Suscripción mensual: Stripe descuenta $1,250 automáticamente cada mes.',
       url: 'https://buy.stripe.com/eVqeVf5FGeft4ao0GXfQI0y', externo: true },
     { grupo: 'Links de pago', id: 'pago-1250-codigo', etiqueta: 'Stripe · mensual', titulo: '$1,250 por mes con código', tipo: 'pago',
-      desc: 'Suscripción mensual de $1,250 con código de promoción: en el checkout se pone el código STEPTOHERUP para un descuento de $253.',
+      desc: 'Código STEPTOHERUP: $253 de descuento y 2 pagos mensuales de $1,250.',
+      codigo: 'STEPTOHERUP',
       url: 'https://buy.stripe.com/8x2cN7c44dbpayM1L1fQI1k', externo: true },
   ];
 
@@ -2264,6 +2265,7 @@
           <div class="rec-acciones">
             <button type="button" class="rec-btn rec-btn-main" data-act="abrir">Abrir${r.externo ? ' ↗' : ''}</button>
             ${r.url ? '<button type="button" class="rec-btn" data-act="copiar">Copiar link</button>' : ''}
+            ${r.codigo ? '<button type="button" class="rec-btn" data-act="codigo">Copiar código</button>' : ''}
           </div>
         </div>`).join('')}</div>`;
     }).join('') + '<p class="rec-estado" id="recEstado"></p>';
@@ -2271,10 +2273,11 @@
       const id = b.closest('.rec-card').dataset.id, r = RECURSOS.find(x => x.id === id);
       if(b.dataset.act === 'abrir') abrirRecurso(id);
       else if(b.dataset.act === 'copiar') copiarLinkRecurso(r, b);
+      else if(b.dataset.act === 'codigo') copiarLinkRecurso({ url: r.codigo }, b, '¡Código copiado!');
     }));
   }
   // Copia el link público (con respaldo para navegadores que no dejan usar el portapapeles).
-  async function copiarLinkRecurso(r, boton){
+  async function copiarLinkRecurso(r, boton, msgOk){
     let ok = false;
     try { await navigator.clipboard.writeText(r.url); ok = true; }
     catch(e){
@@ -2285,7 +2288,7 @@
       t.remove();
     }
     const original = boton.textContent;
-    boton.textContent = ok ? '¡Link copiado!' : 'Copiá: ' + r.url;
+    boton.textContent = ok ? (msgOk || '¡Link copiado!') : 'Copiá: ' + r.url;
     boton.classList.toggle('ok', ok);
     setTimeout(() => { boton.textContent = original; boton.classList.remove('ok'); }, ok ? 1800 : 5000);
   }
