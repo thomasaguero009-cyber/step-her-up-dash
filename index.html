@@ -5284,16 +5284,20 @@
     const out = [];
     for(let i = MESES_FACTURACION - 1; i >= 0; i--){
       const f = new Date(anio, mes - i, 1);
-      out.push({ anio: f.getFullYear(), mes: f.getMonth(), ventas: 0, cierres: 0 });
+      out.push({ anio: f.getFullYear(), mes: f.getMonth(), ventas: 0, cierres: 0, webGhl: 0 });
     }
     if(!funnelPorDiaDatos) return out;
     for(const [fecha, fila] of Object.entries(funnelPorDiaDatos.dias)){
       const a = parseInt(fecha.slice(0, 4), 10), m = parseInt(fecha.slice(5, 7), 10) - 1;
       const celda = out.find(x => x.anio === a && x.mes === m);
       if(!celda) continue;
-      celda.ventas += (fila.ventas || 0) + (fila.ventasWebinar || 0);
+      celda.ventas += fila.ventas || 0;
+      celda.webGhl += fila.ventasWebinar || 0;
       celda.cierres += (fila.cierres || 0) + (fila.cierresWebinar || 0);
     }
+    // Ventas del webinar: lo que diga el ajuste manual del mes (lo cobrado de verdad) o, si no hay, lo de GHL.
+    const aj = funnelPorDiaDatos.ajustesWebinar || {};
+    out.forEach(c => { const k = c.anio + '-' + String(c.mes + 1).padStart(2, '0'); c.ventas += (k in aj) ? aj[k] : c.webGhl; });
     return out;
   }
   function renderFacturacion(){
