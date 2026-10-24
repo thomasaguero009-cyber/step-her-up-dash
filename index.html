@@ -5132,9 +5132,13 @@
       fijarValorNumero('ghlAgendadas', data.totales.agendadas.toLocaleString('es-AR'));
       fijarValorNumero('ghlShows', data.totales.shows.toLocaleString('es-AR'));
       fijarValorNumero('ghlCierres', data.totales.cierres.toLocaleString('es-AR'));
-      fijarValorNumero('ghlVentas', '$' + Math.round(data.totales.ventas).toLocaleString('es-AR'));
-      // AOV = cash collected ÷ cierres, con los mismos totales de GHL de arriba.
-      fijarValorNumero('ghlAov', data.totales.cierres > 0 ? '$' + Math.round(data.totales.ventas / data.totales.cierres).toLocaleString('es-AR') : '–');
+      // Cash collected = ventas de llamadas + ventas del webinar ($997 y upsell). Las tasas de llamadas
+      // (cierre, conversión) siguen usando solo los cierres de llamadas.
+      const cashTotal = (data.totales.ventas || 0) + (data.totales.ventasWebinar || 0);
+      const cierresTotal = (data.totales.cierres || 0) + (data.totales.cierresWebinar || 0);
+      fijarValorNumero('ghlVentas', '$' + Math.round(cashTotal).toLocaleString('es-AR'));
+      // AOV = cash collected ÷ cierres (llamadas + webinar).
+      fijarValorNumero('ghlAov', cierresTotal > 0 ? '$' + Math.round(cashTotal / cierresTotal).toLocaleString('es-AR') : '–');
 
       // Las 4 tasas se calculan con estos MISMOS totales de GHL (no el
       // Sheet manual) para que coincidan con las 5 tarjetas de arriba —
@@ -5287,8 +5291,8 @@
       const a = parseInt(fecha.slice(0, 4), 10), m = parseInt(fecha.slice(5, 7), 10) - 1;
       const celda = out.find(x => x.anio === a && x.mes === m);
       if(!celda) continue;
-      celda.ventas += fila.ventas || 0;
-      celda.cierres += fila.cierres || 0;
+      celda.ventas += (fila.ventas || 0) + (fila.ventasWebinar || 0);
+      celda.cierres += (fila.cierres || 0) + (fila.cierresWebinar || 0);
     }
     return out;
   }
