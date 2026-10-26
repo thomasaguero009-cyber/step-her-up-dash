@@ -2030,7 +2030,7 @@
 
         <button type="button" class="btn" id="metricasGuardarBtn" hidden>Guardar métricas</button>
         <p class="chart-status" id="metricasStatus" style="text-align:center; font-size:15px;"></p>
-        <p class="metricas-hint" style="text-align:center; margin-top:8px;">Si no tocás el botón, tus números se guardan solos a la 1:30 PM y a las 8:30 PM (hora de PR) y se envían al Slack.</p>
+        <p class="metricas-hint" style="text-align:center; margin-top:8px;">Al guardar, tus números van al dashboard y al Slack a la vez: no hace falta escribirlos en Slack. Si no tocás el botón, se guardan y se envían solos a la 1:30 PM y a las 8:30 PM (hora de PR).</p>
       </div>
     </div>
   </section>
@@ -4219,10 +4219,20 @@
         }
       }
       statusEl.textContent = '✓ Guardado — gracias ' + nombre + '. Se ve en el Dashboard en unos minutos.' + avisoRanking;
+      const valoresSlack = {};
+      Object.entries(METRICAS_MAPA[metricasRol]).forEach(([id, k]) => { valoresSlack[k] = Number(document.getElementById(id).value) || 0; });
+      let avisoSlack = '';
       [...METRICAS_CAMPOS_SETTER, ...METRICAS_CAMPOS_CLOSER].forEach(id => { document.getElementById(id).value = ''; });
       document.getElementById('metricasCloserCerro').value = ''; actualizarBloqueCloser();
       borrarBorradorMetricas();
-      try { fetch(WORKER_URL + '/metricas-borrador', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, vaciar: true }) }); } catch(e2) {}
+      // Un solo paso: además de guardarse en el Sheet, el Worker publica los números en #setters (y borra el borrador).
+      try {
+        const rs = await fetch(WORKER_URL + '/metricas-borrador', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, vaciar: true, publicar: { rol: metricasRol, fecha: body.fecha, valores: valoresSlack, closerCerro } }) });
+        const ds = await rs.json();
+        avisoSlack = ds && ds.slack ? ' También se envió al Slack.' : ' OJO: no se pudo enviar al Slack, avisale a Thomas.';
+      } catch(e2) { avisoSlack = ' OJO: no se pudo enviar al Slack, avisale a Thomas.'; }
+      statusEl.textContent += avisoSlack;
       filasTrackerCache = null; filasRankingCache = null; // para que el Dashboard vuelva a leer el Sheet
     } catch(e) {
       statusEl.textContent = 'No se pudo guardar: ' + e.message;
