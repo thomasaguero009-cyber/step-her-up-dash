@@ -1976,10 +1976,6 @@
             <input type="number" min="0" inputmode="numeric" id="metricasNoCalifica" placeholder="0" data-stepper>
           </div>
           <div class="metricas-field">
-            <label for="metricasNoRespondio">No respondió</label>
-            <input type="number" min="0" inputmode="numeric" id="metricasNoRespondio" placeholder="0" data-stepper>
-          </div>
-          <div class="metricas-field">
             <label for="metricasNoAtendieron">No atendieron</label>
             <input type="number" min="0" inputmode="numeric" id="metricasNoAtendieron" placeholder="0" data-stepper>
           </div>
@@ -4011,7 +4007,7 @@
   // dashboard igual que si lo hubiera cargado alguien a mano ahí. =====
   const METRICAS_NOMBRE_KEY = 'shu_metricas_nombre';
   const METRICAS_ROL_KEY = 'shu_metricas_rol';
-  const METRICAS_CAMPOS_SETTER = ['metricasLlamadas', 'metricasAgendadas', 'metricasNoCalifica', 'metricasNoRespondio', 'metricasNoAtendieron', 'metricasInfoWhatsapp', 'metricasCortaron', 'metricasShows', 'metricasCierres', 'metricasVentas'];
+  const METRICAS_CAMPOS_SETTER = ['metricasLlamadas', 'metricasAgendadas', 'metricasNoCalifica', 'metricasNoAtendieron', 'metricasInfoWhatsapp', 'metricasCortaron', 'metricasShows', 'metricasCierres', 'metricasVentas'];
   const METRICAS_CAMPOS_CLOSER = ['metricasCAgendas', 'metricasCShows', 'metricasCNoShows', 'metricasCCash', 'metricasCCierres'];
   let metricasRol = '';
 
@@ -4145,7 +4141,6 @@
           llamadas: numeroDe('metricasLlamadas'),
           agendadas: numeroDe('metricasAgendadas'),
           noCalifica: numeroDe('metricasNoCalifica'),
-          noRespondio: numeroDe('metricasNoRespondio'),
           noAtendieron: numeroDe('metricasNoAtendieron'),
           infoWhatsapp: numeroDe('metricasInfoWhatsapp'),
           cortaron: numeroDe('metricasCortaron'),
@@ -4366,7 +4361,8 @@
           shows: parseNumSheet(r[idx.shows]),
           noCalifica: idx.noCalifica > -1 ? parseNumSheet(r[idx.noCalifica]) : 0,
           noRespondio: idx.noRespondio > -1 ? parseNumSheet(r[idx.noRespondio]) : 0,
-          noAtendieron: idx.noAtendieron > -1 ? parseNumSheet(r[idx.noAtendieron]) : 0,
+          // "No respondió" (columna vieja) y "No atendieron" son lo mismo: se suman para no perder el histórico.
+          noAtendieron: (idx.noAtendieron > -1 ? parseNumSheet(r[idx.noAtendieron]) : 0) + (idx.noRespondio > -1 ? parseNumSheet(r[idx.noRespondio]) : 0),
           infoWhatsapp: idx.infoWhatsapp > -1 ? parseNumSheet(r[idx.infoWhatsapp]) : 0,
           cortaron: idx.cortaron > -1 ? parseNumSheet(r[idx.cortaron]) : 0,
           cierres: parseNumSheet(r[idx.cierres]),
@@ -4713,7 +4709,6 @@
     { valor: 'llamadas', texto: 'Llamadas', color: '#d9b4ff' },
     { valor: 'agendadas', texto: 'Agendadas', color: '#8fb8f0' },
     { valor: 'noCalifica', texto: 'No califica', color: '#ff9b9b' },
-    { valor: 'noRespondio', texto: 'No respondió', color: '#b8a1a6' },
     { valor: 'noAtendieron', texto: 'No atendieron', color: '#c9b3a0' },
     { valor: 'infoWhatsapp', texto: 'Info por WhatsApp', color: '#7fd1c2' },
     { valor: 'cortaron', texto: 'Cortaron / colgaron', color: '#e6a1c9' },
@@ -5522,7 +5517,6 @@
         <div class="breakdown-stat-row"><span class="label">Llamadas</span><span class="val">${s.llamadas.toLocaleString('es-AR')}</span></div>
         <div class="breakdown-stat-row"><span class="label">Agendadas</span><span class="val">${s.agendadas.toLocaleString('es-AR')} (${pct(s.agendadas, s.llamadas)})</span></div>
         <div class="breakdown-stat-row"><span class="label">No califica</span><span class="val">${s.noCalifica.toLocaleString('es-AR')}</span></div>
-        <div class="breakdown-stat-row"><span class="label">No respondió</span><span class="val">${s.noRespondio.toLocaleString('es-AR')}</span></div>
         <div class="breakdown-stat-row"><span class="label">No atendieron</span><span class="val">${s.noAtendieron.toLocaleString('es-AR')}</span></div>
         <div class="breakdown-stat-row"><span class="label">Info por WhatsApp</span><span class="val">${s.infoWhatsapp.toLocaleString('es-AR')}</span></div>
         <div class="breakdown-stat-row"><span class="label">Cortaron / colgaron</span><span class="val">${s.cortaron.toLocaleString('es-AR')}</span></div>
