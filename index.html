@@ -2030,6 +2030,7 @@
 
         <button type="button" class="btn" id="metricasGuardarBtn" hidden>Guardar métricas</button>
         <p class="chart-status" id="metricasStatus" style="text-align:center; font-size:15px;"></p>
+        <p class="metricas-hint" style="text-align:center; margin-top:8px;">Si no tocás el botón, tus números se guardan solos a la 1:30 PM y a las 8:30 PM (hora de PR) y se envían al Slack.</p>
       </div>
     </div>
   </section>
@@ -4040,8 +4041,10 @@
     restaurarBorradorMetricas();
     document.getElementById('metricasStatus').textContent = '';
     actualizarPasosMetricas();
+    revisarAutoguardadoMetricas();
   }
 
+  document.getElementById('metricasCloserCerro').addEventListener('change', () => { try { guardarBorradorMetricas(); } catch(e) {} });
   document.getElementById('metricasNombre').addEventListener('change', () => {
     // El nombre queda guardado en este navegador apenas se elige: la próxima
     // vez que cada persona entre, ya aparece el suyo.
@@ -4087,8 +4090,12 @@
   function guardarBorradorMetricas(){
     const valores = {};
     METRICAS_CAMPOS_TODOS().forEach(id => { const v = document.getElementById(id).value; if(v !== '') valores[id] = v; });
-    try { localStorage.setItem(METRICAS_BORRADOR_KEY, JSON.stringify({ fecha: formatearFechaHoy(), valores })); } catch(e) {}
+    // "inicio" = cuándo empezó este bloque de conteo (el Worker lo compara con el autoguardado para no duplicar).
+    let inicio = Date.now();
+    try { const g = JSON.parse(localStorage.getItem(METRICAS_BORRADOR_KEY) || 'null'); if(g && g.fecha === formatearFechaHoy() && g.inicio && Object.keys(g.valores || {}).length) inicio = g.inicio; } catch(e) {}
+    try { localStorage.setItem(METRICAS_BORRADOR_KEY, JSON.stringify({ fecha: formatearFechaHoy(), valores, inicio })); } catch(e) {}
     actualizarBloqueCloser();
+    sincronizarBorradorMetricas();
   }
   function restaurarBorradorMetricas(){
     try {
@@ -4096,6 +4103,55 @@
       if(g && g.fecha === formatearFechaHoy()) Object.entries(g.valores || {}).forEach(([id, v]) => { const el = document.getElementById(id); if(el) el.value = v; });
     } catch(e) {}
     actualizarBloqueCloser();
+  }
+
+  // ===== Autoguardado: el contador se copia al Worker mientras se cuenta; a la 1:30 PM y a las 8:30 PM (hora de PR)
+  // lo que no se envió con el botón se guarda solo en el Tracker y se publica en #setters. =====
+  const METRICAS_MAPA = {
+    setter: { metricasLlamadas: 'llamadas', metricasAgendadas: 'agendadas', metricasNoCalifica: 'noCalifica', metricasNoAtendieron: 'noAtendieron', metricasInfoWhatsapp: 'infoWhatsapp', metricasCortaron: 'cortaron', metricasShows: 'shows', metricasCierres: 'cierres', metricasVentas: 'ventas' },
+    closer: { metricasCAgendas: 'agendas', metricasCShows: 'shows', metricasCNoShows: 'noShows', metricasCCash: 'ventas', metricasCCierres: 'cierres' },
+  };
+  function inicioBorradorMetricas(){
+    try { const g = JSON.parse(localStorage.getItem(METRICAS_BORRADOR_KEY) || 'null'); return (g && g.inicio) || Date.now(); } catch(e) { return Date.now(); }
+  }
+  function payloadMetricas(extra){
+    const nombre = document.getElementById('metricasNombre').value.trim();
+    if(!nombre || !metricasRol) return null;
+    const valores = {};
+    Object.entries(METRICAS_MAPA[metricasRol]).forEach(([id, k]) => { valores[k] = Number(document.getElementById(id).value) || 0; });
+    return Object.assign({ nombre, rol: metricasRol, fecha: formatearFechaHoy(), valores, inicio: inicioBorradorMetricas(),
+      closerCerro: metricasRol === 'setter' ? (document.getElementById('metricasCloserCerro').value || '') : '' }, extra || {});
+  }
+  function reiniciarPorAutoguardado(){
+    [...METRICAS_CAMPOS_SETTER, ...METRICAS_CAMPOS_CLOSER].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('metricasCloserCerro').value = '';
+    borrarBorradorMetricas(); actualizarBloqueCloser();
+    document.getElementById('metricasStatus').textContent = '✓ Tus números se guardaron solos (autoguardado) y se enviaron al Slack. El contador sigue desde cero.';
+  }
+  let metricasSyncTimer = null;
+  function sincronizarBorradorMetricas(){
+    clearTimeout(metricasSyncTimer);
+    metricasSyncTimer = setTimeout(async () => {
+      const p = payloadMetricas();
+      if(!p) return;
+      try {
+        const r = await fetch(WORKER_URL + '/metricas-borrador', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
+        const d = await r.json();
+        if(d && d.reset) reiniciarPorAutoguardado();
+      } catch(e) {}
+    }, 1500);
+  }
+  // Al abrir la pantalla: si el autoguardado corrió después de que empezó el conteo guardado en este navegador, ya está en el Sheet.
+  async function revisarAutoguardadoMetricas(){
+    const nombre = document.getElementById('metricasNombre').value.trim();
+    if(!nombre) return;
+    try {
+      const g = JSON.parse(localStorage.getItem(METRICAS_BORRADOR_KEY) || 'null');
+      if(!g || g.fecha !== formatearFechaHoy() || !Object.keys(g.valores || {}).length) return;
+      const r = await fetch(WORKER_URL + '/metricas-borrador?nombre=' + encodeURIComponent(nombre));
+      const d = await r.json();
+      if(d && d.ts && d.ts > (g.inicio || 0)) reiniciarPorAutoguardado(); else sincronizarBorradorMetricas();
+    } catch(e) {}
   }
   function borrarBorradorMetricas(){ try { localStorage.removeItem(METRICAS_BORRADOR_KEY); } catch(e) {} }
   document.querySelectorAll('#metricasScreen input[data-stepper]').forEach(input => {
@@ -4166,6 +4222,7 @@
       [...METRICAS_CAMPOS_SETTER, ...METRICAS_CAMPOS_CLOSER].forEach(id => { document.getElementById(id).value = ''; });
       document.getElementById('metricasCloserCerro').value = ''; actualizarBloqueCloser();
       borrarBorradorMetricas();
+      try { fetch(WORKER_URL + '/metricas-borrador', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, vaciar: true }) }); } catch(e2) {}
       filasTrackerCache = null; filasRankingCache = null; // para que el Dashboard vuelva a leer el Sheet
     } catch(e) {
       statusEl.textContent = 'No se pudo guardar: ' + e.message;
