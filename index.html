@@ -900,7 +900,7 @@
   .metricas-timer-ring .progreso{ fill:none; stroke:var(--blush-2); stroke-width:8; stroke-linecap:round; transition:stroke-dashoffset .9s linear; }
   .metricas-timer-centro{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; }
   .metricas-timer-tiempo{ font-size:12px; font-weight:800; color:var(--blush); font-variant-numeric:tabular-nums; line-height:1; }
-  .metricas-timer-sub{ font-size:11px; color:var(--text-dim); line-height:1.25; max-width:74px; }
+  .metricas-timer-sub{ font-size:11px; color:var(--text-dim); line-height:1.25; max-width:96px; }
   .metricas-timer-sub strong{ color:var(--cream); font-weight:600; }
   .metricas-timer.enviando .progreso{ stroke:var(--blush); animation:metricasPulso 1.1s ease-in-out infinite; }
   @keyframes metricasPulso{ 50%{ opacity:.35; } }
@@ -4142,22 +4142,25 @@
     return Object.assign({ nombre, rol: metricasRol, fecha: formatearFechaHoy(), valores, inicio: inicioBorradorMetricas(),
       closerCerro: metricasRol === 'setter' ? (document.getElementById('metricasCloserCerro').value || '') : '' }, extra || {});
   }
-  function reiniciarPorAutoguardado(){
+  function reiniciarPorAutoguardado(slot){
     [...METRICAS_CAMPOS_SETTER, ...METRICAS_CAMPOS_CLOSER].forEach(id => { document.getElementById(id).value = ''; });
     document.getElementById('metricasCloserCerro').value = '';
     borrarBorradorMetricas(); actualizarBloqueCloser();
-    document.getElementById('metricasStatus').textContent = '✓ Tus números se guardaron solos (autoguardado) y se enviaron al Slack. El contador sigue desde cero.';
+    document.getElementById('metricasStatus').textContent = slot === 'hora'
+      ? '✓ Tus números se guardaron solos (guardado de cada hora). El contador sigue desde cero y a la 1:30 PM y 8:30 PM se publica en Slack el total del día.'
+      : '✓ Tus números se guardaron solos y se enviaron al Slack (total del día). El contador sigue desde cero.';
   }
-  // ===== Reloj circular: tiempo que queda hasta el próximo envío automático (1:30 PM y 8:30 PM de PR = 17:30 y 00:30 UTC). =====
+  // ===== Reloj circular: tiempo que queda hasta el próximo guardado automático. Se guarda cada hora, a las :30
+  // (mismos minutos en PR y UTC); a la 1:30 PM y 8:30 PM de PR (17:30 y 00:30 UTC) además se publica en Slack. =====
   function proximoEnvioMetricas(ahora){
-    const d = new Date(ahora);
-    const base = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-    const slots = [];
-    for(let i = -1; i <= 2; i++){ slots.push(base + i * 86400000 + 30 * 60000, base + i * 86400000 + (17 * 60 + 30) * 60000); }
-    slots.sort((a, b) => a - b);
-    const sig = slots.find(t => t > ahora);
-    const ant = [...slots].reverse().find(t => t <= ahora);
-    return { sig, ant, etiqueta: new Date(sig).getUTCHours() === 0 ? '8:30 PM' : '1:30 PM' };
+    const HORA = 3600000, MEDIA = 1800000;
+    const ant = Math.floor((ahora - MEDIA) / HORA) * HORA + MEDIA;
+    const sig = ant + HORA;
+    const hUTC = new Date(sig).getUTCHours();
+    const slack = hUTC === 17 || hUTC === 0;
+    const hPR = new Date(sig - 4 * HORA).getUTCHours();
+    const etiqueta = ((hPR + 11) % 12 + 1) + ':30 ' + (hPR >= 12 ? 'PM' : 'AM');
+    return { sig, ant, etiqueta, slack };
   }
   const RELOJ_CIRC = 389.56;
   let relojUltimoChequeo = 0;
@@ -4166,9 +4169,10 @@
     const pantalla = document.getElementById('metricasScreen');
     if(!caja || !pantalla || !pantalla.classList.contains('active')) return;
     const ahora = Date.now();
-    const { sig, ant, etiqueta } = proximoEnvioMetricas(ahora);
+    const { sig, ant, etiqueta, slack } = proximoEnvioMetricas(ahora);
     const falta = sig - ahora;
-    const despues = ahora - ant; // ms desde el último envío automático
+    const despues = ahora - ant; // ms desde el último guardado automático
+    const slackPrevio = new Date(ant).getUTCHours() === 17 || new Date(ant).getUTCHours() === 0;
     const tiempo = document.getElementById('metricasTimerTiempo');
     const sub = document.getElementById('metricasTimerSub');
     const arco = document.getElementById('metricasTimerArco');
@@ -4177,8 +4181,8 @@
       caja.classList.add('enviando');
       tiempo.textContent = '···';
       arco.style.strokeDashoffset = '0';
-      sub.innerHTML = '<strong>Enviando…</strong>';
-      caja.title = 'Se terminó el tiempo: lo que tenías contado se está guardando en el dashboard y enviando al Slack.';
+      sub.innerHTML = '<strong>Guardando…</strong>';
+      caja.title = 'Se terminó el tiempo: lo que tenías contado se está guardando en el dashboard' + (slackPrevio ? ' y publicando en Slack.' : '.');
       if(despues > 15000 && ahora - relojUltimoChequeo > 10000){ relojUltimoChequeo = ahora; revisarAutoguardadoMetricas(); }
       return;
     }
@@ -4187,8 +4191,8 @@
     const h = Math.floor(seg / 3600), m = Math.floor((seg % 3600) / 60), sc = seg % 60;
     tiempo.textContent = h > 0 ? h + ':' + String(m).padStart(2, '0') + ':' + String(sc).padStart(2, '0') : String(m).padStart(2, '0') + ':' + String(sc).padStart(2, '0');
     arco.style.strokeDashoffset = String(RELOJ_CIRC * (1 - Math.max(0, Math.min(1, falta / (sig - ant)))));
-    sub.innerHTML = 'Se envía<br><strong>' + etiqueta + '</strong>';
-    caja.title = 'Cuando se acabe el tiempo (' + etiqueta + ', hora de PR) lo que tengas contado se guarda en el dashboard y se envía al Slack. También podés enviarlo antes con el botón.';
+    sub.innerHTML = (slack ? 'Se guarda y se envía al Slack' : 'Se guarda solo') + '<br><strong>' + etiqueta + '</strong>';
+    caja.title = 'Cada hora (a las :30, hora de PR) lo que tengas contado se guarda solo en el dashboard.' + (slack ? ' A las ' + etiqueta + ' además se publica en #setters.' : ' A la 1:30 PM y a las 8:30 PM además se publica en #setters.') + ' También podés enviarlo antes con el botón.';
   }
   setInterval(actualizarRelojMetricas, 1000);
 
@@ -4201,7 +4205,7 @@
       try {
         const r = await fetch(WORKER_URL + '/metricas-borrador', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
         const d = await r.json();
-        if(d && d.reset) reiniciarPorAutoguardado();
+        if(d && d.reset) reiniciarPorAutoguardado(d.slot);
       } catch(e) {}
     }, 1500);
   }
@@ -4214,7 +4218,7 @@
       if(!g || g.fecha !== formatearFechaHoy() || !Object.keys(g.valores || {}).length) return;
       const r = await fetch(WORKER_URL + '/metricas-borrador?nombre=' + encodeURIComponent(nombre));
       const d = await r.json();
-      if(d && d.ts && d.ts > (g.inicio || 0)) reiniciarPorAutoguardado(); else sincronizarBorradorMetricas();
+      if(d && d.ts && d.ts > (g.inicio || 0)) reiniciarPorAutoguardado(d.slot); else sincronizarBorradorMetricas();
     } catch(e) {}
   }
   function borrarBorradorMetricas(){ try { localStorage.removeItem(METRICAS_BORRADOR_KEY); } catch(e) {} }
