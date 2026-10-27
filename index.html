@@ -4139,9 +4139,12 @@
     if(!nombre || !metricasRol) return null;
     const valores = {};
     Object.entries(METRICAS_MAPA[metricasRol]).forEach(([id, k]) => { valores[k] = Number(document.getElementById(id).value) || 0; });
-    return Object.assign({ nombre, rol: metricasRol, fecha: formatearFechaHoy(), valores, inicio: inicioBorradorMetricas(),
+    return Object.assign({ v: 2, nombre, rol: metricasRol, fecha: formatearFechaHoy(), valores, inicio: inicioBorradorMetricas(),
       closerCerro: metricasRol === 'setter' ? (document.getElementById('metricasCloserCerro').value || '') : '' }, extra || {});
   }
+  // Lo que el Worker ya guardó hoy en el Tracker para esta persona (la pantalla muestra el total del día y nunca se pone en cero).
+  let metricasGuardado = {};
+  function cargarGuardadoDe(d){ if(d && d.guardado && typeof d.guardado === 'object') metricasGuardado = d.guardado; }
   function reiniciarPorAutoguardado(slot){
     [...METRICAS_CAMPOS_SETTER, ...METRICAS_CAMPOS_CLOSER].forEach(id => { document.getElementById(id).value = ''; });
     document.getElementById('metricasCloserCerro').value = '';
@@ -4205,20 +4208,21 @@
       try {
         const r = await fetch(WORKER_URL + '/metricas-borrador', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
         const d = await r.json();
-        if(d && d.reset) reiniciarPorAutoguardado(d.slot);
+        cargarGuardadoDe(d);
       } catch(e) {}
     }, 1500);
   }
-  // Al abrir la pantalla: si el autoguardado corrió después de que empezó el conteo guardado en este navegador, ya está en el Sheet.
+  // Al abrir la pantalla o cuando llega la hora del guardado: se consulta lo ya guardado (la pantalla no se toca).
   async function revisarAutoguardadoMetricas(){
     const nombre = document.getElementById('metricasNombre').value.trim();
     if(!nombre) return;
     try {
-      const g = JSON.parse(localStorage.getItem(METRICAS_BORRADOR_KEY) || 'null');
-      if(!g || g.fecha !== formatearFechaHoy() || !Object.keys(g.valores || {}).length) return;
-      const r = await fetch(WORKER_URL + '/metricas-borrador?nombre=' + encodeURIComponent(nombre));
+      const antes = JSON.stringify(metricasGuardado);
+      const r = await fetch(WORKER_URL + '/metricas-borrador?nombre=' + encodeURIComponent(nombre) + '&fecha=' + encodeURIComponent(formatearFechaHoy()));
       const d = await r.json();
-      if(d && d.ts && d.ts > (g.inicio || 0)) reiniciarPorAutoguardado(d.slot); else sincronizarBorradorMetricas();
+      cargarGuardadoDe(d);
+      if(JSON.stringify(metricasGuardado) !== antes && Object.values(metricasGuardado).some(x => x > 0)) document.getElementById('metricasStatus').textContent = '✓ Tus números se guardaron solos. Siguen aquí en pantalla: es el total del día.';
+      sincronizarBorradorMetricas();
     } catch(e) {}
   }
   function borrarBorradorMetricas(){ try { localStorage.removeItem(METRICAS_BORRADOR_KEY); } catch(e) {} }
@@ -4251,53 +4255,38 @@
     }
     try { localStorage.setItem(METRICAS_NOMBRE_KEY, nombre); } catch(e) {}
 
-    const body = metricasRol === 'closer'
-      ? {
-          action: 'addMetricas', rol: 'closer', closer: nombre, fecha: formatearFechaHoy(),
-          agendas: numeroDe('metricasCAgendas'),
-          shows: numeroDe('metricasCShows'),
-          noShows: numeroDe('metricasCNoShows'),
-          ventas: numeroDe('metricasCCash'),
-          cierres: numeroDe('metricasCCierres'),
-        }
-      : {
-          action: 'addMetricas', rol: 'setter', setter: nombre, fecha: formatearFechaHoy(),
-          llamadas: numeroDe('metricasLlamadas'),
-          agendadas: numeroDe('metricasAgendadas'),
-          noCalifica: numeroDe('metricasNoCalifica'),
-          noAtendieron: numeroDe('metricasNoAtendieron'),
-          infoWhatsapp: numeroDe('metricasInfoWhatsapp'),
-          cortaron: numeroDe('metricasCortaron'),
-          shows: numeroDe('metricasShows'),
-          cierres: numeroDe('metricasCierres'),
-          ventas: numeroDe('metricasVentas'),
-        };
-
     statusEl.textContent = 'Guardando…';
     try {
-      await escribirLecciones(body);
+      // Total del día en pantalla y lo que ya está guardado (a mano, por el botón, o solo, por el guardado de cada hora).
+      try { const rg = await fetch(WORKER_URL + '/metricas-borrador?nombre=' + encodeURIComponent(nombre) + '&fecha=' + encodeURIComponent(formatearFechaHoy())); cargarGuardadoDe(await rg.json()); } catch(e0) {}
+      const total = {};
+      Object.entries(METRICAS_MAPA[metricasRol]).forEach(([id, k]) => { total[k] = Number(document.getElementById(id).value) || 0; });
+      const dif = {};
+      let hayNuevo = false;
+      Object.keys(total).forEach(k => { dif[k] = Math.max(0, total[k] - (Number(metricasGuardado[k]) || 0)); if(dif[k] > 0) hayNuevo = true; });
+      const fecha = formatearFechaHoy();
       let avisoRanking = '';
-      if(closerCerro){
-        const cashVenta = numeroDe('metricasVentas');
-        try {
-          await escribirLecciones({ action: 'addMetricas', rol: 'closer', closer: closerCerro, fecha: formatearFechaHoy(), agendas: 0, shows: 0, noShows: 0, ventas: cashVenta, cierres: cierresN });
-          avisoRanking = ' La venta quedó cargada en el Ranking de ' + closerCerro + (cashVenta > 0 ? '.' : ' (sin cash: pusiste $0).');
-        } catch(e2) {
-          avisoRanking = ' OJO: tu reporte se guardó, pero la venta NO se cargó en el Ranking (' + e2.message + '). Avisale a Thomas.';
+      if(hayNuevo){
+        await escribirLecciones(metricasRol === 'closer'
+          ? { action: 'addMetricas', rol: 'closer', closer: nombre, fecha, agendas: dif.agendas, shows: dif.shows, noShows: dif.noShows, ventas: dif.ventas, cierres: dif.cierres }
+          : { action: 'addMetricas', rol: 'setter', setter: nombre, fecha, llamadas: dif.llamadas, agendadas: dif.agendadas, noCalifica: dif.noCalifica, noAtendieron: dif.noAtendieron, infoWhatsapp: dif.infoWhatsapp, cortaron: dif.cortaron, shows: dif.shows, cierres: dif.cierres, ventas: dif.ventas });
+        if(closerCerro && dif.cierres > 0){
+          try {
+            await escribirLecciones({ action: 'addMetricas', rol: 'closer', closer: closerCerro, fecha, agendas: 0, shows: 0, noShows: 0, ventas: dif.ventas, cierres: dif.cierres });
+            avisoRanking = ' La venta quedó cargada en el Ranking de ' + closerCerro + (dif.ventas > 0 ? '.' : ' (sin cash: pusiste $0).');
+          } catch(e2) {
+            avisoRanking = ' OJO: tu reporte se guardó, pero la venta NO se cargó en el Ranking (' + e2.message + '). Avisale a Thomas.';
+          }
         }
       }
-      statusEl.textContent = '✓ Guardado — gracias ' + nombre + '. Se ve en el Dashboard en unos minutos.' + avisoRanking;
-      const valoresSlack = {};
-      Object.entries(METRICAS_MAPA[metricasRol]).forEach(([id, k]) => { valoresSlack[k] = Number(document.getElementById(id).value) || 0; });
+      statusEl.textContent = (hayNuevo ? '✓ Guardado — gracias ' + nombre + '. Se ve en el Dashboard en unos minutos.' : '✓ Ya estaba todo guardado, ' + nombre + '.') + avisoRanking + ' Tus números siguen en pantalla: es el total del día.';
       let avisoSlack = '';
-      [...METRICAS_CAMPOS_SETTER, ...METRICAS_CAMPOS_CLOSER].forEach(id => { document.getElementById(id).value = ''; });
-      document.getElementById('metricasCloserCerro').value = ''; actualizarBloqueCloser();
-      borrarBorradorMetricas();
-      // Un solo paso: además de guardarse en el Sheet, el Worker publica los números en #setters (y borra el borrador).
+      // Un solo paso: además de guardarse en el Sheet, el Worker publica el total del día en #setters y anota lo guardado.
       try {
         const rs = await fetch(WORKER_URL + '/metricas-borrador', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nombre, vaciar: true, publicar: { rol: metricasRol, fecha: body.fecha, valores: valoresSlack, closerCerro } }) });
+          body: JSON.stringify({ v: 2, nombre, vaciar: true, publicar: { rol: metricasRol, fecha, valores: total, closerCerro } }) });
         const ds = await rs.json();
+        cargarGuardadoDe(ds);
         avisoSlack = ds && ds.slack ? ' También se envió al Slack.' : ' OJO: no se pudo enviar al Slack, avisale a Thomas.';
       } catch(e2) { avisoSlack = ' OJO: no se pudo enviar al Slack, avisale a Thomas.'; }
       statusEl.textContent += avisoSlack;
