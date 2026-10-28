@@ -1413,6 +1413,7 @@
         <button type="button" class="quick-nav-btn" data-tab="utm">Campañas (UTM)</button>
         <button type="button" class="quick-nav-btn" data-tab="webinar">Webinar</button>
         <button type="button" class="quick-nav-btn" data-tab="email">Email</button>
+        <button type="button" class="quick-nav-btn" data-tab="agentes">Agentes</button>
       </div>
 
       <!-- Cluster único de "números de arriba" — antes eran 3 bloques
@@ -1890,6 +1891,29 @@
           <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Envío</th><th>Fecha</th><th>Enviados</th><th>Entregados</th><th>Abiertos</th><th>Clics</th><th>Rebotados</th><th>Fallidos</th><th>Omitidos</th></tr></thead><tbody id="emailEnvios"></tbody></table></div>
         </div>
         <div class="chart-status" id="statusEmail" style="margin-bottom:44px;">Cargando…</div>
+      </div>
+
+      <!-- Agentes vigilantes: flujo de nodos de cada agente con el resultado de su última revisión (el Worker guarda el historial). -->
+      <div class="tab-panel" data-tab-panel="agentes">
+        <div class="section-label" id="agentes">Agentes</div>
+        <div class="chart-panel" style="margin-bottom:18px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:600;color:var(--blush);">Agente de GHL</div>
+            <div id="agGhlEstado" style="font-size:13px;color:var(--text-dim);">Cargando…</div>
+          </div>
+          <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">Revisa los 4 pipelines de leads a las 10:00 AM, 1:10 PM y 8:10 PM (hora de PR) y te manda el reporte completo por mensaje directo en Slack. Toca un nodo para ver el detalle.</div>
+          <div style="overflow-x:auto;"><div id="agGhlFlujo" style="min-width:760px;"></div></div>
+          <div id="agGhlDetalle" style="margin-top:10px;font-size:13px;color:var(--text-dim);min-height:20px;"></div>
+        </div>
+        <div class="chart-panel" style="margin-bottom:18px;">
+          <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Últimas revisiones</div>
+          <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Cuándo</th><th>Revisión</th><th>Estado</th><th>Citas vencidas</th><th>Leads sin tocar</th><th>Sin responsable</th><th>Tarjetas movidas 24 h</th></tr></thead><tbody id="agGhlHistorial"></tbody></table></div>
+        </div>
+        <div class="breakdown-grid" style="margin-bottom:44px;">
+          <div class="breakdown-card" style="opacity:.65;"><h4>Agente de Funnel</h4><div style="font-size:13px;color:var(--text-dim);">⏳ Por activar. Revisará que las páginas y el link de Stripe respondan, y que los registros del día no caigan a cero.</div></div>
+          <div class="breakdown-card" style="opacity:.65;"><h4>Agente de Skool</h4><div style="font-size:13px;color:var(--text-dim);">⏳ Por activar. Comparará las ventas con los miembros de la comunidad.</div></div>
+        </div>
+        <div class="chart-status" id="statusAgentes" style="margin-bottom:44px;"></div>
       </div>
 
       <!-- Closers: sale de la pestaña "Ranking" del Sheet (Fecha | Closer | Monto),
@@ -2645,8 +2669,102 @@
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === tab));
       if(tab === 'webinar') cargarWebinar();
       if(tab === 'email') cargarEmail();
+      if(tab === 'agentes') cargarAgentes();
     });
   });
+
+
+  // ===== Agentes: flujo de nodos del agente de GHL con el resultado de su última revisión (Worker: /agentes-estado). =====
+  let agentesTimer = null;
+  function proximaRevisionGhl(ahora){
+    // 10:00 AM PR = 14:00 UTC (lunes a sábado), 1:10 PM = 17:10 UTC y 8:10 PM = 00:10 UTC (todos los días).
+    const cand = [];
+    for(let d = 0; d < 3; d++){
+      const base = new Date(Date.UTC(new Date(ahora).getUTCFullYear(), new Date(ahora).getUTCMonth(), new Date(ahora).getUTCDate() + d));
+      [['10:00 AM', 14, 0], ['1:10 PM', 17, 10], ['8:10 PM', 0, 10]].forEach(([et, h, m]) => {
+        const t = new Date(base.getTime() + (h * 60 + m) * 60000).getTime();
+        const dow = new Date(t - 4 * 3600000).getUTCDay();
+        if(t > ahora && !(et === '10:00 AM' && dow === 0)) cand.push({ t, et });
+      });
+    }
+    cand.sort((a, b) => a.t - b.t);
+    return cand[0];
+  }
+  function haceTanto(ts){
+    const m = Math.max(0, Math.round((Date.now() - ts) / 60000));
+    if(m < 1) return 'hace un momento';
+    if(m < 60) return 'hace ' + m + ' min';
+    const h = Math.round(m / 60);
+    return h < 24 ? 'hace ' + h + ' h' : 'hace ' + Math.round(h / 24) + ' d';
+  }
+  function horaPR(ts){
+    return new Date(ts - 4 * 3600000).toLocaleString('es-AR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+  function pintarAgenteGhl(hist){
+    const flujo = document.getElementById('agGhlFlujo');
+    const estado = document.getElementById('agGhlEstado');
+    const ultima = hist.find(c => !c.error) || null;
+    const prox = proximaRevisionGhl(Date.now());
+    estado.textContent = (hist.length ? 'Última revisión ' + haceTanto(hist[0].ts) + (hist[0].error ? ' (falló)' : '') + ' · ' : 'Todavía no ha corrido · ') + 'próxima: ' + prox.et;
+    const COL = { ok: '#5fd39a', warn: '#f4b860', off: '#8a7a80' };
+    const checks = (ultima && ultima.checks) || [
+      { id: 'citas', titulo: 'Citas vencidas' }, { id: 'sinTocar', titulo: 'Leads sin tocar' }, { id: 'sinResponsable', titulo: 'Sin responsable' }, { id: 'movimiento', titulo: 'Tarjetas movidas 24 h' } ];
+    const W = 900, H = 330, nx = 150, nh = 52;
+    const caja = (x, y, w, h, color, l1, l2, id) =>
+      '<g class="ag-nodo" data-nodo="' + (id || '') + '" style="cursor:' + (id ? 'pointer' : 'default') + '"><rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="12" fill="rgba(255,255,255,0.05)" stroke="' + color + '" stroke-width="2"/>'
+      + '<circle cx="' + (x + 16) + '" cy="' + (y + h / 2) + '" r="5" fill="' + color + '"/>'
+      + '<text x="' + (x + 30) + '" y="' + (y + (l2 ? h / 2 - 3 : h / 2 + 4)) + '" fill="#f6e9ee" font-size="13" font-weight="600">' + l1 + '</text>'
+      + (l2 ? '<text x="' + (x + 30) + '" y="' + (y + h / 2 + 14) + '" fill="#cdb7be" font-size="12">' + l2 + '</text>' : '') + '</g>';
+    const linea = (x1, y1, x2, y2) => '<path d="M' + x1 + ' ' + y1 + ' C ' + (x1 + 40) + ' ' + y1 + ', ' + (x2 - 40) + ' ' + y2 + ', ' + x2 + ' ' + y2 + '" fill="none" stroke="rgba(246,233,238,0.35)" stroke-width="1.6"/>';
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Flujo del agente de GHL" style="font-family:inherit">';
+    const cy = H / 2;
+    svg += caja(10, cy - nh / 2, nx, nh, COL.ok, 'Horario', '10:00 · 1:10 · 8:10');
+    svg += caja(220, cy - nh / 2, nx, nh, COL.ok, 'Lee GHL', '4 pipelines de leads');
+    svg += linea(10 + nx, cy, 220, cy);
+    const ys = [18, 98, 178, 258];
+    checks.forEach((c, i) => {
+      const y = ys[i];
+      const color = !ultima ? COL.off : (c.ok ? COL.ok : COL.warn);
+      svg += linea(220 + nx, cy, 430, y + nh / 2);
+      svg += caja(430, y, 220, nh, color, c.titulo, ultima ? (c.cantidad + (c.ok ? ' · bien' : ' · revisar')) : 'sin datos', c.id);
+      svg += linea(430 + 220, y + nh / 2, 730, cy);
+    });
+    svg += caja(730, cy - nh / 2, 160, nh, COL.ok, 'Mensaje a Thomas', 'Slack, siempre');
+    svg += '</svg>';
+    flujo.innerHTML = svg;
+    flujo.querySelectorAll('.ag-nodo[data-nodo]').forEach(g => {
+      if(!g.dataset.nodo) return;
+      g.addEventListener('click', () => {
+        const c = checks.find(x => x.id === g.dataset.nodo);
+        const d = document.getElementById('agGhlDetalle');
+        if(!c || !ultima){ d.textContent = 'Todavía no hay una revisión para mostrar.'; return; }
+        const extra = c.detalle ? ' ' + c.detalle : '';
+        const r = ultima.resumen || {};
+        const txt = {
+          citas: c.cantidad + ' cita(s) agendada(s) hace más de 2 días siguen en "Appointment Set"; falta marcar si se presentaron. Los nombres van en el mensaje de Slack.',
+          sinTocar: c.cantidad + ' lead(s) nuevo(s) de los últimos 3 días llevan más de 24 h sin moverse. Los nombres van en el mensaje de Slack.',
+          sinResponsable: c.cantidad + ' oportunidad(es) recientes agendadas o en llamada sin responsable asignado.',
+          movimiento: c.cantidad + ' tarjeta(s) movida(s) en 24 h.' + extra + (r.oportunidades ? ' Oportunidades revisadas: ' + r.oportunidades + '.' : '')
+        }[c.id] || '';
+        d.textContent = c.titulo + ': ' + txt + ' (' + horaPR(ultima.ts) + ' hora de PR)';
+      });
+    });
+    const f = (c, id) => { const k = (c.checks || []).find(x => x.id === id); return k ? (k.ok ? '✅ ' : '⚠️ ') + k.cantidad : '–'; };
+    document.getElementById('agGhlHistorial').innerHTML = hist.length ? hist.slice(0, 12).map(c => '<tr><td style="white-space:nowrap">' + escapeHtml(horaPR(c.ts)) + '</td><td>' + escapeHtml(c.slot || '') + '</td><td>' + (c.error ? '❌ falló' : (c.checks.every(k => k.ok) ? '✅ todo bien' : '⚠️ para revisar')) + '</td><td>' + f(c, 'citas') + '</td><td>' + f(c, 'sinTocar') + '</td><td>' + f(c, 'sinResponsable') + '</td><td>' + f(c, 'movimiento') + '</td></tr>').join('')
+      : '<tr><td colspan="7" style="color:var(--text-dim)">Aún no hay revisiones guardadas. La primera sale en el próximo horario.</td></tr>';
+  }
+  async function cargarAgentes(){
+    const st = document.getElementById('statusAgentes');
+    try {
+      const r = await fetch(WORKER_URL + '/agentes-estado');
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'sin datos');
+      pintarAgenteGhl((d.ghl && d.ghl.historial) || []);
+      st.textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    } catch(e){ st.textContent = 'No se pudo leer el estado de los agentes (' + e.message + ').'; }
+    clearTimeout(agentesTimer);
+    agentesTimer = setTimeout(() => { if(document.querySelector('.tab-panel.active[data-tab-panel="agentes"]') && !document.hidden) cargarAgentes(); }, 60000);
+  }
 
   // ===== Tarjetas "espejo": una cifra que ya se calcula en otro lado
   // (ej. Cash collected) se repite en la sección que la usa. Se copia
