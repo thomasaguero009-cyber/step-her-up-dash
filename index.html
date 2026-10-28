@@ -2100,6 +2100,10 @@
             <input type="number" min="0" inputmode="numeric" id="metricasCortaron" placeholder="0" data-stepper>
           </div>
           <div class="metricas-field">
+            <label for="metricasLlamarTarde">Llamar más tarde</label>
+            <input type="number" min="0" inputmode="numeric" id="metricasLlamarTarde" placeholder="0" data-stepper>
+          </div>
+          <div class="metricas-field">
             <label for="metricasShows">Shows</label>
             <input type="number" min="0" inputmode="numeric" id="metricasShows" placeholder="0" data-stepper>
           </div>
@@ -4214,7 +4218,7 @@
   // dashboard igual que si lo hubiera cargado alguien a mano ahí. =====
   const METRICAS_NOMBRE_KEY = 'shu_metricas_nombre';
   const METRICAS_ROL_KEY = 'shu_metricas_rol';
-  const METRICAS_CAMPOS_SETTER = ['metricasLlamadas', 'metricasAgendadas', 'metricasNoCalifica', 'metricasNoAtendieron', 'metricasInfoWhatsapp', 'metricasCortaron', 'metricasShows', 'metricasCierres', 'metricasVentas'];
+  const METRICAS_CAMPOS_SETTER = ['metricasLlamadas', 'metricasAgendadas', 'metricasNoCalifica', 'metricasNoAtendieron', 'metricasInfoWhatsapp', 'metricasCortaron', 'metricasLlamarTarde', 'metricasShows', 'metricasCierres', 'metricasVentas'];
   const METRICAS_CAMPOS_CLOSER = ['metricasCAgendas', 'metricasCShows', 'metricasCNoShows', 'metricasCCash', 'metricasCCierres'];
   let metricasRol = '';
 
@@ -4314,7 +4318,7 @@
   // ===== Autoguardado: el contador se copia al Worker mientras se cuenta; a la 1:30 PM y a las 8:30 PM (hora de PR)
   // lo que no se envió con el botón se guarda solo en el Tracker y se publica en #setters. =====
   const METRICAS_MAPA = {
-    setter: { metricasLlamadas: 'llamadas', metricasAgendadas: 'agendadas', metricasNoCalifica: 'noCalifica', metricasNoAtendieron: 'noAtendieron', metricasInfoWhatsapp: 'infoWhatsapp', metricasCortaron: 'cortaron', metricasShows: 'shows', metricasCierres: 'cierres', metricasVentas: 'ventas' },
+    setter: { metricasLlamadas: 'llamadas', metricasAgendadas: 'agendadas', metricasNoCalifica: 'noCalifica', metricasNoAtendieron: 'noAtendieron', metricasInfoWhatsapp: 'infoWhatsapp', metricasCortaron: 'cortaron', metricasLlamarTarde: 'llamarMasTarde', metricasShows: 'shows', metricasCierres: 'cierres', metricasVentas: 'ventas' },
     closer: { metricasCAgendas: 'agendas', metricasCShows: 'shows', metricasCNoShows: 'noShows', metricasCCash: 'ventas', metricasCCierres: 'cierres' },
   };
   function inicioBorradorMetricas(){
@@ -4492,7 +4496,7 @@
       if(hayNuevo){
         await escribirLecciones(metricasRol === 'closer'
           ? { action: 'addMetricas', rol: 'closer', closer: nombre, fecha, agendas: dif.agendas, shows: dif.shows, noShows: dif.noShows, ventas: dif.ventas, cierres: dif.cierres }
-          : { action: 'addMetricas', rol: 'setter', setter: nombre, fecha, llamadas: dif.llamadas, agendadas: dif.agendadas, noCalifica: dif.noCalifica, noAtendieron: dif.noAtendieron, infoWhatsapp: dif.infoWhatsapp, cortaron: dif.cortaron, shows: dif.shows, cierres: dif.cierres, ventas: dif.ventas });
+          : { action: 'addMetricas', rol: 'setter', setter: nombre, fecha, llamadas: dif.llamadas, agendadas: dif.agendadas, noCalifica: dif.noCalifica, noAtendieron: dif.noAtendieron, infoWhatsapp: dif.infoWhatsapp, cortaron: dif.cortaron, llamarMasTarde: dif.llamarMasTarde, shows: dif.shows, cierres: dif.cierres, ventas: dif.ventas });
         if(closerCerro && dif.cierres > 0){
           try {
             await escribirLecciones({ action: 'addMetricas', rol: 'closer', closer: closerCerro, fecha, agendas: 0, shows: 0, noShows: 0, ventas: dif.ventas, cierres: dif.cierres });
@@ -4786,6 +4790,7 @@
         noAtendieron: idxDe('no atendieron', 'noatendieron'),
         infoWhatsapp: idxDe('info por whatsapp', 'infowhatsapp'),
         cortaron: idxDe('cortaron / colgaron', 'cortaron', 'colgaron'),
+        llamarMasTarde: idxDe('llamar más tarde', 'llamar mas tarde', 'llamarmastarde'),
         cierres: idxDe('cierres'),
         ventas: idxDe('ventas'),
       };
@@ -4807,6 +4812,7 @@
           noAtendieron: (idx.noAtendieron > -1 ? parseNumSheet(r[idx.noAtendieron]) : 0) + (idx.noRespondio > -1 ? parseNumSheet(r[idx.noRespondio]) : 0),
           infoWhatsapp: idx.infoWhatsapp > -1 ? parseNumSheet(r[idx.infoWhatsapp]) : 0,
           cortaron: idx.cortaron > -1 ? parseNumSheet(r[idx.cortaron]) : 0,
+          llamarMasTarde: idx.llamarMasTarde > -1 ? parseNumSheet(r[idx.llamarMasTarde]) : 0,
           cierres: parseNumSheet(r[idx.cierres]),
           ventas: parseNumSheet(r[idx.ventas]),
         });
@@ -4962,9 +4968,9 @@
       if(f.fecha.getFullYear() !== anio || f.fecha.getMonth() !== mes) return;
       huboDatos = true;
       const dia = f.fecha.getDate() - 1;
-      if(!seriesSetters.has(f.setter)) seriesSetters.set(f.setter, { llamadas: new Array(dias).fill(0), noCalifica: new Array(dias).fill(0), noRespondio: new Array(dias).fill(0), noAtendieron: new Array(dias).fill(0), infoWhatsapp: new Array(dias).fill(0), cortaron: new Array(dias).fill(0), agendadas: new Array(dias).fill(0), shows: new Array(dias).fill(0), cierres: new Array(dias).fill(0), ventas: new Array(dias).fill(0) });
+      if(!seriesSetters.has(f.setter)) seriesSetters.set(f.setter, { llamadas: new Array(dias).fill(0), noCalifica: new Array(dias).fill(0), noRespondio: new Array(dias).fill(0), noAtendieron: new Array(dias).fill(0), infoWhatsapp: new Array(dias).fill(0), cortaron: new Array(dias).fill(0), llamarMasTarde: new Array(dias).fill(0), agendadas: new Array(dias).fill(0), shows: new Array(dias).fill(0), cierres: new Array(dias).fill(0), ventas: new Array(dias).fill(0) });
       const ss = seriesSetters.get(f.setter);
-      ss.llamadas[dia] += f.llamadas; ss.noCalifica[dia] += f.noCalifica; ss.noRespondio[dia] += f.noRespondio; ss.noAtendieron[dia] += f.noAtendieron; ss.infoWhatsapp[dia] += f.infoWhatsapp; ss.cortaron[dia] += f.cortaron; ss.agendadas[dia] += f.agendadas; ss.shows[dia] += f.shows; ss.cierres[dia] += f.cierres; ss.ventas[dia] += f.ventas;
+      ss.llamadas[dia] += f.llamadas; ss.noCalifica[dia] += f.noCalifica; ss.noRespondio[dia] += f.noRespondio; ss.noAtendieron[dia] += f.noAtendieron; ss.infoWhatsapp[dia] += f.infoWhatsapp; ss.cortaron[dia] += f.cortaron; ss.llamarMasTarde[dia] += f.llamarMasTarde; ss.agendadas[dia] += f.agendadas; ss.shows[dia] += f.shows; ss.cierres[dia] += f.cierres; ss.ventas[dia] += f.ventas;
       llamadas[dia] += f.llamadas;
       ventas[dia] += f.ventas;
       totLlamadas += f.llamadas; totAgendadas += f.agendadas; totShows += f.shows;
@@ -4973,9 +4979,9 @@
       // Google Ads, Meta Ads, etc.) — así no hace falta un nombre exacto.
       if(/ads/i.test(f.fuente)) { totVentasAds += f.ventas; totCierresAds += f.cierres; }
 
-      if(!porSetter.has(f.setter)) porSetter.set(f.setter, { llamadas:0, noCalifica:0, noRespondio:0, noAtendieron:0, infoWhatsapp:0, cortaron:0, agendadas:0, shows:0, cierres:0, ventas:0 });
+      if(!porSetter.has(f.setter)) porSetter.set(f.setter, { llamadas:0, noCalifica:0, noRespondio:0, noAtendieron:0, infoWhatsapp:0, cortaron:0, llamarMasTarde:0, agendadas:0, shows:0, cierres:0, ventas:0 });
       const s = porSetter.get(f.setter);
-      s.llamadas += f.llamadas; s.noCalifica += f.noCalifica; s.noRespondio += f.noRespondio; s.noAtendieron += f.noAtendieron; s.infoWhatsapp += f.infoWhatsapp; s.cortaron += f.cortaron; s.agendadas += f.agendadas; s.shows += f.shows; s.cierres += f.cierres; s.ventas += f.ventas;
+      s.llamadas += f.llamadas; s.noCalifica += f.noCalifica; s.noRespondio += f.noRespondio; s.noAtendieron += f.noAtendieron; s.infoWhatsapp += f.infoWhatsapp; s.cortaron += f.cortaron; s.llamarMasTarde += f.llamarMasTarde; s.agendadas += f.agendadas; s.shows += f.shows; s.cierres += f.cierres; s.ventas += f.ventas;
 
     });
 
@@ -5154,6 +5160,7 @@
     { valor: 'noAtendieron', texto: 'No atendieron', color: '#c9b3a0' },
     { valor: 'infoWhatsapp', texto: 'Info por WhatsApp', color: '#7fd1c2' },
     { valor: 'cortaron', texto: 'Cortaron / colgaron', color: '#e6a1c9' },
+    { valor: 'llamarMasTarde', texto: 'Llamar más tarde', color: '#f4b860' },
     { valor: 'shows', texto: 'Shows', color: '#5fd39a' },
     { valor: 'cierres', texto: 'Cierres', color: '#f0c674' },
   ];
@@ -5235,7 +5242,7 @@
     if(!(tot > 0)) return '<div class="vz-barra"></div>';
     return '<div class="vz-barra">' + segmentos.filter(s => s.valor > 0).map(s => `<i title="${escapeHtml(s.titulo)}" style="width:${(s.valor / tot * 100).toFixed(2)}%;background:${s.color}"></i>`).join('') + '</div>';
   }
-  const COL_LLAMADAS = { agendadas: '#5fd39a', info: '#7fd1c2', noCalifica: '#ff9b9b', cortaron: '#e6a1c9', noAtendieron: '#c9b3a0' };
+  const COL_LLAMADAS = { agendadas: '#5fd39a', info: '#7fd1c2', noCalifica: '#ff9b9b', cortaron: '#e6a1c9', llamarMasTarde: '#f4b860', noAtendieron: '#c9b3a0' };
   const barraVentasEq = (nombre, campo) => {
     const v = equipo.ventas.filter(x => mismaPersona(x[campo], nombre)).sort((a, b) => (String(a.fecha).split('/').reverse().join('') > String(b.fecha).split('/').reverse().join('')) ? 1 : -1);
     if(!v.length) return '';
@@ -6184,7 +6191,7 @@
     asegurarDatosEquipo();
     const grid = document.getElementById('settersGrid');
     grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(290px, 1fr))';
-    const vacio = () => ({ llamadas: 0, noCalifica: 0, noRespondio: 0, noAtendieron: 0, infoWhatsapp: 0, cortaron: 0, agendadas: 0, shows: 0, cierres: 0, ventas: 0 });
+    const vacio = () => ({ llamadas: 0, noCalifica: 0, noRespondio: 0, noAtendieron: 0, infoWhatsapp: 0, cortaron: 0, llamarMasTarde: 0, agendadas: 0, shows: 0, cierres: 0, ventas: 0 });
     const todos = new Map(mapa);
     SETTERS_FIJOS.forEach(n => { if(!todos.has(n)) todos.set(n, vacio()); });
     const cashDe = (n) => { const v = equipo.ventas.filter(x => mismaPersona(x.setter, n)); return v.length ? v.reduce((a, x) => a + x.cash, 0) : (todos.get(n).ventas || 0); };
@@ -6200,7 +6207,7 @@
     grid.innerHTML = nombres.map((nombre, i) => {
       const sh = showsDePersona('agendo', nombre);
       const s = Object.assign({}, todos.get(nombre), sh || {}), color = colores[nombre], cash = cashDe(nombre);
-      const seg = [['agendadas', s.agendadas, 'Agendadas'], ['info', s.infoWhatsapp, 'Info por WhatsApp'], ['noCalifica', s.noCalifica, 'No califica'], ['cortaron', s.cortaron, 'Cortaron / colgaron'], ['noAtendieron', s.noAtendieron, 'No atendieron']];
+      const seg = [['agendadas', s.agendadas, 'Agendadas'], ['info', s.infoWhatsapp, 'Info por WhatsApp'], ['noCalifica', s.noCalifica, 'No califica'], ['cortaron', s.cortaron, 'Cortaron / colgaron'], ['llamarMasTarde', s.llamarMasTarde, 'Llamar más tarde'], ['noAtendieron', s.noAtendieron, 'No atendieron']];
       return `<div class="breakdown-card">
         <div class="eq-head"><span style="width:10px;height:10px;border-radius:50%;background:${color};"></span><h4>${escapeHtml(nombre)}</h4>${cash > 0 && i === 0 ? '<span class="eq-rank">#1 en cash</span>' : ''}</div>
         <div class="eq-cash">${usdEq(cash)}</div>
