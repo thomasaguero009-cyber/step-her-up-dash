@@ -977,6 +977,25 @@
   .utm-table .utm-sin{ color:var(--text-dim); font-style:italic; font-weight:500; }
   .utm-table .utm-top td:first-child::before{ content:"★ "; color:var(--blush-2); }
   .utm-vacio{ padding:28px 20px; color:var(--text-dim); font-size:14px; text-align:center; }
+  /* Tarjetas del equipo (setters y closers): cash arriba, embudo con conversiones y ventas de cada una. */
+  .eq-head{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .eq-head h4{ margin:0; flex:1; }
+  .eq-rank{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:3px 9px; border-radius:999px; background:rgba(240,168,190,.16); color:var(--blush); }
+  .eq-cash{ font-family:'Playfair Display',Georgia,serif; font-size:34px; font-weight:600; line-height:1.1; font-variant-numeric:tabular-nums; }
+  .eq-cash-sub{ font-size:12px; color:var(--text-dim); margin:4px 0 8px; }
+  .eq-share{ height:6px; border-radius:6px; background:rgba(255,255,255,.08); overflow:hidden; margin-bottom:16px; }
+  .eq-share i{ display:block; height:100%; border-radius:6px; }
+  .eq-flow{ display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:6px; margin-bottom:14px; }
+  .eq-step{ background:rgba(255,255,255,.05); border-radius:12px; padding:9px 6px; text-align:center; }
+  .eq-step b{ display:block; font-size:20px; font-variant-numeric:tabular-nums; }
+  .eq-step span{ display:block; font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .eq-step em{ display:block; font-style:normal; font-size:11px; color:var(--blush); margin-top:3px; min-height:14px; }
+  .eq-mini{ display:grid; grid-template-columns:1fr 1fr; gap:4px 14px; font-size:12.5px; color:var(--text-dim); margin-bottom:14px; }
+  .eq-mini div{ display:flex; justify-content:space-between; gap:8px; } .eq-mini b{ color:var(--cream); font-weight:600; font-variant-numeric:tabular-nums; }
+  .eq-ventas-t{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-dim); margin:0 0 6px; }
+  .eq-ventas{ display:flex; flex-direction:column; gap:4px; font-size:12.5px; }
+  .eq-ventas div{ display:flex; justify-content:space-between; gap:8px; border-top:1px solid rgba(255,255,255,.06); padding-top:4px; }
+  .eq-ventas span:first-child{ color:var(--text-dim); } .eq-ventas b{ font-variant-numeric:tabular-nums; }
   .breakdown-card{ background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px; }
   .breakdown-card h4{ font-family:"Playfair Display", Georgia, serif; font-size:17px; font-weight:600; margin:0 0 10px; color:var(--blush); }
   .breakdown-stat-row{
@@ -4985,6 +5004,37 @@
     const otra = metricas.find(m => tiene(m.valor));
     return otra ? otra.valor : actual;
   }
+  // ===== Tarjetas del equipo: cash, embudo y ventas de cada una. Las ventas salen de la pestaña "Ventas" del Tracker. =====
+  const acumular = (arr) => { let s = 0; return arr.map(v => (s += v || 0)); };
+  const equipo = { mes: '', ventas: [], pendiente: false };
+  const usdEq = (n) => '$' + Math.round(n || 0).toLocaleString('es-AR');
+  const pctEq = (a, b) => b > 0 && a <= b ? Math.round(a / b * 100) + '%' : '';
+  let ultimoMapaSetters = null, ultimoMapaClosers = null;
+  async function asegurarDatosEquipo(){
+    const { anio, mes } = mesElegidoAYyyyMm();
+    const clave = anio + '-' + mes;
+    if(equipo.mes === clave || equipo.pendiente) return;
+    equipo.pendiente = true;
+    try {
+      const data = JSON.parse(await fetchTextConTimeout(LECCIONES_WRITE_URL + '?action=ventasDesglose&mes=' + anio + '-' + String(mes + 1).padStart(2, '0'), 20000));
+      equipo.ventas = data.status === 'ok' ? (data.ventas || []) : [];
+      equipo.mes = clave;
+    } catch(e){ equipo.ventas = []; equipo.mes = clave; }
+    equipo.pendiente = false;
+    if(ultimoMapaSetters) renderBreakdownSetters(ultimoMapaSetters);
+    if(ultimoMapaClosers) renderBreakdownClosers(ultimoMapaClosers);
+  }
+  const mismaPersona = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+  function listaVentasEq(nombre, campo, titulo){
+    const v = equipo.ventas.filter(x => mismaPersona(x[campo], nombre));
+    if(!v.length) return '';
+    const orden = v.slice().sort((a, b) => b.cash - a.cash);
+    const top = orden.slice(0, 5);
+    return '<p class="eq-ventas-t">' + titulo + ' · ' + v.length + (v.length === 1 ? ' venta' : ' ventas') + '</p><div class="eq-ventas">'
+      + top.map(x => '<div><span>' + escapeHtml(x.clienta) + ' · ' + escapeHtml(String(x.fecha).slice(0, 5)) + '</span><b>' + usdEq(x.cash) + '</b></div>').join('')
+      + (orden.length > top.length ? '<div><span>+ ' + (orden.length - top.length) + ' más</span><b>' + usdEq(orden.slice(5).reduce((a, x) => a + x.cash, 0)) + '</b></div>' : '') + '</div>';
+  }
+  const pasoEq = (valor, etiqueta, conv, base) => '<div class="eq-step"><b>' + Number(valor).toLocaleString('es-AR') + '</b><span>' + etiqueta + '</span><em>' + (conv ? conv + ' de ' + base : '') + '</em></div>';
   function renderGraficoSetters(){
     if(!setterMetricaElegida) setterMetrica = metricaConDatos(datosSetters, METRICAS_SETTER, 'ventas');
     const m = METRICAS_SETTER.find(x => x.valor === setterMetrica);
@@ -4995,15 +5045,18 @@
     const leyenda = document.getElementById('settersLeyenda');
     const vacio = 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' cargado este mes';
     if(setterFiltro === 'Comparar'){
-      const series = nombres.map((n, i) => ({
-        nombre: n, color: colorDeSetter(n, i),
-        valores: (datosSetters.has(n) ? datosSetters.get(n)[setterMetrica] : new Array(ctxMes.dias).fill(0)).slice(0, ctxMes.diasAMostrar)
-      }));
-      leyenda.innerHTML = series.map(x => `<span><i style="background:${x.color}"></i>${escapeHtml(x.nombre)}</span>`).join('');
+      const esCash = setterMetrica === 'ventas';
+      const series = nombres.map((n, i) => {
+        const base = datosSetters.has(n) ? datosSetters.get(n)[setterMetrica] : new Array(ctxMes.dias).fill(0);
+        return { nombre: n, color: colorDeSetter(n, i), valores: (esCash ? acumular(base) : base).slice(0, ctxMes.diasAMostrar) };
+      });
+      leyenda.innerHTML = series.map(x => `<span><i style="background:${x.color}"></i>${escapeHtml(x.nombre)}</span>`).join('') + (esCash ? '<span style="opacity:.7">· cash acumulado del mes</span>' : '');
       drawMultiChart('chartSetters', 'tooltipSetters', series, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
     } else {
       leyenda.innerHTML = '';
-      const serie = sumarSeries(datosSetters, setterFiltro, setterMetrica, ctxMes.dias).slice(0, ctxMes.diasAMostrar);
+      let serie = sumarSeries(datosSetters, setterFiltro, setterMetrica, ctxMes.dias);
+      if(setterMetrica === 'ventas'){ serie = acumular(serie); leyenda.innerHTML = '<span style="opacity:.7">Cash acumulado del mes</span>'; }
+      serie = serie.slice(0, ctxMes.diasAMostrar);
       drawChart('chartSetters', 'tooltipSetters', serie, m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
     }
   }
@@ -5023,26 +5076,37 @@
     if(closerFiltro !== 'Todos' && !datosClosers.has(closerFiltro)) closerFiltro = 'Todos';
     pintarChips('closersMetrica', METRICAS_CLOSER.map(x => ({ valor: x.valor, texto: x.texto })), closerMetrica, v => { closerMetrica = v; closerMetricaElegida = true; renderGraficoClosers(); });
     pintarChips('closersFiltro', ['Todos', ...datosClosers.keys()].map(n => ({ valor: n, texto: n === 'Todos' ? 'Todos los closers' : n })), closerFiltro, v => { closerFiltro = v; renderGraficoClosers(); });
-    const serie = sumarSeries(datosClosers, closerFiltro, closerMetrica, ctxMes.dias).slice(0, ctxMes.diasAMostrar);
+    let serie = sumarSeries(datosClosers, closerFiltro, closerMetrica, ctxMes.dias);
+    if(closerMetrica === 'cash') serie = acumular(serie);
+    serie = serie.slice(0, ctxMes.diasAMostrar);
     drawChart('chartClosers', 'tooltipClosers', serie, m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio: 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' cargado este mes' });
   }
   function renderBreakdownClosers(mapa){
+    ultimoMapaClosers = mapa;
+    asegurarDatosEquipo();
     const grid = document.getElementById('closersGrid');
+    grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(290px, 1fr))';
     const suma = (arr) => arr.reduce((a, b) => a + b, 0);
-    const pct = (a, b) => b > 0 ? Math.round(a / b * 100) + '%' : '–';
     const filas = [...mapa.entries()].map(([nombre, s]) => {
-      const cash = suma(s.cash), cobros = suma(s.cobros);
-      return { nombre, cash, cobros, agendas: suma(s.agendas), shows: suma(s.shows), noShows: suma(s.noShows), cierres: suma(s.cierres) };
+      const vt = equipo.ventas.filter(x => mismaPersona(x.closer, nombre));
+      const cash = vt.length ? vt.reduce((a, x) => a + x.cash, 0) : suma(s.cash);
+      return { nombre, cash, cobros: suma(s.cobros), agendas: suma(s.agendas), shows: suma(s.shows), noShows: suma(s.noShows), cierres: suma(s.cierres) };
     }).sort((a, b) => b.cash - a.cash);
-    grid.innerHTML = filas.map(f => `<div class="breakdown-card">
-      <h4>${escapeHtml(f.nombre)}</h4>
-      <div class="breakdown-stat-row"><span class="label">Cash collected</span><span class="val">$${Math.round(f.cash).toLocaleString('es-AR')}</span></div>
-      <div class="breakdown-stat-row"><span class="label">Agendas</span><span class="val">${f.agendas.toLocaleString('es-AR')}</span></div>
-      <div class="breakdown-stat-row"><span class="label">Shows</span><span class="val">${f.shows.toLocaleString('es-AR')} (${pct(f.shows, f.agendas)})</span></div>
-      <div class="breakdown-stat-row"><span class="label">No shows</span><span class="val">${f.noShows.toLocaleString('es-AR')}</span></div>
-      <div class="breakdown-stat-row"><span class="label">Cierres</span><span class="val">${f.cierres.toLocaleString('es-AR')} (${pct(f.cierres, f.shows)})</span></div>
-      <div class="breakdown-stat-row"><span class="label">Ticket promedio</span><span class="val">${f.cierres > 0 ? '$' + Math.round(f.cash / f.cierres).toLocaleString('es-AR') : (f.cobros > 0 ? '$' + Math.round(f.cash / f.cobros).toLocaleString('es-AR') : '–')}</span></div>
-    </div>`).join('');
+    const totalCash = filas.reduce((a, f) => a + f.cash, 0);
+    grid.innerHTML = filas.map((f, i) => {
+      const share = totalCash > 0 ? f.cash / totalCash * 100 : 0;
+      const color = colorDeSetter(f.nombre, i);
+      return `<div class="breakdown-card">
+        <div class="eq-head"><span style="width:10px;height:10px;border-radius:50%;background:${color};"></span><h4>${escapeHtml(f.nombre)}</h4>${f.cash > 0 && i === 0 ? '<span class="eq-rank">#1 en cash</span>' : ''}</div>
+        <div class="eq-cash">${usdEq(f.cash)}</div>
+        <div class="eq-cash-sub">cash collected · ${share.toFixed(0)}% de lo cerrado${f.cierres > 0 ? ' · ticket ' + usdEq(f.cash / f.cierres) : ''}</div>
+        <div class="eq-share"><i style="width:${share.toFixed(1)}%;background:${color};"></i></div>
+        <div class="eq-flow">
+          ${pasoEq(f.agendas, 'Agendas', '')}${pasoEq(f.shows, 'Shows', pctEq(f.shows, f.agendas), 'agendas')}${pasoEq(f.noShows, 'No shows', '')}${pasoEq(f.cierres, 'Cierres', pctEq(f.cierres, f.shows), 'shows')}
+        </div>
+        ${listaVentasEq(f.nombre, 'closer', 'Ventas que cerró')}
+      </div>`;
+    }).join('');
   }
 
   // Leads por día — contactos nuevos de GHL (Worker: /leads-por-dia).
@@ -5853,34 +5917,36 @@
   }
 
   function renderBreakdownSetters(mapa){
+    ultimoMapaSetters = mapa;
+    asegurarDatosEquipo();
     const grid = document.getElementById('settersGrid');
+    grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(290px, 1fr))';
     const vacio = () => ({ llamadas: 0, noCalifica: 0, noRespondio: 0, noAtendieron: 0, infoWhatsapp: 0, cortaron: 0, agendadas: 0, shows: 0, cierres: 0, ventas: 0 });
     const todos = new Map(mapa);
     SETTERS_FIJOS.forEach(n => { if(!todos.has(n)) todos.set(n, vacio()); });
-    const nombres = [...todos.keys()].filter(n => !esSetterInactivo(n)).sort((a,b) => todos.get(b).ventas - todos.get(a).ventas);
-    const pct = (a, b) => b > 0 ? Math.round(a / b * 100) + '%' : '–';
+    // Cash: el de la pestaña Ventas si ya cargó (cobros reales); si no, lo que cargaron en Métricas.
+    const cashDe = (n) => { const v = equipo.ventas.filter(x => mismaPersona(x.setter, n)); return v.length ? v.reduce((a, x) => a + x.cash, 0) : (todos.get(n).ventas || 0); };
+    const nombres = [...todos.keys()].filter(n => !esSetterInactivo(n)).sort((a, b) => cashDe(b) - cashDe(a));
+    const totalCash = nombres.reduce((a, n) => a + cashDe(n), 0);
     grid.innerHTML = nombres.map((nombre, i) => {
-      const s = todos.get(nombre);
+      const s = todos.get(nombre), color = colorDeSetter(nombre, i), cash = cashDe(nombre);
+      const share = totalCash > 0 ? cash / totalCash * 100 : 0;
       return `<div class="breakdown-card">
-        <h4><span style="display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:8px; background:${colorDeSetter(nombre, i)};"></span>${escapeHtml(nombre)}</h4>
-        <div class="breakdown-stat-row"><span class="label">Llamadas</span><span class="val">${s.llamadas.toLocaleString('es-AR')}</span></div>
-        <div class="breakdown-stat-row"><span class="label">Agendadas</span><span class="val">${s.agendadas.toLocaleString('es-AR')} (${pct(s.agendadas, s.llamadas)})</span></div>
-        <div class="breakdown-stat-row"><span class="label">No califica</span><span class="val">${s.noCalifica.toLocaleString('es-AR')}</span></div>
-        <div class="breakdown-stat-row"><span class="label">No atendieron</span><span class="val">${s.noAtendieron.toLocaleString('es-AR')}</span></div>
-        <div class="breakdown-stat-row"><span class="label">Info por WhatsApp</span><span class="val">${s.infoWhatsapp.toLocaleString('es-AR')}</span></div>
-        <div class="breakdown-stat-row"><span class="label">Cortaron / colgaron</span><span class="val">${s.cortaron.toLocaleString('es-AR')}</span></div>
-        <div class="breakdown-stat-row"><span class="label">Shows</span><span class="val">${s.shows.toLocaleString('es-AR')} (${pct(s.shows, s.agendadas)})</span></div>
-        <div class="breakdown-stat-row"><span class="label">Cierres</span><span class="val">${s.cierres.toLocaleString('es-AR')} (${pct(s.cierres, s.shows)})</span></div>
-        <div class="breakdown-stat-row"><span class="label">Cash collected</span><span class="val">$${Math.round(s.ventas).toLocaleString('es-AR')}</span></div>
+        <div class="eq-head"><span style="width:10px;height:10px;border-radius:50%;background:${color};"></span><h4>${escapeHtml(nombre)}</h4>${cash > 0 && i === 0 ? '<span class="eq-rank">#1 en cash</span>' : ''}</div>
+        <div class="eq-cash">${usdEq(cash)}</div>
+        <div class="eq-cash-sub">cash collected · ${share.toFixed(0)}% del equipo</div>
+        <div class="eq-share"><i style="width:${share.toFixed(1)}%;background:${color};"></i></div>
+        <div class="eq-flow">
+          ${pasoEq(s.llamadas, 'Llamadas', '')}${pasoEq(s.agendadas, 'Agendadas', pctEq(s.agendadas, s.llamadas), 'llamadas')}${pasoEq(s.shows, 'Shows', pctEq(s.shows, s.agendadas), 'agendadas')}${pasoEq(s.cierres, 'Cierres', pctEq(s.cierres, s.shows), 'shows')}
+        </div>
+        <div class="eq-mini">
+          <div><span>No califica</span><b>${s.noCalifica.toLocaleString('es-AR')}</b></div><div><span>No atendieron</span><b>${s.noAtendieron.toLocaleString('es-AR')}</b></div>
+          <div><span>Info WhatsApp</span><b>${s.infoWhatsapp.toLocaleString('es-AR')}</b></div><div><span>Cortaron</span><b>${s.cortaron.toLocaleString('es-AR')}</b></div>
+        </div>
+        ${listaVentasEq(nombre, 'setter', 'Ventas que agendó')}
       </div>`;
     }).join('');
   }
-
-  // ===== Ranking Factor — dos gauges (semicírculo, largo real del path
-  // vía getTotalLength() en vez de un número fijo, así no depende de
-  // que el path SVG se mantenga exactamente igual) + tabla ordenada por
-  // monto acumulado del closer en el mes elegido. "Cash del día" mira
-  // la fecha de HOY siempre, sin importar qué mes esté elegido arriba. =====
   function pintarGauge(pathId, valorId, value, max){
     const path = document.getElementById(pathId);
     const total = path.getTotalLength();
