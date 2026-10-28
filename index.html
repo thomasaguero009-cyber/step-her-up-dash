@@ -4267,6 +4267,27 @@
   }
   setInterval(actualizarRelojMetricas, 1000);
 
+  // ===== Páginas abiertas durante días: cuando se publica una versión nueva, la pestaña se recarga sola (si nadie está escribiendo).
+  // Lo contado en Métricas no se pierde: se restaura del borrador y el Worker guarda el total del día. =====
+  let versionPaginaCargada = null, ultimaTeclaMs = 0;
+  document.addEventListener('input', () => { ultimaTeclaMs = Date.now(); }, true);
+  document.addEventListener('click', () => { ultimaTeclaMs = Date.now(); }, true);
+  async function versionPaginaActual(){
+    try {
+      const r = await fetch(location.pathname + '?v=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
+      return r.ok ? (r.headers.get('etag') || r.headers.get('last-modified')) : null;
+    } catch(e) { return null; }
+  }
+  async function revisarVersionPagina(){
+    const v = await versionPaginaActual();
+    if(!v) return;
+    if(versionPaginaCargada === null){ versionPaginaCargada = v; return; }
+    if(v !== versionPaginaCargada && Date.now() - ultimaTeclaMs > 15000) location.reload();
+  }
+  revisarVersionPagina();
+  setInterval(revisarVersionPagina, 300000);
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) revisarVersionPagina(); });
+
   let metricasSyncTimer = null;
   function sincronizarBorradorMetricas(){
     clearTimeout(metricasSyncTimer);
