@@ -6030,6 +6030,16 @@
   refreshDashBtn.addEventListener('click', actualizarDashboard);
   const dashboardVisible = () => dashboardScreen.classList.contains('active') && !document.hidden;
   setInterval(() => { if(dashboardVisible()) actualizarDashboard(); }, REFRESCO_AUTOMATICO_MS);
+  // GHL cada minuto: el Worker responde al instante con una copia de máximo ~30 s y la renueva por detrás, así que no pesa.
+  const REFRESCO_GHL_MS = 60 * 1000;
+  let ultimoRefrescoGhl = Date.now();
+  setInterval(() => {
+    if(!dashboardVisible() || Date.now() - ultimoRefresco < REFRESCO_GHL_MS) return;
+    ultimoRefrescoGhl = Date.now();
+    cargarYPintarGHL(true);
+    cargarYPintarLeads(true);
+    cargarYPintarFunnelPorDia(true);
+  }, REFRESCO_GHL_MS);
   // Volver a la pestaña después de un rato: refrescar en el momento, sin esperar el próximo ciclo.
   document.addEventListener('visibilitychange', () => {
     if(dashboardVisible() && Date.now() - ultimoRefresco > REFRESCO_AUTOMATICO_MS) actualizarDashboard();
