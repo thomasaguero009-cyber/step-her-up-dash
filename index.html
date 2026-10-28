@@ -5027,7 +5027,7 @@
   }
   // ===== Tarjetas del equipo: cash, embudo y ventas de cada una. Las ventas salen de la pestaña "Ventas" del Tracker. =====
   const acumular = (arr) => { let s = 0; return arr.map(v => (s += v || 0)); };
-  const equipo = { mes: '', ventas: [], pendiente: false };
+  const equipo = { mes: '', ventas: [], shows: [], pendiente: false };
   const usdEq = (n) => '$' + Math.round(n || 0).toLocaleString('es-AR');
   const pctEq = (a, b) => b > 0 && a <= b ? Math.round(a / b * 100) + '%' : '';
   let ultimoMapaSetters = null, ultimoMapaClosers = null;
@@ -5041,11 +5041,18 @@
       equipo.ventas = data.status === 'ok' ? (data.ventas || []) : [];
       equipo.mes = clave;
     } catch(e){ equipo.ventas = []; equipo.mes = clave; }
+    equipo.shows = (await leerShows(anio, mes)) || [];
     equipo.pendiente = false;
     if(ultimoMapaSetters) renderBreakdownSetters(ultimoMapaSetters);
     if(ultimoMapaClosers) renderBreakdownClosers(ultimoMapaClosers);
   }
   const mismaPersona = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+  // Shows y cierres de una persona según la pestaña "Shows" del Tracker (una sola fuente, así coinciden con los totales). null si no hay datos.
+  function showsDePersona(campo, nombre){
+    if(!equipo.shows.length) return null;
+    const m = equipo.shows.filter(x => mismaPersona(x[campo], nombre));
+    return { shows: m.length, cierres: m.filter(x => x.resultado === 'Cierre').length };
+  }
   function listaVentasEq(nombre, campo, titulo){
     const v = equipo.ventas.filter(x => mismaPersona(x[campo], nombre));
     if(!v.length) return '';
@@ -5139,7 +5146,8 @@
     const filas = [...mapa.entries()].map(([nombre, s]) => {
       const vt = equipo.ventas.filter(x => mismaPersona(x.closer, nombre));
       const cash = vt.length ? vt.reduce((a, x) => a + x.cash, 0) : suma(s.cash);
-      return { nombre, cash, agendas: suma(s.agendas), shows: suma(s.shows), noShows: suma(s.noShows), cierres: suma(s.cierres) };
+      const sh = showsDePersona('cerro', nombre);
+      return { nombre, cash, agendas: suma(s.agendas), shows: sh ? sh.shows : suma(s.shows), noShows: suma(s.noShows), cierres: sh ? sh.cierres : suma(s.cierres) };
     }).sort((a, b) => b.cash - a.cash);
     const colores = Object.fromEntries(filas.map((f, i) => [f.nombre, colorDeSetter(f.nombre, i)]));
     const totalCash = filas.reduce((a, f) => a + f.cash, 0);
@@ -5983,9 +5991,10 @@
     document.getElementById('settersVisual').innerHTML = `<div class="vz-grid">
       <div><p class="vz-titulo">Quién trae el cash</p><div class="vz-donut">${donutEq(nombres.map(n => ({ nombre: n, valor: cashDe(n), color: colores[n], texto: usdEq(cashDe(n)) })), usdEq(totalCash), 'cash del mes')}
         <div class="vz-leyenda">${nombres.map(n => `<div><i style="background:${colores[n]}"></i>${escapeHtml(n)}<b>${usdEq(cashDe(n))} · ${totalCash > 0 ? Math.round(cashDe(n) / totalCash * 100) : 0}%</b></div>`).join('')}</div></div></div>
-      <div><p class="vz-titulo">El embudo, comparado</p><div class="vz-multi">${etapas.map(([tit, k]) => minisEq(tit, nombres.map(n => ({ nombre: n, valor: todos.get(n)[k] || 0, color: colores[n] })))).join('')}</div></div></div>`;
+      <div><p class="vz-titulo">El embudo, comparado</p><div class="vz-multi">${etapas.map(([tit, k]) => minisEq(tit, nombres.map(n => ({ nombre: n, valor: (showsDePersona('agendo', n) || {})[k] ?? (todos.get(n)[k] || 0), color: colores[n] })))).join('')}</div></div></div>`;
     grid.innerHTML = nombres.map((nombre, i) => {
-      const s = todos.get(nombre), color = colores[nombre], cash = cashDe(nombre);
+      const sh = showsDePersona('agendo', nombre);
+      const s = Object.assign({}, todos.get(nombre), sh || {}), color = colores[nombre], cash = cashDe(nombre);
       const seg = [['agendadas', s.agendadas, 'Agendadas'], ['info', s.infoWhatsapp, 'Info por WhatsApp'], ['noCalifica', s.noCalifica, 'No califica'], ['cortaron', s.cortaron, 'Cortaron / colgaron'], ['noAtendieron', s.noAtendieron, 'No atendieron']];
       return `<div class="breakdown-card">
         <div class="eq-head"><span style="width:10px;height:10px;border-radius:50%;background:${color};"></span><h4>${escapeHtml(nombre)}</h4>${cash > 0 && i === 0 ? '<span class="eq-rank">#1 en cash</span>' : ''}</div>
