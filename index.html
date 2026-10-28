@@ -1673,9 +1673,10 @@
             <select id="desgloseMes" style="background:transparent;color:inherit;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font:inherit;"></select>
           </div>
           <div class="kpi-grid" id="desgloseResumen" style="margin-top:18px;margin-bottom:18px;"></div>
+          <div id="desgloseGrafico" style="margin-bottom:22px;"></div>
           <div class="utm-wrap">
             <table class="utm-table">
-              <thead><tr><th>Fecha</th><th>Clienta</th><th>Producto</th><th>Pago</th><th>Cobrado</th><th>Closer</th><th>Setter</th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Clienta</th><th>Producto</th><th>Pago</th><th>Fuente</th><th>Cobrado</th><th>Closer</th><th>Setter</th></tr></thead>
               <tbody id="desgloseBody"></tbody>
             </table>
           </div>
@@ -4420,6 +4421,51 @@
       estado.textContent = viejo ? 'El Apps Script todavía no tiene la versión nueva (falta volver a implementarlo).' : 'No se pudo leer la pestaña Ventas: ' + (err && err.message || err);
     }
   }
+  // Gráfico: una barra por vendedora; cada tramo es una venta (en orden de fecha), con el ancho proporcional a lo cobrado
+  // y el color según el producto. Al pasar el mouse o tocar un tramo salen los datos de la venta y de la lead.
+  const COLOR_PRODUCTO = { 'SHU PROGRAM': '#f0a8be', 'Step Her Up premium': '#d8b57a', 'Coaching 1:1': '#5fd39a' };
+  const colorProducto = (p) => COLOR_PRODUCTO[p] || '#b9a9b4';
+  function fechaOrden(f){ const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(f || ''); return m ? +m[3] * 10000 + +m[2] * 100 + +m[1] : 0; }
+  function pintarGraficoDesglose(ventas, sin){
+    const cont = document.getElementById('desgloseGrafico');
+    if(!cont) return;
+    if(!ventas.length){ cont.innerHTML = ''; return; }
+    const grupos = {};
+    ventas.forEach((v, i) => { const k = v.vendio || sin; (grupos[k] = grupos[k] || { total: 0, items: [] }); grupos[k].total += v.cash; grupos[k].items.push(Object.assign({ i }, v)); });
+    const nombres = Object.keys(grupos).sort((a, b) => (a === sin) - (b === sin) || grupos[b].total - grupos[a].total);
+    const max = Math.max(...nombres.map(n => grupos[n].total));
+    const productos = [...new Set(ventas.map(v => v.producto || 'Otro'))];
+    const filas = nombres.map(n => {
+      const g = grupos[n];
+      g.items.sort((a, b) => fechaOrden(a.fecha) - fechaOrden(b.fecha));
+      const tramos = g.items.map(v => {
+        const w = v.cash / max * 100;
+        return '<button type="button" class="dg-tramo" data-i="' + v.i + '" style="flex:0 0 ' + w.toFixed(2) + '%;background:' + colorProducto(v.producto) + ';" aria-label="' + escDesglose(v.clienta + ' ' + usdDesglose(v.cash)) + '">' + (w >= 9 ? usdDesglose(v.cash) : '') + '</button>';
+      }).join('');
+      return '<div class="dg-fila"><div class="dg-nombre">' + escDesglose(n) + '<span>' + usdDesglose(g.total) + ' · ' + g.items.length + (g.items.length === 1 ? ' venta' : ' ventas') + '</span></div><div class="dg-pista">' + tramos + '</div></div>';
+    }).join('');
+    const leyenda = productos.map(p => '<span class="dg-chip"><i style="background:' + colorProducto(p) + '"></i>' + escDesglose(p) + '</span>').join('');
+    cont.innerHTML = '<style>'
+      + '.dg-fila{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;margin-bottom:10px;}'
+      + '.dg-nombre{font-weight:600;font-size:14px;line-height:1.25;}.dg-nombre span{display:block;font-weight:400;font-size:12px;color:var(--text-dim);font-variant-numeric:tabular-nums;}'
+      + '.dg-pista{display:flex;height:40px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.05);}'
+      + '.dg-tramo{border:0;border-right:2px solid var(--wine-2);color:#2a0b14;font:600 11px/1 inherit;font-family:inherit;cursor:pointer;padding:0 4px;overflow:hidden;white-space:nowrap;min-width:4px;}'
+      + '.dg-tramo:last-child{border-right:0;}.dg-tramo:hover,.dg-tramo:focus-visible,.dg-tramo.on{filter:brightness(1.12);outline:2px solid var(--cream);outline-offset:-2px;}'
+      + '.dg-leyenda{display:flex;gap:16px;flex-wrap:wrap;margin:6px 0 12px;font-size:12px;color:var(--text-dim);}.dg-chip i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;}'
+      + '.dg-detalle{min-height:44px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--card);font-size:13.5px;line-height:1.45;}'
+      + '@media(max-width:640px){.dg-fila{grid-template-columns:1fr;gap:6px;}}'
+      + '</style>' + filas + '<div class="dg-leyenda">' + leyenda + '<span>Cada tramo es una venta; el ancho es lo cobrado.</span></div>'
+      + '<div class="dg-detalle" id="desgloseDetalle">Pasa el mouse o toca una venta para ver los datos de la clienta.</div>';
+    const detalle = document.getElementById('desgloseDetalle');
+    const mostrar = (b) => {
+      const v = ventas[+b.dataset.i];
+      cont.querySelectorAll('.dg-tramo.on').forEach(x => x.classList.remove('on')); b.classList.add('on');
+      detalle.innerHTML = '<strong>' + escDesglose(v.clienta) + '</strong> · ' + usdDesglose(v.cash) + ' · ' + escDesglose(v.fecha)
+        + '<br>' + escDesglose(v.producto) + ' · ' + escDesglose(v.pago) + (v.source ? ' · Fuente: ' + escDesglose(v.source) : '')
+        + '<br>Vendió: ' + escDesglose(v.setter || v.closer || sin) + (v.setter && v.closer ? ' (closer: ' + escDesglose(v.closer) + ')' : '');
+    };
+    cont.querySelectorAll('.dg-tramo').forEach(b => { b.addEventListener('mouseenter', () => mostrar(b)); b.addEventListener('focus', () => mostrar(b)); b.addEventListener('click', () => mostrar(b)); });
+  }
   function pintarDesglose(data){
     // Quién vendió: la setter/chatter que cerró el pago y, si no hay, el closer (ej. las ventas por DM de Gianie).
     const ventas = (data.ventas || []).map(v => Object.assign({ vendio: v.setter || v.closer }, v));
@@ -4437,9 +4483,10 @@
       : '';
     const celda = (v) => v ? escDesglose(v) : '<span style="color:var(--text-dim)">' + sin + '</span>';
     document.getElementById('desgloseBody').innerHTML = ventas.map(v =>
-      '<tr><td>' + escDesglose(v.fecha) + '</td><td>' + escDesglose(v.clienta) + '</td><td>' + escDesglose(v.producto) + '</td><td>' + escDesglose(v.pago) +
-      '</td><td>' + usdDesglose(v.cash) + '</td><td>' + celda(v.closer) + '</td><td>' + celda(v.setter) + '</td></tr>').join('')
-      + (ventas.length ? '<tr><td><strong>Total</strong></td><td></td><td></td><td></td><td><strong>' + usdDesglose(total) + '</strong></td><td></td><td></td></tr>' : '');
+      '<tr><td style="white-space:nowrap">' + escDesglose(v.fecha) + '</td><td>' + escDesglose(v.clienta) + '</td><td>' + escDesglose(v.producto) + '</td><td>' + escDesglose(v.pago) +
+      '</td><td>' + escDesglose(v.source) + '</td><td style="white-space:nowrap">' + usdDesglose(v.cash) + '</td><td>' + (v.closer ? escDesglose(v.closer) : '<span style="color:var(--text-dim)">—</span>') + '</td><td>' + celda(v.setter || (v.closer ? '—' : '')) + '</td></tr>').join('')
+      + (ventas.length ? '<tr><td><strong>Total</strong></td><td></td><td></td><td></td><td></td><td><strong>' + usdDesglose(total) + '</strong></td><td></td><td></td></tr>' : '');
+    pintarGraficoDesglose(ventas, sin);
     const faltan = ventas.filter(v => !v.vendio).length;
     document.getElementById('statusDesglose').textContent = !ventas.length
       ? (data.message || 'No hay cobros cargados en ese mes.')
