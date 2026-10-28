@@ -5498,6 +5498,7 @@
   // ===== Shows del mes: lee la pestaña "Shows" del Tracker. Completa a GHL (que solo cuenta lo que el equipo mueve de etapa):
   // Shows y Cierres de los KPI son el mayor entre GHL y lo cargado en esa pestaña. =====
   const showsCache = {};
+  let showsTabActual = null; // { anio, mes, filas } de la pestaña Shows del mes mostrado
   async function leerShows(anio, mes0){
     const m = anio + '-' + String(mes0 + 1).padStart(2, '0');
     const c = showsCache[m];
@@ -5593,6 +5594,8 @@
       // Shows y cierres: el mayor entre GHL y la pestaña "Shows" del Tracker (GHL solo cuenta lo que el equipo mueve de etapa).
       const showsTracker = await leerShows(anio, mes);
       if(pedido !== ghlPedidoActual) return;
+      showsTabActual = showsTracker ? { anio, mes, filas: showsTracker } : null;
+      if(funnelPorDiaDatos) renderFunnelChart();
       if(showsTracker){
         data.totales.shows = Math.max(data.totales.shows, showsTracker.length);
         data.totales.cierres = Math.max(data.totales.cierres, showsTracker.filter(s => s.resultado === 'Cierre').length);
@@ -5632,8 +5635,24 @@
       renderCampanas();
       pintarConversionFunnel();
 
-      const fuentes = Object.entries(data.porFuente).sort((a,b) => b[1].ventas - a[1].ventas);
-      grid.innerHTML = fuentes.map(([nombre, f]) => `
+      // Tarjetas por fuente: shows, cierres y cash de llamadas completados con la pestaña "Shows" del Tracker.
+      const fuentesTarjetas = JSON.parse(JSON.stringify(data.porFuente));
+      (showsTracker || []).forEach(r => {
+        const k = r.fuente || 'Sin fuente';
+        const f = fuentesTarjetas[k] || (fuentesTarjetas[k] = { llamadas: 0, agendadas: 0, shows: 0, cierres: 0, ventas: 0 });
+        f._tabShows = (f._tabShows || 0) + 1;
+        if(r.resultado === 'Cierre'){ f._tabCierres = (f._tabCierres || 0) + 1; f._tabCash = (f._tabCash || 0) + (r.cash || 0); }
+      });
+      Object.entries(fuentesTarjetas).forEach(([k, f]) => {
+        if(f._tabShows == null) return;
+        const enGhl = f.shows > 0 || k !== 'Webinar'; // en Webinar GHL cuenta ventas del webinar, no llamadas
+        f.shows = Math.max(f.shows, f._tabShows);
+        if(enGhl){ f.cierres = Math.max(f.cierres, f._tabCierres || 0); f.ventas = Math.max(f.ventas, f._tabCash || 0); }
+        else { f.cierres += f._tabCierres || 0; f.ventas += f._tabCash || 0; }
+      });
+      const pintarFuentes = (real) => {
+        const fuentes = Object.entries(fuentesTarjetas).sort((a,b) => b[1].ventas - a[1].ventas);
+        const tarjetas = fuentes.map(([nombre, f]) => `
         <div class="breakdown-card">
           <h4>${escapeHtml(nombre)}</h4>
           <div class="breakdown-stat-row"><span class="label">Llamadas</span><span class="val">${f.llamadas.toLocaleString('es-AR')}</span></div>
@@ -5641,8 +5660,18 @@
           <div class="breakdown-stat-row"><span class="label">Shows</span><span class="val">${f.shows.toLocaleString('es-AR')}</span></div>
           <div class="breakdown-stat-row"><span class="label">Cierres</span><span class="val">${f.cierres.toLocaleString('es-AR')}</span></div>
           <div class="breakdown-stat-row"><span class="label">Ventas</span><span class="val">$${Math.round(f.ventas).toLocaleString('es-AR')}</span></div>
-        </div>
-      `).join('');
+        </div>`).join('');
+        const resto = real == null ? 0 : Math.round(real - fuentes.reduce((a, [, f]) => a + f.ventas, 0));
+        const extra = resto > 0 ? `
+        <div class="breakdown-card">
+          <h4>Cobros sin fuente en GHL</h4>
+          <div class="breakdown-stat-row"><span class="label">Ventas</span><span class="val">$${resto.toLocaleString('es-AR')}</span></div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:8px;">Cuotas y ventas anteriores que no están en las oportunidades de GHL (pestaña Ventas del Tracker). Con esto las tarjetas suman el cash collected.</div>
+        </div>` : '';
+        grid.innerHTML = tarjetas + extra;
+      };
+      pintarFuentes(null);
+      cashRealDelMes(anio, mes).then(real => { if(real != null && pedido === ghlPedidoActual) pintarFuentes(real); });
 
       const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
       statusEl.textContent = 'Datos en vivo desde GHL — ' + mesElegido + ' · actualizado ' + hora;
@@ -5738,6 +5767,20 @@
         out.shows[d] += origen.shows;
         out.cierres[d] += origen.cierres;
       }
+    }
+    // Shows y cierres de la pestaña "Shows" del Tracker (GHL no los ve si el equipo no mueve la etapa): por día, el mayor entre ambos.
+    if(showsTabActual && showsTabActual.anio === ctxMes.anio && showsTabActual.mes === ctxMes.mes){
+      const sh = new Array(dias).fill(0), ci = new Array(dias).fill(0);
+      showsTabActual.filas.forEach(r => {
+        if(filtro !== 'Todas' && r.fuente !== filtro) return;
+        const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(r.fecha || '');
+        if(!m) return;
+        const d = parseInt(m[1], 10) - 1;
+        if(d < 0 || d >= dias) return;
+        sh[d]++;
+        if(r.resultado === 'Cierre') ci[d]++;
+      });
+      for(let d = 0; d < dias; d++){ out.shows[d] = Math.max(out.shows[d], sh[d]); out.cierres[d] = Math.max(out.cierres[d], ci[d]); }
     }
     // Leads = contactos nuevos (Worker: /leads-por-dia), no oportunidades —
     // no tiene pipeline de GHL asociado, así que siempre muestra el total
