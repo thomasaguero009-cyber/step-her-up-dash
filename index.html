@@ -4479,7 +4479,8 @@
     const tarjetas = (titulo, r) => '<div style="grid-column:1/-1;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);">' + titulo + '</div>'
       + r.orden.map(k => '<div class="kpi-card"><div class="kpi-label">' + escDesglose(k) + '</div><div class="kpi-value">' + usdDesglose(r.g[k].cash) + '</div><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">' + r.g[k].n + (r.g[k].n === 1 ? ' cobro' : ' cobros') + '</div></div>').join('');
     document.getElementById('desgloseResumen').innerHTML = ventas.length
-      ? tarjetas('Por vendedora', agrupar('vendio'))
+      ? tarjetas('Por vendedora (la que agendó; se lleva el cash)', agrupar('vendio'))
+        + (ventas.some(v => v.closer) ? tarjetas('Cerradas por la closer', (() => { const r = agrupar('closer'); r.orden = r.orden.filter(k => k !== sin); return r; })()) : '')
       : '';
     const celda = (v) => v ? escDesglose(v) : '<span style="color:var(--text-dim)">' + sin + '</span>';
     document.getElementById('desgloseBody').innerHTML = ventas.map(v =>
