@@ -1668,11 +1668,7 @@
         <!-- Desglose de ventas: cada cobro de la pestaña "Ventas" del Tracker con su closer y setter (solo lectura). -->
         <div class="section-label" id="ventasDesglose" style="margin-top:44px;">Quién hizo cada venta</div>
         <div class="chart-panel">
-          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-            <label for="desgloseMes" style="font-size:13px;color:var(--text-dim);">Mes</label>
-            <select id="desgloseMes" style="background:transparent;color:inherit;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font:inherit;"></select>
-          </div>
-          <div class="kpi-grid" id="desgloseResumen" style="margin-top:18px;margin-bottom:18px;"></div>
+          <div class="kpi-grid" id="desgloseResumen" style="margin-bottom:18px;"></div>
           <div id="desgloseGrafico" style="margin-bottom:22px;"></div>
           <div class="utm-wrap">
             <table class="utm-table">
@@ -4387,34 +4383,22 @@
 
   // Desglose de ventas por vendedora: lee (sin escribir) la pestaña "Ventas" del Tracker a través del mismo Apps Script.
   // Closer y Setter se llenan en esa pestaña; lo que esté vacío sale como "Sin asignar".
-  const MESES_NOMBRE = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   let desgloseCargado = 0;
   const escDesglose = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const usdDesglose = (n) => '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-  function iniciarDesglose(){
-    const sel = document.getElementById('desgloseMes');
-    if(!sel || sel.options.length) return;
-    const hoy = new Date(Date.now() - 4 * 3600 * 1000);
-    for(let i = 0; i < 6; i++){
-      const d = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() - i, 1));
-      const o = document.createElement('option');
-      o.value = d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0');
-      o.textContent = MESES_NOMBRE[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
-      sel.appendChild(o);
-    }
-    sel.addEventListener('change', () => cargarDesglose(true));
-  }
+  let desgloseMes = '';
   async function cargarDesglose(forzar){
-    const sel = document.getElementById('desgloseMes'), estado = document.getElementById('statusDesglose');
-    if(!sel || !estado) return;
-    iniciarDesglose();
-    if(!forzar && Date.now() - desgloseCargado < 60000) return;
+    const estado = document.getElementById('statusDesglose');
+    if(!estado) return;
+    const { anio, mes } = mesElegidoAYyyyMm(); // el mismo mes que se elige arriba en el dashboard
+    const m = anio + '-' + String(mes + 1).padStart(2, '0');
+    if(!forzar && m === desgloseMes && Date.now() - desgloseCargado < 60000) return;
     estado.textContent = 'Cargando desde el Tracker…';
     try {
-      const txt = await fetchTextConTimeout(LECCIONES_WRITE_URL + '?action=ventasDesglose&mes=' + encodeURIComponent(sel.value), 20000);
+      const txt = await fetchTextConTimeout(LECCIONES_WRITE_URL + '?action=ventasDesglose&mes=' + m, 20000);
       const data = JSON.parse(txt);
       if(data.status !== 'ok') throw new Error(data.message || 'Error');
-      desgloseCargado = Date.now();
+      desgloseCargado = Date.now(); desgloseMes = m;
       pintarDesglose(data);
     } catch(err){
       const viejo = /No hay|Unexpected token|ventasDesglose/.test(String(err && err.message));
@@ -4494,7 +4478,6 @@
       : (faltan ? faltan + ' de ' + ventas.length + ' cobros todavía sin vendedora: se completan en la pestaña "Ventas" del Tracker, columnas "Closer" y "Setter / Chatter". ' : '') + 'Cash collected del mes: ' + usdDesglose(total) + ' (pestaña ' + (data.hoja || '') + ' del Tracker).';
   }
   document.addEventListener('click', (e) => { if(e.target.closest && e.target.closest('[data-tab="ventas"]')) cargarDesglose(); });
-  document.addEventListener('DOMContentLoaded', () => { iniciarDesglose(); });
 
   // Metas de los gauges de cash — se editan a mano acá, no vienen del Sheet.
   const META_CASH_MES = 100000;
@@ -5422,6 +5405,7 @@
       fijarValorNumero('ghlAov', cierresTotal > 0 ? '$' + Math.round(cashTotal / cierresTotal).toLocaleString('es-AR') : '–');
       // El cash collected real sale de la pestaña "Ventas" del Tracker (cada cobro, cuotas y ventas pasadas incluidas):
       // las oportunidades de GHL guardan el monto de la venta, no lo que entró. Si el Tracker no responde, queda el de GHL.
+      cargarDesglose(!silencioso);
       cashRealDelMes(anio, mes).then(real => {
         if(real == null || pedido !== ghlPedidoActual) return;
         fijarValorNumero('ghlVentas', '$' + Math.round(real).toLocaleString('es-AR'));
