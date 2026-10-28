@@ -1711,6 +1711,20 @@
           </div>
           <div class="chart-status" id="statusLlamadas">Sin datos todavía — se va a conectar a un Google Sheet</div>
         </div>
+
+        <!-- Desglose de shows: cada llamada a la que la lead se presentó, de la pestaña "Shows" del Tracker (solo lectura). -->
+        <div class="section-label" id="llamadasShows" style="margin-top:44px;">Shows del mes</div>
+        <div class="chart-panel">
+          <div class="kpi-grid" id="showsResumen" style="margin-bottom:18px;"></div>
+          <div id="showsGrafico" style="margin-bottom:22px;"></div>
+          <div class="utm-wrap">
+            <table class="utm-table">
+              <thead><tr><th>Fecha</th><th>Lead</th><th>Agendó</th><th>Cerró</th><th>Resultado</th><th>Fuente</th><th>Cash</th></tr></thead>
+              <tbody id="showsBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="chart-status" id="statusShows" style="margin-bottom:44px;">Cargando desde el Tracker…</div>
       </div>
 
       <div class="tab-panel" data-tab-panel="matematica">
@@ -4407,6 +4421,16 @@
   }
   // Gráfico: una barra por vendedora; cada tramo es una venta (en orden de fecha), con el ancho proporcional a lo cobrado
   // y el color según el producto. Al pasar el mouse o tocar un tramo salen los datos de la venta y de la lead.
+  const DG_CSS = ''
+      + '.dg-fila{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;margin-bottom:10px;}'
+      + '.dg-nombre{font-weight:600;font-size:14px;line-height:1.25;}.dg-nombre span{display:block;font-weight:400;font-size:12px;color:var(--text-dim);font-variant-numeric:tabular-nums;}'
+      + '.dg-pista{display:flex;height:40px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.05);}'
+      + '.dg-tramo{border:0;border-right:2px solid var(--wine-2);color:#2a0b14;font:600 11px/1 inherit;font-family:inherit;cursor:pointer;padding:0 4px;overflow:hidden;white-space:nowrap;min-width:4px;}'
+      + '.dg-tramo:last-child{border-right:0;}.dg-tramo:hover,.dg-tramo:focus-visible,.dg-tramo.on{filter:brightness(1.12);outline:2px solid var(--cream);outline-offset:-2px;}'
+      + '.dg-leyenda{display:flex;gap:16px;flex-wrap:wrap;margin:6px 0 12px;font-size:12px;color:var(--text-dim);}.dg-chip i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;}'
+      + '.dg-detalle{min-height:44px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--card);font-size:13.5px;line-height:1.45;}'
+      + '@media(max-width:640px){.dg-fila{grid-template-columns:1fr;gap:6px;}}'
+      ;
   const COLOR_PRODUCTO = { 'SHU PROGRAM': '#f0a8be', 'Step Her Up premium': '#d8b57a', 'Coaching 1:1': '#5fd39a' };
   const colorProducto = (p) => COLOR_PRODUCTO[p] || '#b9a9b4';
   function fechaOrden(f){ const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(f || ''); return m ? +m[3] * 10000 + +m[2] * 100 + +m[1] : 0; }
@@ -4429,16 +4453,7 @@
       return '<div class="dg-fila"><div class="dg-nombre">' + escDesglose(n) + '<span>' + usdDesglose(g.total) + ' · ' + g.items.length + (g.items.length === 1 ? ' venta' : ' ventas') + '</span></div><div class="dg-pista">' + tramos + '</div></div>';
     }).join('');
     const leyenda = productos.map(p => '<span class="dg-chip"><i style="background:' + colorProducto(p) + '"></i>' + escDesglose(p) + '</span>').join('');
-    cont.innerHTML = '<style>'
-      + '.dg-fila{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;margin-bottom:10px;}'
-      + '.dg-nombre{font-weight:600;font-size:14px;line-height:1.25;}.dg-nombre span{display:block;font-weight:400;font-size:12px;color:var(--text-dim);font-variant-numeric:tabular-nums;}'
-      + '.dg-pista{display:flex;height:40px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,0.05);}'
-      + '.dg-tramo{border:0;border-right:2px solid var(--wine-2);color:#2a0b14;font:600 11px/1 inherit;font-family:inherit;cursor:pointer;padding:0 4px;overflow:hidden;white-space:nowrap;min-width:4px;}'
-      + '.dg-tramo:last-child{border-right:0;}.dg-tramo:hover,.dg-tramo:focus-visible,.dg-tramo.on{filter:brightness(1.12);outline:2px solid var(--cream);outline-offset:-2px;}'
-      + '.dg-leyenda{display:flex;gap:16px;flex-wrap:wrap;margin:6px 0 12px;font-size:12px;color:var(--text-dim);}.dg-chip i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;}'
-      + '.dg-detalle{min-height:44px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--card);font-size:13.5px;line-height:1.45;}'
-      + '@media(max-width:640px){.dg-fila{grid-template-columns:1fr;gap:6px;}}'
-      + '</style>' + filas + '<div class="dg-leyenda">' + leyenda + '<span>Cada tramo es una venta; el ancho es lo cobrado.</span></div>'
+    cont.innerHTML = '<style>' + DG_CSS + '</style>' + filas + '<div class="dg-leyenda">' + leyenda + '<span>Cada tramo es una venta; el ancho es lo cobrado.</span></div>'
       + '<div class="dg-detalle" id="desgloseDetalle">Pasa el mouse o toca una venta para ver los datos de la clienta.</div>';
     const detalle = document.getElementById('desgloseDetalle');
     const mostrar = (b) => {
@@ -5357,6 +5372,66 @@
     if(leads == null || !ghlTotales){ fijarValorNumero('mateConversionFunnel', '–'); return; }
     fijarValorNumero('mateConversionFunnel', leads > 0 ? (ghlTotales.cierres / leads * 100).toFixed(1) + '%' : '–');
   }
+  // ===== Shows del mes: lee la pestaña "Shows" del Tracker. Completa a GHL (que solo cuenta lo que el equipo mueve de etapa):
+  // Shows y Cierres de los KPI son el mayor entre GHL y lo cargado en esa pestaña. =====
+  const showsCache = {};
+  async function leerShows(anio, mes0){
+    const m = anio + '-' + String(mes0 + 1).padStart(2, '0');
+    const c = showsCache[m];
+    if(c && Date.now() - c.t < 60000) return c.d;
+    try {
+      const data = JSON.parse(await fetchTextConTimeout(LECCIONES_WRITE_URL + '?action=showsDesglose&mes=' + m, 20000));
+      if(data.status !== 'ok' || !data.hoja) throw new Error(data.message || 'sin pestaña');
+      showsCache[m] = { t: Date.now(), d: data.shows || [] };
+      return showsCache[m].d;
+    } catch(e){
+      const st = document.getElementById('statusShows');
+      if(st) st.textContent = /Unexpected token|ventasDesglose|showsDesglose|sin pestaña/.test(String(e && e.message)) ? 'El Apps Script todavía no tiene la versión nueva (falta volver a implementarlo).' : 'No se pudo leer la pestaña Shows.';
+      return null;
+    }
+  }
+  const COLOR_RESULTADO = { 'Cierre': '#5fd39a', 'Seguimiento': '#d8b57a', 'No cierra': '#b9a9b4' };
+  function pintarShows(shows){
+    const cont = document.getElementById('showsGrafico');
+    if(!cont) return;
+    const sin = 'Sin asignar';
+    const cierres = shows.filter(s => s.resultado === 'Cierre');
+    const cash = cierres.reduce((a, s) => a + (s.cash || 0), 0);
+    const grupos = {};
+    shows.forEach((s, i) => { const k = s.cerro || sin; (grupos[k] = grupos[k] || []).push(Object.assign({ i }, s)); });
+    const nombres = Object.keys(grupos).sort((a, b) => (a === sin) - (b === sin) || grupos[b].length - grupos[a].length);
+    const tarjeta = (titulo, valor, sub) => '<div class="kpi-card"><div class="kpi-label">' + titulo + '</div><div class="kpi-value">' + valor + '</div><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">' + sub + '</div></div>';
+    document.getElementById('showsResumen').innerHTML = shows.length
+      ? tarjeta('Shows del mes', shows.length, cierres.length + (cierres.length === 1 ? ' cierre' : ' cierres') + ' · ' + usdDesglose(cash))
+        + nombres.map(n => { const g = grupos[n]; const c = g.filter(s => s.resultado === 'Cierre'); return tarjeta(escDesglose(n), g.length + (g.length === 1 ? ' show' : ' shows'), c.length + (c.length === 1 ? ' cierre' : ' cierres') + ' · ' + usdDesglose(c.reduce((a, s) => a + (s.cash || 0), 0))); }).join('')
+      : '';
+    if(!shows.length){ cont.innerHTML = ''; document.getElementById('showsBody').innerHTML = ''; document.getElementById('statusShows').textContent = 'No hay shows cargados en ese mes (pestaña "Shows" del Tracker).'; return; }
+    const maxN = Math.max(...nombres.map(n => grupos[n].length));
+    const filas = nombres.map(n => {
+      const tramos = grupos[n].map(s => '<button type="button" class="dg-tramo" data-i="' + s.i + '" style="flex:0 0 ' + (100 / maxN).toFixed(2) + '%;background:' + (COLOR_RESULTADO[s.resultado] || '#b9a9b4') + ';" aria-label="' + escDesglose(s.lead) + '">' + (100 / maxN >= 14 ? escDesglose(s.lead.split(' ')[0]) : '') + '</button>').join('');
+      return '<div class="dg-fila"><div class="dg-nombre">' + escDesglose(n) + '<span>' + grupos[n].length + (grupos[n].length === 1 ? ' show' : ' shows') + '</span></div><div class="dg-pista">' + tramos + '</div></div>';
+    }).join('');
+    const leyenda = Object.keys(COLOR_RESULTADO).map(r => '<span class="dg-chip"><i style="background:' + COLOR_RESULTADO[r] + '"></i>' + r + '</span>').join('');
+    cont.innerHTML = '<style>' + DG_CSS + '</style>' + filas + '<div class="dg-leyenda">' + leyenda + '<span>Cada tramo es un show; las filas son quien atendió la llamada.</span></div><div class="dg-detalle" id="showsDetalle">Pasa el mouse o toca un show para ver los datos de la lead.</div>';
+    const det = document.getElementById('showsDetalle');
+    const mostrar = (b) => {
+      const s = shows[+b.dataset.i];
+      cont.querySelectorAll('.dg-tramo.on').forEach(x => x.classList.remove('on')); b.classList.add('on');
+      det.innerHTML = '<strong>' + escDesglose(s.lead) + '</strong> · ' + escDesglose(s.fecha) + ' · ' + escDesglose(s.resultado) + (s.cash ? ' · ' + usdDesglose(s.cash) : '')
+        + '<br>Agendó: ' + escDesglose(s.agendo || sin) + ' · Cerró: ' + escDesglose(s.cerro || sin) + (s.fuente ? '<br>Fuente: ' + escDesglose(s.fuente) : '');
+    };
+    cont.querySelectorAll('.dg-tramo').forEach(b => { b.addEventListener('mouseenter', () => mostrar(b)); b.addEventListener('focus', () => mostrar(b)); b.addEventListener('click', () => mostrar(b)); });
+    const dim = (v) => v ? escDesglose(v) : '<span style="color:var(--text-dim)">' + sin + '</span>';
+    document.getElementById('showsBody').innerHTML = shows.map(s => '<tr><td style="white-space:nowrap">' + escDesglose(s.fecha) + '</td><td>' + escDesglose(s.lead) + '</td><td>' + dim(s.agendo) + '</td><td>' + dim(s.cerro) + '</td><td>' + escDesglose(s.resultado) + '</td><td>' + escDesglose(s.fuente) + '</td><td style="white-space:nowrap">' + (s.cash ? usdDesglose(s.cash) : '—') + '</td></tr>').join('');
+    document.getElementById('statusShows').textContent = shows.length + (shows.length === 1 ? ' show' : ' shows') + ' en el mes, ' + cierres.length + (cierres.length === 1 ? ' cierre' : ' cierres') + '. Se completa en la pestaña "Shows" del Tracker (columnas Agendó, Cerró y Resultado).';
+  }
+  async function cargarShowsTab(){
+    const { anio, mes } = mesElegidoAYyyyMm();
+    const s = await leerShows(anio, mes);
+    if(s) pintarShows(s);
+  }
+  document.addEventListener('click', (e) => { if(e.target.closest && e.target.closest('[data-tab="llamadas"]')) cargarShowsTab(); });
+
   // Cash collected del mes según la pestaña "Ventas" del Tracker (null si no se pudo leer).
   async function cashRealDelMes(anio, mes0){
     try {
@@ -5392,6 +5467,14 @@
       // respuesta ya es vieja: no pisar lo que se ve.
       if(pedido !== ghlPedidoActual) return;
 
+      // Shows y cierres: el mayor entre GHL y la pestaña "Shows" del Tracker (GHL solo cuenta lo que el equipo mueve de etapa).
+      const showsTracker = await leerShows(anio, mes);
+      if(pedido !== ghlPedidoActual) return;
+      if(showsTracker){
+        data.totales.shows = Math.max(data.totales.shows, showsTracker.length);
+        data.totales.cierres = Math.max(data.totales.cierres, showsTracker.filter(s => s.resultado === 'Cierre').length);
+        pintarShows(showsTracker);
+      }
       fijarValorNumero('ghlLlamadas', data.totales.llamadas.toLocaleString('es-AR'));
       fijarValorNumero('ghlAgendadas', data.totales.agendadas.toLocaleString('es-AR'));
       fijarValorNumero('ghlShows', data.totales.shows.toLocaleString('es-AR'));
