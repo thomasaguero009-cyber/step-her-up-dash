@@ -5325,6 +5325,15 @@
     if(leads == null || !ghlTotales){ fijarValorNumero('mateConversionFunnel', '–'); return; }
     fijarValorNumero('mateConversionFunnel', leads > 0 ? (ghlTotales.cierres / leads * 100).toFixed(1) + '%' : '–');
   }
+  // Cash collected del mes según la pestaña "Ventas" del Tracker (null si no se pudo leer).
+  async function cashRealDelMes(anio, mes0){
+    try {
+      const m = anio + '-' + String(mes0 + 1).padStart(2, '0');
+      const data = JSON.parse(await fetchTextConTimeout(LECCIONES_WRITE_URL + '?action=ventasDesglose&mes=' + m, 20000));
+      if(data.status !== 'ok' || !data.hoja) return null;
+      return (data.ventas || []).reduce((a, v) => a + (v.cash || 0), 0);
+    } catch(e){ return null; }
+  }
   async function cargarYPintarGHL(silencioso = false){
     const pedido = ++ghlPedidoActual;
     const { anio, mes } = mesElegidoAYyyyMm();
@@ -5362,6 +5371,14 @@
       fijarValorNumero('ghlVentas', '$' + Math.round(cashTotal).toLocaleString('es-AR'));
       // AOV = cash collected ÷ cierres (llamadas + webinar).
       fijarValorNumero('ghlAov', cierresTotal > 0 ? '$' + Math.round(cashTotal / cierresTotal).toLocaleString('es-AR') : '–');
+      // El cash collected real sale de la pestaña "Ventas" del Tracker (cada cobro, cuotas y ventas pasadas incluidas):
+      // las oportunidades de GHL guardan el monto de la venta, no lo que entró. Si el Tracker no responde, queda el de GHL.
+      cashRealDelMes(anio, mes).then(real => {
+        if(real == null || pedido !== ghlPedidoActual) return;
+        fijarValorNumero('ghlVentas', '$' + Math.round(real).toLocaleString('es-AR'));
+        const el = document.getElementById('ghlVentas');
+        if(el) el.title = 'Suma de la pestaña Ventas del Tracker (incluye cuotas y cobros de ventas anteriores). GHL marcaba $' + Math.round(cashTotal).toLocaleString('es-AR') + '.';
+      });
 
       // Las 4 tasas se calculan con estos MISMOS totales de GHL (no el
       // Sheet manual) para que coincidan con las 5 tarjetas de arriba —
