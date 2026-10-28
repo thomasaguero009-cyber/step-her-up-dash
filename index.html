@@ -5147,7 +5147,8 @@
       const vt = equipo.ventas.filter(x => mismaPersona(x.closer, nombre));
       const cash = vt.length ? vt.reduce((a, x) => a + x.cash, 0) : suma(s.cash);
       const sh = showsDePersona('cerro', nombre);
-      return { nombre, cash, agendas: suma(s.agendas), shows: sh ? sh.shows : suma(s.shows), noShows: suma(s.noShows), cierres: sh ? sh.cierres : suma(s.cierres) };
+      // Cierres de una closer = ventas que cerró según la pestaña Ventas (incluye las del webinar); si no hay, la pestaña Shows o Métricas.
+      return { nombre, cash, agendas: suma(s.agendas), shows: sh ? sh.shows : suma(s.shows), noShows: suma(s.noShows), cierres: vt.length ? vt.length : (sh ? sh.cierres : suma(s.cierres)) };
     }).sort((a, b) => b.cash - a.cash);
     const colores = Object.fromEntries(filas.map((f, i) => [f.nombre, colorDeSetter(f.nombre, i)]));
     const totalCash = filas.reduce((a, f) => a + f.cash, 0);
