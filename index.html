@@ -1664,6 +1664,23 @@
             <div class="kpi-value" id="mateRevenueShow">–</div>
           </div>
         </div>
+
+        <!-- Desglose de ventas: cada cobro de la pestaña "Ventas" del Tracker con su closer y setter (solo lectura). -->
+        <div class="section-label" id="ventasDesglose" style="margin-top:44px;">Quién hizo cada venta</div>
+        <div class="chart-panel">
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <label for="desgloseMes" style="font-size:13px;color:var(--text-dim);">Mes</label>
+            <select id="desgloseMes" style="background:transparent;color:inherit;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font:inherit;"></select>
+          </div>
+          <div class="kpi-grid" id="desgloseResumen" style="margin-top:18px;margin-bottom:18px;"></div>
+          <div class="utm-wrap">
+            <table class="utm-table">
+              <thead><tr><th>Fecha</th><th>Clienta</th><th>Producto</th><th>Pago</th><th>Cobrado</th><th>Closer</th><th>Setter</th></tr></thead>
+              <tbody id="desgloseBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="chart-status" id="statusDesglose" style="margin-bottom:44px;">Cargando desde el Tracker…</div>
       </div>
 
       <div class="tab-panel" data-tab-panel="llamadas">
@@ -4366,6 +4383,69 @@
     if(!data || data.status !== 'ok') throw new Error((data && data.message) || 'Error al guardar');
     return data;
   }
+
+  // Desglose de ventas por vendedora: lee (sin escribir) la pestaña "Ventas" del Tracker a través del mismo Apps Script.
+  // Closer y Setter se llenan en esa pestaña; lo que esté vacío sale como "Sin asignar".
+  const MESES_NOMBRE = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  let desgloseCargado = 0;
+  const escDesglose = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const usdDesglose = (n) => '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  function iniciarDesglose(){
+    const sel = document.getElementById('desgloseMes');
+    if(!sel || sel.options.length) return;
+    const hoy = new Date(Date.now() - 4 * 3600 * 1000);
+    for(let i = 0; i < 6; i++){
+      const d = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() - i, 1));
+      const o = document.createElement('option');
+      o.value = d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0');
+      o.textContent = MESES_NOMBRE[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+      sel.appendChild(o);
+    }
+    sel.addEventListener('change', () => cargarDesglose(true));
+  }
+  async function cargarDesglose(forzar){
+    const sel = document.getElementById('desgloseMes'), estado = document.getElementById('statusDesglose');
+    if(!sel || !estado) return;
+    iniciarDesglose();
+    if(!forzar && Date.now() - desgloseCargado < 60000) return;
+    estado.textContent = 'Cargando desde el Tracker…';
+    try {
+      const txt = await fetchTextConTimeout(LECCIONES_WRITE_URL + '?action=ventasDesglose&mes=' + encodeURIComponent(sel.value), 20000);
+      const data = JSON.parse(txt);
+      if(data.status !== 'ok') throw new Error(data.message || 'Error');
+      desgloseCargado = Date.now();
+      pintarDesglose(data);
+    } catch(err){
+      const viejo = /No hay|Unexpected token|ventasDesglose/.test(String(err && err.message));
+      estado.textContent = viejo ? 'El Apps Script todavía no tiene la versión nueva (falta volver a implementarlo).' : 'No se pudo leer la pestaña Ventas: ' + (err && err.message || err);
+    }
+  }
+  function pintarDesglose(data){
+    const ventas = data.ventas || [];
+    const sin = 'Sin asignar';
+    const agrupar = (campo) => {
+      const g = {};
+      ventas.forEach(v => { const k = v[campo] || sin; (g[k] = g[k] || { cash: 0, n: 0 }); g[k].cash += v.cash; g[k].n++; });
+      return { g, orden: Object.keys(g).sort((a, b) => (a === sin) - (b === sin) || g[b].cash - g[a].cash) };
+    };
+    const total = ventas.reduce((a, v) => a + v.cash, 0);
+    const tarjetas = (titulo, r) => '<div style="grid-column:1/-1;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);">' + titulo + '</div>'
+      + r.orden.map(k => '<div class="kpi-card"><div class="kpi-label">' + escDesglose(k) + '</div><div class="kpi-value">' + usdDesglose(r.g[k].cash) + '</div><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">' + r.g[k].n + (r.g[k].n === 1 ? ' cobro' : ' cobros') + '</div></div>').join('');
+    document.getElementById('desgloseResumen').innerHTML = ventas.length
+      ? tarjetas('Por closer', agrupar('closer')) + tarjetas('Por setter', agrupar('setter'))
+      : '';
+    const celda = (v) => v ? escDesglose(v) : '<span style="color:var(--text-dim)">' + sin + '</span>';
+    document.getElementById('desgloseBody').innerHTML = ventas.map(v =>
+      '<tr><td>' + escDesglose(v.fecha) + '</td><td>' + escDesglose(v.clienta) + '</td><td>' + escDesglose(v.producto) + '</td><td>' + escDesglose(v.pago) +
+      '</td><td>' + usdDesglose(v.cash) + '</td><td>' + celda(v.closer) + '</td><td>' + celda(v.setter) + '</td></tr>').join('')
+      + (ventas.length ? '<tr><td><strong>Total</strong></td><td></td><td></td><td></td><td><strong>' + usdDesglose(total) + '</strong></td><td></td><td></td></tr>' : '');
+    const faltan = ventas.filter(v => !v.closer).length;
+    document.getElementById('statusDesglose').textContent = !ventas.length
+      ? (data.message || 'No hay cobros cargados en ese mes.')
+      : (faltan ? faltan + ' de ' + ventas.length + ' cobros todavía sin closer: se completan en la pestaña "Ventas" del Tracker, columnas "Closer" y "Setter / Chatter". ' : '') + 'Cash collected del mes: ' + usdDesglose(total) + ' (pestaña ' + (data.hoja || '') + ' del Tracker).';
+  }
+  document.addEventListener('click', (e) => { if(e.target.closest && e.target.closest('[data-tab="ventas"]')) cargarDesglose(); });
+  document.addEventListener('DOMContentLoaded', () => { iniciarDesglose(); });
 
   // Metas de los gauges de cash — se editan a mano acá, no vienen del Sheet.
   const META_CASH_MES = 100000;
