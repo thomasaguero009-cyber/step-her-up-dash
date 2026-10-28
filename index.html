@@ -4421,7 +4421,8 @@
     }
   }
   function pintarDesglose(data){
-    const ventas = data.ventas || [];
+    // Quién vendió: la setter/chatter que cerró el pago y, si no hay, el closer (ej. las ventas por DM de Gianie).
+    const ventas = (data.ventas || []).map(v => Object.assign({ vendio: v.setter || v.closer }, v));
     const sin = 'Sin asignar';
     const agrupar = (campo) => {
       const g = {};
@@ -4432,17 +4433,17 @@
     const tarjetas = (titulo, r) => '<div style="grid-column:1/-1;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);">' + titulo + '</div>'
       + r.orden.map(k => '<div class="kpi-card"><div class="kpi-label">' + escDesglose(k) + '</div><div class="kpi-value">' + usdDesglose(r.g[k].cash) + '</div><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">' + r.g[k].n + (r.g[k].n === 1 ? ' cobro' : ' cobros') + '</div></div>').join('');
     document.getElementById('desgloseResumen').innerHTML = ventas.length
-      ? tarjetas('Por closer', agrupar('closer')) + tarjetas('Por setter', agrupar('setter'))
+      ? tarjetas('Por vendedora', agrupar('vendio'))
       : '';
     const celda = (v) => v ? escDesglose(v) : '<span style="color:var(--text-dim)">' + sin + '</span>';
     document.getElementById('desgloseBody').innerHTML = ventas.map(v =>
       '<tr><td>' + escDesglose(v.fecha) + '</td><td>' + escDesglose(v.clienta) + '</td><td>' + escDesglose(v.producto) + '</td><td>' + escDesglose(v.pago) +
       '</td><td>' + usdDesglose(v.cash) + '</td><td>' + celda(v.closer) + '</td><td>' + celda(v.setter) + '</td></tr>').join('')
       + (ventas.length ? '<tr><td><strong>Total</strong></td><td></td><td></td><td></td><td><strong>' + usdDesglose(total) + '</strong></td><td></td><td></td></tr>' : '');
-    const faltan = ventas.filter(v => !v.closer).length;
+    const faltan = ventas.filter(v => !v.vendio).length;
     document.getElementById('statusDesglose').textContent = !ventas.length
       ? (data.message || 'No hay cobros cargados en ese mes.')
-      : (faltan ? faltan + ' de ' + ventas.length + ' cobros todavía sin closer: se completan en la pestaña "Ventas" del Tracker, columnas "Closer" y "Setter / Chatter". ' : '') + 'Cash collected del mes: ' + usdDesglose(total) + ' (pestaña ' + (data.hoja || '') + ' del Tracker).';
+      : (faltan ? faltan + ' de ' + ventas.length + ' cobros todavía sin vendedora: se completan en la pestaña "Ventas" del Tracker, columnas "Closer" y "Setter / Chatter". ' : '') + 'Cash collected del mes: ' + usdDesglose(total) + ' (pestaña ' + (data.hoja || '') + ' del Tracker).';
   }
   document.addEventListener('click', (e) => { if(e.target.closest && e.target.closest('[data-tab="ventas"]')) cargarDesglose(); });
   document.addEventListener('DOMContentLoaded', () => { iniciarDesglose(); });
