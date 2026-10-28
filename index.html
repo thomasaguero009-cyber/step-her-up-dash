@@ -978,6 +978,25 @@
   .utm-table .utm-top td:first-child::before{ content:"★ "; color:var(--blush-2); }
   .utm-vacio{ padding:28px 20px; color:var(--text-dim); font-size:14px; text-align:center; }
   /* Tarjetas del equipo (setters y closers): cash arriba, embudo con conversiones y ventas de cada una. */
+  .vz-grid{ display:grid; grid-template-columns:minmax(230px,300px) 1fr; gap:26px; align-items:start; }
+  @media(max-width:760px){ .vz-grid{ grid-template-columns:1fr; } }
+  .vz-titulo{ font-family:'Playfair Display',Georgia,serif; font-size:17px; font-weight:600; color:var(--blush); margin:0 0 12px; }
+  .vz-donut{ display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .vz-leyenda{ display:flex; flex-direction:column; gap:6px; font-size:13px; width:100%; }
+  .vz-leyenda div{ display:flex; align-items:center; gap:8px; } .vz-leyenda i{ width:10px; height:10px; border-radius:3px; flex:none; } .vz-leyenda b{ margin-left:auto; font-variant-numeric:tabular-nums; }
+  .vz-multi{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; }
+  .vz-mini{ background:rgba(255,255,255,.04); border-radius:14px; padding:12px 12px 10px; }
+  .vz-mini h5{ margin:0 0 8px; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); }
+  .vz-cols{ display:flex; align-items:flex-end; gap:10px; height:120px; }
+  .vz-col{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%; gap:4px; font-size:12px; font-variant-numeric:tabular-nums; }
+  .vz-col i{ display:block; width:100%; border-radius:6px 6px 2px 2px; min-height:3px; }
+  .vz-nom{ display:flex; gap:10px; margin-top:6px; font-size:11px; color:var(--text-dim); } .vz-nom span{ flex:1; text-align:center; overflow:hidden; text-overflow:ellipsis; }
+  .vz-gauges{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:12px 0; text-align:center; }
+  .vz-gauges small{ display:block; font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .vz-barra{ display:flex; height:16px; border-radius:8px; overflow:hidden; background:rgba(255,255,255,.06); }
+  .vz-barra i{ display:block; height:100%; border-right:2px solid var(--wine-2); } .vz-barra i:last-child{ border-right:0; }
+  .vz-cap{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); margin:12px 0 6px; display:flex; justify-content:space-between; gap:8px; }
+  .vz-cap span:last-child{ text-transform:none; letter-spacing:0; }
   .eq-head{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
   .eq-head h4{ margin:0; flex:1; }
   .eq-rank{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; padding:3px 9px; border-radius:999px; background:rgba(240,168,190,.16); color:var(--blush); }
@@ -1811,6 +1830,7 @@
             <div class="chart-tooltip" id="tooltipSetters"></div>
           </div>
         </div>
+        <div class="chart-panel" id="settersVisual" style="margin-bottom:18px;"></div>
         <div class="breakdown-grid" id="settersGrid"></div>
         <div class="chart-status" id="statusSetters" style="margin-bottom:44px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
       </div>
@@ -1884,6 +1904,7 @@
             <div class="chart-tooltip" id="tooltipClosers"></div>
           </div>
         </div>
+        <div class="chart-panel" id="closersVisual" style="margin-bottom:18px;"></div>
         <div class="breakdown-grid" id="closersGrid"></div>
         <div class="chart-status" id="statusClosers" style="margin-bottom:44px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
       </div>
@@ -5034,6 +5055,34 @@
       + top.map(x => '<div><span>' + escapeHtml(x.clienta) + ' · ' + escapeHtml(String(x.fecha).slice(0, 5)) + '</span><b>' + usdEq(x.cash) + '</b></div>').join('')
       + (orden.length > top.length ? '<div><span>+ ' + (orden.length - top.length) + ' más</span><b>' + usdEq(orden.slice(5).reduce((a, x) => a + x.cash, 0)) + '</b></div>' : '') + '</div>';
   }
+  // --- Gráficos del equipo (SVG/HTML, sin librerías) ---
+  function donutEq(items, centro, subcentro){
+    const R = 52, C = 2 * Math.PI * R, tot = items.reduce((a, x) => a + x.valor, 0);
+    let acc = 0;
+    const arcos = tot > 0 ? items.filter(x => x.valor > 0).map(x => { const l = x.valor / tot * C; const s = `<circle cx="70" cy="70" r="${R}" fill="none" stroke="${x.color}" stroke-width="18" stroke-dasharray="${(l - 2).toFixed(2)} ${(C - l + 2).toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}" transform="rotate(-90 70 70)"><title>${escapeHtml(x.nombre)}: ${escapeHtml(x.texto)}</title></circle>`; acc += l; return s; }).join('') : '';
+    return `<svg viewBox="0 0 140 140" width="170" height="170"><circle cx="70" cy="70" r="${R}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="18"/>${arcos}<text x="70" y="68" text-anchor="middle" fill="#f7ece9" font-size="19" font-weight="700" font-family="Inter,system-ui">${escapeHtml(centro)}</text><text x="70" y="86" text-anchor="middle" fill="rgba(247,236,233,.65)" font-size="10" font-family="Inter,system-ui">${escapeHtml(subcentro)}</text></svg>`;
+  }
+  function anilloEq(pct, color, etiqueta){
+    const R = 22, C = 2 * Math.PI * R, ok = pct != null;
+    const l = ok ? Math.min(100, Math.max(pct, pct > 0 ? 2 : 0)) / 100 * C : 0;
+    return `<div><svg viewBox="0 0 56 56" width="62" height="62"><circle cx="28" cy="28" r="${R}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="6"/>${ok ? `<circle cx="28" cy="28" r="${R}" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${l.toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 28 28)"/>` : ''}<text x="28" y="32" text-anchor="middle" fill="#f7ece9" font-size="12" font-weight="700" font-family="Inter,system-ui">${ok ? (pct < 10 && pct > 0 ? pct.toFixed(1) : Math.round(pct)) + '%' : '–'}</text></svg><small>${etiqueta}</small></div>`;
+  }
+  const tasaEq = (a, b) => b > 0 && a <= b ? a / b * 100 : null;
+  function minisEq(titulo, items){
+    const max = Math.max(1, ...items.map(x => x.valor));
+    return `<div class="vz-mini"><h5>${titulo}</h5><div class="vz-cols">${items.map(x => `<div class="vz-col" title="${escapeHtml(x.nombre)}: ${x.valor.toLocaleString('es-AR')}"><span>${x.valor.toLocaleString('es-AR')}</span><i style="height:${Math.max(3, x.valor / max * 92).toFixed(0)}%;background:${x.color}"></i></div>`).join('')}</div><div class="vz-nom">${items.map(x => `<span>${escapeHtml(x.nombre)}</span>`).join('')}</div></div>`;
+  }
+  function barraApilada(segmentos){
+    const tot = segmentos.reduce((a, s) => a + s.valor, 0);
+    if(!(tot > 0)) return '<div class="vz-barra"></div>';
+    return '<div class="vz-barra">' + segmentos.filter(s => s.valor > 0).map(s => `<i title="${escapeHtml(s.titulo)}" style="width:${(s.valor / tot * 100).toFixed(2)}%;background:${s.color}"></i>`).join('') + '</div>';
+  }
+  const COL_LLAMADAS = { agendadas: '#5fd39a', info: '#7fd1c2', noCalifica: '#ff9b9b', cortaron: '#e6a1c9', noAtendieron: '#c9b3a0' };
+  const barraVentasEq = (nombre, campo) => {
+    const v = equipo.ventas.filter(x => mismaPersona(x[campo], nombre)).sort((a, b) => (String(a.fecha).split('/').reverse().join('') > String(b.fecha).split('/').reverse().join('')) ? 1 : -1);
+    if(!v.length) return '';
+    return `<div class="vz-cap"><span>Ventas (cada tramo, una venta)</span><span>${v.length} · ${usdEq(v.reduce((a, x) => a + x.cash, 0))}</span></div>` + barraApilada(v.map(x => ({ valor: x.cash, color: colorProducto(x.producto), titulo: `${x.clienta} · ${x.fecha} · ${x.producto} · ${usdEq(x.cash)}` })));
+  };
   const pasoEq = (valor, etiqueta, conv, base) => '<div class="eq-step"><b>' + Number(valor).toLocaleString('es-AR') + '</b><span>' + etiqueta + '</span><em>' + (conv ? conv + ' de ' + base : '') + '</em></div>';
   function renderGraficoSetters(){
     if(!setterMetricaElegida) setterMetrica = metricaConDatos(datosSetters, METRICAS_SETTER, 'ventas');
@@ -5090,21 +5139,22 @@
     const filas = [...mapa.entries()].map(([nombre, s]) => {
       const vt = equipo.ventas.filter(x => mismaPersona(x.closer, nombre));
       const cash = vt.length ? vt.reduce((a, x) => a + x.cash, 0) : suma(s.cash);
-      return { nombre, cash, cobros: suma(s.cobros), agendas: suma(s.agendas), shows: suma(s.shows), noShows: suma(s.noShows), cierres: suma(s.cierres) };
+      return { nombre, cash, agendas: suma(s.agendas), shows: suma(s.shows), noShows: suma(s.noShows), cierres: suma(s.cierres) };
     }).sort((a, b) => b.cash - a.cash);
+    const colores = Object.fromEntries(filas.map((f, i) => [f.nombre, colorDeSetter(f.nombre, i)]));
     const totalCash = filas.reduce((a, f) => a + f.cash, 0);
+    document.getElementById('closersVisual').innerHTML = `<div class="vz-grid">
+      <div><p class="vz-titulo">Quién cierra el cash</p><div class="vz-donut">${donutEq(filas.map(f => ({ nombre: f.nombre, valor: f.cash, color: colores[f.nombre], texto: usdEq(f.cash) })), usdEq(totalCash), 'cerrado')}
+        <div class="vz-leyenda">${filas.map(f => `<div><i style="background:${colores[f.nombre]}"></i>${escapeHtml(f.nombre)}<b>${usdEq(f.cash)} · ${totalCash > 0 ? Math.round(f.cash / totalCash * 100) : 0}%</b></div>`).join('')}</div></div></div>
+      <div><p class="vz-titulo">Sus llamadas, comparadas</p><div class="vz-multi">${[['Agendas', 'agendas'], ['Shows', 'shows'], ['No shows', 'noShows'], ['Cierres', 'cierres']].map(([tit, k]) => minisEq(tit, filas.map(f => ({ nombre: f.nombre, valor: f[k], color: colores[f.nombre] })))).join('')}</div></div></div>`;
     grid.innerHTML = filas.map((f, i) => {
-      const share = totalCash > 0 ? f.cash / totalCash * 100 : 0;
-      const color = colorDeSetter(f.nombre, i);
+      const color = colores[f.nombre];
       return `<div class="breakdown-card">
         <div class="eq-head"><span style="width:10px;height:10px;border-radius:50%;background:${color};"></span><h4>${escapeHtml(f.nombre)}</h4>${f.cash > 0 && i === 0 ? '<span class="eq-rank">#1 en cash</span>' : ''}</div>
         <div class="eq-cash">${usdEq(f.cash)}</div>
-        <div class="eq-cash-sub">cash collected · ${share.toFixed(0)}% de lo cerrado${f.cierres > 0 ? ' · ticket ' + usdEq(f.cash / f.cierres) : ''}</div>
-        <div class="eq-share"><i style="width:${share.toFixed(1)}%;background:${color};"></i></div>
-        <div class="eq-flow">
-          ${pasoEq(f.agendas, 'Agendas', '')}${pasoEq(f.shows, 'Shows', pctEq(f.shows, f.agendas), 'agendas')}${pasoEq(f.noShows, 'No shows', '')}${pasoEq(f.cierres, 'Cierres', pctEq(f.cierres, f.shows), 'shows')}
-        </div>
-        ${listaVentasEq(f.nombre, 'closer', 'Ventas que cerró')}
+        <div class="eq-cash-sub">cash collected${f.cierres > 0 ? ' · ticket ' + usdEq(f.cash / f.cierres) : ''}</div>
+        <div class="vz-gauges">${anilloEq(tasaEq(f.shows, f.agendas), color, 'Show')}${anilloEq(tasaEq(f.cierres, f.shows), color, 'Cierre')}${anilloEq(f.agendas + f.noShows > 0 ? tasaEq(f.noShows, f.agendas + f.noShows) : null, '#ff9b9b', 'No show')}</div>
+        ${barraVentasEq(f.nombre, 'closer')}
       </div>`;
     }).join('');
   }
@@ -5924,26 +5974,28 @@
     const vacio = () => ({ llamadas: 0, noCalifica: 0, noRespondio: 0, noAtendieron: 0, infoWhatsapp: 0, cortaron: 0, agendadas: 0, shows: 0, cierres: 0, ventas: 0 });
     const todos = new Map(mapa);
     SETTERS_FIJOS.forEach(n => { if(!todos.has(n)) todos.set(n, vacio()); });
-    // Cash: el de la pestaña Ventas si ya cargó (cobros reales); si no, lo que cargaron en Métricas.
     const cashDe = (n) => { const v = equipo.ventas.filter(x => mismaPersona(x.setter, n)); return v.length ? v.reduce((a, x) => a + x.cash, 0) : (todos.get(n).ventas || 0); };
     const nombres = [...todos.keys()].filter(n => !esSetterInactivo(n)).sort((a, b) => cashDe(b) - cashDe(a));
+    const colores = Object.fromEntries(nombres.map((n, i) => [n, colorDeSetter(n, i)]));
     const totalCash = nombres.reduce((a, n) => a + cashDe(n), 0);
+    // Arriba: reparto del cash (dona) + una mini gráfica de barras por etapa del embudo.
+    const etapas = [['Llamadas', 'llamadas'], ['Agendadas', 'agendadas'], ['Shows', 'shows'], ['Cierres', 'cierres']];
+    document.getElementById('settersVisual').innerHTML = `<div class="vz-grid">
+      <div><p class="vz-titulo">Quién trae el cash</p><div class="vz-donut">${donutEq(nombres.map(n => ({ nombre: n, valor: cashDe(n), color: colores[n], texto: usdEq(cashDe(n)) })), usdEq(totalCash), 'cash del mes')}
+        <div class="vz-leyenda">${nombres.map(n => `<div><i style="background:${colores[n]}"></i>${escapeHtml(n)}<b>${usdEq(cashDe(n))} · ${totalCash > 0 ? Math.round(cashDe(n) / totalCash * 100) : 0}%</b></div>`).join('')}</div></div></div>
+      <div><p class="vz-titulo">El embudo, comparado</p><div class="vz-multi">${etapas.map(([tit, k]) => minisEq(tit, nombres.map(n => ({ nombre: n, valor: todos.get(n)[k] || 0, color: colores[n] })))).join('')}</div></div></div>`;
     grid.innerHTML = nombres.map((nombre, i) => {
-      const s = todos.get(nombre), color = colorDeSetter(nombre, i), cash = cashDe(nombre);
-      const share = totalCash > 0 ? cash / totalCash * 100 : 0;
+      const s = todos.get(nombre), color = colores[nombre], cash = cashDe(nombre);
+      const seg = [['agendadas', s.agendadas, 'Agendadas'], ['info', s.infoWhatsapp, 'Info por WhatsApp'], ['noCalifica', s.noCalifica, 'No califica'], ['cortaron', s.cortaron, 'Cortaron / colgaron'], ['noAtendieron', s.noAtendieron, 'No atendieron']];
       return `<div class="breakdown-card">
         <div class="eq-head"><span style="width:10px;height:10px;border-radius:50%;background:${color};"></span><h4>${escapeHtml(nombre)}</h4>${cash > 0 && i === 0 ? '<span class="eq-rank">#1 en cash</span>' : ''}</div>
         <div class="eq-cash">${usdEq(cash)}</div>
-        <div class="eq-cash-sub">cash collected · ${share.toFixed(0)}% del equipo</div>
-        <div class="eq-share"><i style="width:${share.toFixed(1)}%;background:${color};"></i></div>
-        <div class="eq-flow">
-          ${pasoEq(s.llamadas, 'Llamadas', '')}${pasoEq(s.agendadas, 'Agendadas', pctEq(s.agendadas, s.llamadas), 'llamadas')}${pasoEq(s.shows, 'Shows', pctEq(s.shows, s.agendadas), 'agendadas')}${pasoEq(s.cierres, 'Cierres', pctEq(s.cierres, s.shows), 'shows')}
-        </div>
-        <div class="eq-mini">
-          <div><span>No califica</span><b>${s.noCalifica.toLocaleString('es-AR')}</b></div><div><span>No atendieron</span><b>${s.noAtendieron.toLocaleString('es-AR')}</b></div>
-          <div><span>Info WhatsApp</span><b>${s.infoWhatsapp.toLocaleString('es-AR')}</b></div><div><span>Cortaron</span><b>${s.cortaron.toLocaleString('es-AR')}</b></div>
-        </div>
-        ${listaVentasEq(nombre, 'setter', 'Ventas que agendó')}
+        <div class="eq-cash-sub">cash collected · ${s.llamadas.toLocaleString('es-AR')} llamadas</div>
+        <div class="vz-gauges">${anilloEq(tasaEq(s.agendadas, s.llamadas), color, 'Agendó')}${anilloEq(tasaEq(s.shows, s.agendadas), color, 'Show')}${anilloEq(tasaEq(s.cierres, s.shows), color, 'Cierre')}</div>
+        <div class="vz-cap"><span>Qué pasó con sus llamadas</span><span>${seg.reduce((a, x) => a + x[1], 0).toLocaleString('es-AR')}</span></div>
+        ${barraApilada(seg.map(x => ({ valor: x[1], color: COL_LLAMADAS[x[0]], titulo: x[2] + ': ' + x[1] })))}
+        <div class="vz-leyenda" style="flex-direction:row;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11px;color:var(--text-dim);">${seg.map(x => `<div><i style="background:${COL_LLAMADAS[x[0]]}"></i>${x[2]} ${x[1]}</div>`).join('')}</div>
+        ${barraVentasEq(nombre, 'setter')}
       </div>`;
     }).join('');
   }
