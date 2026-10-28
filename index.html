@@ -4446,7 +4446,7 @@
       cont.querySelectorAll('.dg-tramo.on').forEach(x => x.classList.remove('on')); b.classList.add('on');
       detalle.innerHTML = '<strong>' + escDesglose(v.clienta) + '</strong> · ' + usdDesglose(v.cash) + ' · ' + escDesglose(v.fecha)
         + '<br>' + escDesglose(v.producto) + ' · ' + escDesglose(v.pago) + (v.source ? ' · Fuente: ' + escDesglose(v.source) : '')
-        + '<br>Vendió: ' + escDesglose(v.setter || v.closer || sin) + (v.setter && v.closer ? ' (closer: ' + escDesglose(v.closer) + ')' : '');
+        + '<br>Agendó: ' + escDesglose(v.setter || v.closer || sin) + (v.setter && v.closer && v.setter !== v.closer ? ' · Cerró: ' + escDesglose(v.closer) : (v.closer ? ' · Agendó y cerró' : ''));
     };
     cont.querySelectorAll('.dg-tramo').forEach(b => { b.addEventListener('mouseenter', () => mostrar(b)); b.addEventListener('focus', () => mostrar(b)); b.addEventListener('click', () => mostrar(b)); });
   }
