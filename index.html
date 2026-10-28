@@ -4212,14 +4212,30 @@
   }
   // Lo que el Worker ya guardó hoy en el Tracker para esta persona (la pantalla muestra el total del día y nunca se pone en cero).
   let metricasGuardado = {};
-  function cargarGuardadoDe(d){ if(d && d.guardado && typeof d.guardado === 'object') metricasGuardado = d.guardado; }
+  let metricasPrecargado = ''; // 'nombre|fecha' ya precargado en esta sesión
+  function cargarGuardadoDe(d){
+    if(d && d.guardado && typeof d.guardado === 'object') metricasGuardado = d.guardado;
+    // La primera vez del día (o al cambiar de nombre) la pantalla se llena con el total del día que ya tiene el sistema: lo guardado en el Tracker
+    // y lo contado y aún no guardado. Así nadie vuelve a ver ceros a mitad del día; el reinicio es solo con el cambio de fecha (23:59).
+    const nombre = document.getElementById('metricasNombre').value.trim();
+    const clave = nombre + '|' + formatearFechaHoy();
+    if(!d || !nombre || !metricasRol || metricasPrecargado === clave) return;
+    metricasPrecargado = clave;
+    let cambio = false;
+    Object.entries(METRICAS_MAPA[metricasRol]).forEach(([id, k]) => {
+      const el = document.getElementById(id);
+      const servidor = Math.max(Number((d.guardado || {})[k]) || 0, Number((d.borrador || {})[k]) || 0);
+      if(el && servidor > (Number(el.value) || 0)){ el.value = servidor; cambio = true; }
+    });
+    if(cambio) guardarBorradorMetricas();
+  }
   function reiniciarPorAutoguardado(slot){
     [...METRICAS_CAMPOS_SETTER, ...METRICAS_CAMPOS_CLOSER].forEach(id => { document.getElementById(id).value = ''; });
     document.getElementById('metricasCloserCerro').value = '';
     borrarBorradorMetricas(); actualizarBloqueCloser();
     document.getElementById('metricasStatus').textContent = slot === 'hora'
-      ? '✓ Tus números se guardaron solos (guardado de cada hora). El contador sigue desde cero y a la 1:30 PM y 8:30 PM se publica en Slack el total del día.'
-      : '✓ Tus números se guardaron solos y se enviaron al Slack (total del día). El contador sigue desde cero.';
+      ? '✓ Tus números se guardaron solos (guardado de cada hora).'
+      : '✓ Tus números se guardaron solos.';
   }
   // ===== Reloj circular: tiempo que queda hasta el próximo guardado automático. Se guarda cada hora, a las :30
   // (mismos minutos en PR y UTC); a la 1:30 PM y 8:30 PM de PR (17:30 y 00:30 UTC) además se publica en Slack. =====
@@ -4228,7 +4244,7 @@
     const ant = Math.floor((ahora - MEDIA) / HORA) * HORA + MEDIA;
     const sig = ant + HORA;
     const hUTC = new Date(sig).getUTCHours();
-    const slack = hUTC === 17 || hUTC === 0;
+    const slack = false; // Slack recibe el total a la 1:00 PM y a las 8:00 PM, no en el guardado de las :30
     const hPR = new Date(sig - 4 * HORA).getUTCHours();
     const etiqueta = ((hPR + 11) % 12 + 1) + ':30 ' + (hPR >= 12 ? 'PM' : 'AM');
     return { sig, ant, etiqueta, slack };
@@ -4263,7 +4279,7 @@
     tiempo.textContent = h > 0 ? h + ':' + String(m).padStart(2, '0') + ':' + String(sc).padStart(2, '0') : String(m).padStart(2, '0') + ':' + String(sc).padStart(2, '0');
     arco.style.strokeDashoffset = String(RELOJ_CIRC * (1 - Math.max(0, Math.min(1, falta / (sig - ant)))));
     sub.innerHTML = (slack ? 'Se guarda y se envía al Slack' : 'Se guarda solo') + '<br><strong>' + etiqueta + '</strong>';
-    caja.title = 'Cada hora (a las :30, hora de PR) lo que tengas contado se guarda solo en el dashboard.' + (slack ? ' A las ' + etiqueta + ' además se publica en #setters.' : ' A la 1:30 PM y a las 8:30 PM además se publica en #setters.') + ' También podés enviarlo antes con el botón.';
+    caja.title = 'Cada hora (a las :30, hora de PR) lo que tengas contado se guarda solo en el dashboard. A la 1:00 PM y a las 8:00 PM se publica en #setters cuánto lleva cada una. Tus números no se ponen en cero durante el día: solo cambian a las 12 de la noche.';
   }
   setInterval(actualizarRelojMetricas, 1000);
 
@@ -4369,16 +4385,12 @@
         }
       }
       statusEl.textContent = (hayNuevo ? '✓ Guardado — gracias ' + nombre + '. Se ve en el Dashboard en unos minutos.' : '✓ Ya estaba todo guardado, ' + nombre + '.') + avisoRanking + ' Tus números siguen en pantalla: es el total del día.';
-      let avisoSlack = '';
-      // Un solo paso: además de guardarse en el Sheet, el Worker publica el total del día en #setters y anota lo guardado.
+      // Se anota en el Worker lo que ya quedó en el Tracker. Slack NO recibe nada ahora: el total de cada una se publica a la 1:00 PM y a las 8:00 PM.
       try {
         const rs = await fetch(WORKER_URL + '/metricas-borrador', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ v: 2, nombre, vaciar: true, publicar: { rol: metricasRol, fecha, valores: total, closerCerro } }) });
-        const ds = await rs.json();
-        cargarGuardadoDe(ds);
-        avisoSlack = ds && ds.slack ? ' También se envió al Slack.' : ' OJO: no se pudo enviar al Slack, avisale a Thomas.';
-      } catch(e2) { avisoSlack = ' OJO: no se pudo enviar al Slack, avisale a Thomas.'; }
-      statusEl.textContent += avisoSlack;
+        cargarGuardadoDe(await rs.json());
+      } catch(e2) { /* el guardado de cada hora lo anota igual */ }
       filasTrackerCache = null; filasRankingCache = null; // para que el Dashboard vuelva a leer el Sheet
     } catch(e) {
       statusEl.textContent = 'No se pudo guardar: ' + e.message;
