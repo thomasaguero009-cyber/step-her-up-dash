@@ -5571,7 +5571,18 @@
     // Ventas del webinar: lo que diga el ajuste manual del mes (lo cobrado de verdad) o, si no hay, lo de GHL.
     const aj = funnelPorDiaDatos.ajustesWebinar || {};
     out.forEach(c => { const k = c.anio + '-' + String(c.mes + 1).padStart(2, '0'); c.ventas += (k in aj) ? aj[k] : c.webGhl; });
+    // Si el mes ya está cargado en la pestaña "Ventas" del Tracker (cobros reales, con cuotas), manda esa cifra.
+    out.forEach(c => { const real = cashTrackerMes[c.anio + '-' + String(c.mes + 1).padStart(2, '0')]; if(real > 0) c.ventas = real; });
     return out;
+  }
+  const cashTrackerMes = {}; // 'AAAA-MM' -> cash cobrado según la pestaña Ventas (null si no se pudo leer)
+  const cashTrackerPedido = new Set();
+  async function cargarCashTrackerMeses(meses){
+    const faltan = meses.filter(m => !cashTrackerPedido.has(m.anio + '-' + m.mes));
+    if(!faltan.length) return;
+    faltan.forEach(m => cashTrackerPedido.add(m.anio + '-' + m.mes));
+    await Promise.all(faltan.map(async m => { cashTrackerMes[m.anio + '-' + String(m.mes + 1).padStart(2, '0')] = await cashRealDelMes(m.anio, m.mes); }));
+    renderFacturacion();
   }
   function renderFacturacion(){
     const cont = document.getElementById('factBars');
@@ -5585,6 +5596,7 @@
       return;
     }
     const meses = facturacionPorMes();
+    cargarCashTrackerMeses(meses);
     const actual = meses[meses.length - 1];
     const previo = meses[meses.length - 2];
     const hoy = new Date();
