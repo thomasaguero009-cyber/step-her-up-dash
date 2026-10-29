@@ -2764,6 +2764,32 @@
     });
   }
 
+  // ===== Una sola fuente de cash: la pestaña "Ventas" del Tracker (cada cobro, con cuotas). Los shows y cierres de las closers salen de la pestaña "Shows".
+  // La pestaña "Ranking" del Sheet ya no se usa en los bloques por día y por semana. =====
+  const ventasMesCache = {};
+  async function leerVentasMes(anio, mes0){
+    const m = anio + '-' + String(mes0 + 1).padStart(2, '0'), c = ventasMesCache[m];
+    if(c && Date.now() - c.t < 60000) return c.d;
+    try {
+      const data = JSON.parse(await fetchTextConTimeout(LECCIONES_WRITE_URL + '?action=ventasDesglose&mes=' + m, 20000));
+      if(data.status !== 'ok' || !data.hoja) return [];
+      ventasMesCache[m] = { t: Date.now(), d: data.ventas || [] };
+      return ventasMesCache[m].d;
+    } catch(e){ return []; }
+  }
+  async function cajaYShows(a, b){
+    const meses = [];
+    for(let d = new Date(a.getFullYear(), a.getMonth(), 1); d < b; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) meses.push([d.getFullYear(), d.getMonth()]);
+    const out = [];
+    await Promise.all(meses.map(async ([y, m]) => {
+      const [v, sh] = await Promise.all([leerVentasMes(y, m), leerShows(y, m)]);
+      (v || []).forEach(x => { const f = parseFechaSheet(x.fecha); if(f) out.push({ fecha: f, closer: x.closer || 'Sin asignar', monto: x.cash || 0, agendas: 0, shows: 0, noShows: 0, cierres: 0 }); });
+      (sh || []).forEach(x => { const f = parseFechaSheet(x.fecha); if(f) out.push({ fecha: f, closer: x.cerro || 'Sin asignar', monto: 0, agendas: 0, shows: 1, noShows: 0, cierres: x.resultado === 'Cierre' ? 1 : 0 }); });
+    }));
+    return out;
+  }
+
+
   // ----- Leads por semana (contactos nuevos de GHL, Worker /leads-por-dia): 5 semanas de barras + detalle día por día -----
   let semLeadsPedido = 0;
   async function renderSemanaLeads(){
@@ -2897,10 +2923,11 @@
   }
 
   let diaLeadsPedido = 0;
-  function renderDias(filas, rank){
+  async function renderDias(filas){
     const cuerpo = t => document.querySelector('.sem-dia[data-dia="' + t + '"] .sem-cuerpo');
     const h0 = new Date(); h0.setHours(0, 0, 0, 0);
     const dias = [0,1,2,3,4,5,6].map(i => masDias(h0, -i));
+    const rank = await cajaYShows(dias[6], masDias(dias[0], 1));
     const nom = (d, i) => (i === 0 ? 'Hoy' : i === 1 ? 'Ayer' : DIAS_ES[(d.getDay() + 6) % 7]) + ' ' + d.getDate();
     const T = d => filas.filter(r => +r.fecha === +d), R = d => (rank || []).filter(r => +r.fecha === +d);
     const vacio = '<div class="chart-status" style="margin-bottom:0;">Todavía no hay datos cargados hoy.</div>';
@@ -2920,9 +2947,9 @@
     }
     el = cuerpo('closers');
     if(el){
-      const f = dias.map((d, i) => { const x = R(d); return '<tr><td>' + nom(d, i) + '</td><td>' + dinero(sumaDe(x, 'monto')) + '</td><td>' + x.filter(r => r.monto > 0).length + '</td><td>' + sumaDe(x, 'shows') + '</td><td>' + sumaDe(x, 'noShows') + '</td><td>' + sumaDe(x, 'cierres') + '</td></tr>'; }).join('');
+      const f = dias.map((d, i) => { const x = R(d); return '<tr><td>' + nom(d, i) + '</td><td>' + dinero(sumaDe(x, 'monto')) + '</td><td>' + x.filter(r => r.monto > 0).length + '</td><td>' + sumaDe(x, 'shows') + '</td><td>' + sumaDe(x, 'cierres') + '</td></tr>'; }).join('');
       const hoy = R(dias[0]);
-      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado hoy', dinero(sumaDe(hoy, 'monto')), '') + kpiSem('Pagos hoy', hoy.filter(r => r.monto > 0).length, '') + '</div>' + tablaSem(['Día','Cash','Pagos','Shows','No shows','Cierres'], f, '');
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado hoy', dinero(sumaDe(hoy, 'monto')), '') + kpiSem('Pagos hoy', hoy.filter(r => r.monto > 0).length, '') + '</div>' + tablaSem(['Día','Cash cobrado','Pagos','Shows','Cierres'], f, '');
     }
     el = cuerpo('ventas');
     if(el){
@@ -2946,7 +2973,8 @@
 
 
   async function renderSemanas(){
-    const [filas, rank] = await Promise.all([obtenerFilasTracker(), obtenerFilasRanking()]);
+    const filas = await obtenerFilasTracker();
+    const rank = await cajaYShows(masDias(semLunes, -7), masDias(semLunes, 7));
     const L = semLunes, F = masDias(L, 7), L0 = masDias(L, -7), fin = masDias(L, 6);
     const dentro = (f, a, b) => f >= a && f < b;
     const T = filas.filter(r => dentro(r.fecha, L, F)), T0 = filas.filter(r => dentro(r.fecha, L0, L));
@@ -2958,7 +2986,7 @@
     const dia = i => DIAS_ES[i] + ' ' + masDias(L, i).getDate();
     const hayR = R.length > 0;
     renderSemanaLeads();
-    renderDias(filas, rank);
+    renderDias(filas);
 
     // ----- Setters -----
     let el = cuerpo('setters');
@@ -2981,7 +3009,7 @@
         }
         return '<tr><td>' + n + '</td><td>' + o.dias.size + '</td><td>' + o.llamadas.toLocaleString('es-AR') + '</td><td>' + f1(ld) + '</td><td>' + o.agendadas + '</td><td>' + f1(ad) + '</td><td>' + pc(o.agendadas, o.llamadas) + '</td><td>' + pc(o.noAtend, o.llamadas) + '</td><td>' + meta + '</td><td>' + avance + '</td></tr>';
       }).join('');
-      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Llamadas', tt.toLocaleString('es-AR'), delta(tt, tt0)) + kpiSem('Agendadas', ta, delta(ta, ta0)) + kpiSem('% de llamadas a agenda', pc(ta, tt), tt0 > 0 ? 'Semana anterior: ' + pc(ta0, tt0) : '') + kpiSem('Shows', sumaDe(T, 'shows'), delta(sumaDe(T, 'shows'), sumaDe(T0, 'shows'))) + kpiSem('Cierres', sumaDe(T, 'cierres'), delta(sumaDe(T, 'cierres'), sumaDe(T0, 'cierres'))) + '</div>' +
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Llamadas', tt.toLocaleString('es-AR'), delta(tt, tt0)) + kpiSem('Agendadas', ta, delta(ta, ta0)) + kpiSem('% de llamadas a agenda', pc(ta, tt), tt0 > 0 ? 'Semana anterior: ' + pc(ta0, tt0) : '') + kpiSem('Shows', sumaDe(R, 'shows'), delta(sumaDe(R, 'shows'), sumaDe(R0, 'shows'))) + kpiSem('Cierres', sumaDe(R, 'cierres'), delta(sumaDe(R, 'cierres'), sumaDe(R0, 'cierres'))) + '</div>' +
         (mejor ? '<div class="mim-frase">🏆 Quien más subió respecto a la semana anterior: <b>' + mejor.n + '</b> (+' + f1(mejor.d) + ' agendas por día).</div>' : '') +
         tablaSem(['Setter','Días','Llamadas','Llam/día','Agendadas','Agend/día','% agenda','No atienden','Meta/día','Avance'], filasHtml, 'Sin datos cargados esta semana.') +
         '<div class="chart-status" style="margin-bottom:0;">' + (semIdx < 0 ? 'La escalera de metas empieza el lunes 2 de noviembre; hasta entonces la columna Meta/día queda vacía.' : 'Meta/día = llamadas / agendas por día de la escalera de esta semana. Avance = mitad llamadas, mitad agendas.') + '</div>';
@@ -3001,9 +3029,9 @@
     if(el){
       const cash = sumaDe(R, 'monto'), cash0 = sumaDe(R0, 'monto'), pagos = R.filter(r => r.monto > 0).length;
       const porDia = [0,1,2,3,4,5,6].map(i => { const d = masDias(L, i); const x = R.filter(r => +r.fecha === +d); return '<tr><td>' + dia(i) + '</td><td>' + dinero(sumaDe(x, 'monto')) + '</td><td>' + x.filter(r => r.monto > 0).length + '</td></tr>'; }).join('');
-      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado', dinero(cash), delta(cash, cash0)) + kpiSem('Pagos registrados', pagos, '') + kpiSem('Ticket promedio', pagos ? dinero(cash / pagos) : '–', '') + kpiSem('Cierres (según Ranking)', sumaDe(R, 'cierres'), '') + kpiSem('Ventas que reportan las setters', dinero(sumaDe(T, 'ventas')), delta(sumaDe(T, 'ventas'), sumaDe(T0, 'ventas'))) + '</div>' +
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado', dinero(cash), delta(cash, cash0)) + kpiSem('Pagos registrados', pagos, '') + kpiSem('Ticket promedio', pagos ? dinero(cash / pagos) : '–', '') + kpiSem('Cierres (pestaña Shows)', sumaDe(R, 'cierres'), '') + kpiSem('Ventas que reportan las setters', dinero(sumaDe(T, 'ventas')), delta(sumaDe(T, 'ventas'), sumaDe(T0, 'ventas'))) + '</div>' +
         tablaSem(['Día','Cash cobrado','Pagos'], porDia, '') +
-        '<div class="chart-status" style="margin-bottom:0;">Cash cobrado = montos de la pestaña Ranking del Tracker. «Ventas que reportan las setters» sale de lo que cargan en Métricas; son dos fuentes distintas.</div>';
+        '<div class="chart-status" style="margin-bottom:0;">Cash cobrado = cada cobro de la pestaña Ventas del Tracker (incluye cuotas), la misma fuente de la Vista General y de la meta del mes. «Ventas que reportan las setters» sale de lo que cargan en Métricas.</div>';
     }
 
     // ----- Closers -----
@@ -3012,10 +3040,10 @@
       const por = {};
       R.forEach(r => { const o = por[r.closer] || (por[r.closer] = { monto: 0, pagos: 0, agendas: 0, shows: 0, noShows: 0, cierres: 0 }); o.monto += r.monto; if(r.monto > 0) o.pagos++; o.agendas += r.agendas; o.shows += r.shows; o.noShows += r.noShows; o.cierres += r.cierres; });
       const cash = sumaDe(R, 'monto'), cash0 = sumaDe(R0, 'monto');
-      const filasHtml = Object.keys(por).sort((a, b) => por[b].monto - por[a].monto).map(n => { const o = por[n]; return '<tr><td>' + n + '</td><td>' + dinero(o.monto) + '</td><td>' + o.pagos + '</td><td>' + o.agendas + '</td><td>' + o.shows + '</td><td>' + o.noShows + '</td><td>' + o.cierres + '</td><td>' + pc(o.shows, o.shows + o.noShows) + '</td><td>' + pc(o.cierres, o.shows) + '</td></tr>'; }).join('');
-      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado', dinero(cash), delta(cash, cash0)) + kpiSem('Pagos registrados', R.filter(r => r.monto > 0).length, '') + kpiSem('Shows', sumaDe(R, 'shows'), '') + kpiSem('No shows', sumaDe(R, 'noShows'), '') + kpiSem('Cierres', sumaDe(R, 'cierres'), '') + '</div>' +
-        tablaSem(['Closer','Cash','Pagos','Agendas','Shows','No shows','Cierres','Show rate','% cierre'], filasHtml, 'Sin datos de closers esta semana.') +
-        '<div class="chart-status" style="margin-bottom:0;">' + (hayR ? 'Agendas, shows, no shows y cierres solo cuentan si las closers los cargan en la pestaña Ranking; hoy casi solo se carga el monto.' : 'No hay montos cargados en el Ranking para esta semana.') + '</div>';
+      const filasHtml = Object.keys(por).sort((a, b) => por[b].monto - por[a].monto).map(n => { const o = por[n]; return '<tr><td>' + n + '</td><td>' + dinero(o.monto) + '</td><td>' + o.pagos + '</td><td>' + o.shows + '</td><td>' + o.cierres + '</td><td>' + pc(o.cierres, o.shows) + '</td></tr>'; }).join('');
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado', dinero(cash), delta(cash, cash0)) + kpiSem('Pagos registrados', R.filter(r => r.monto > 0).length, '') + kpiSem('Shows', sumaDe(R, 'shows'), '') + kpiSem('Cierres', sumaDe(R, 'cierres'), '') + '</div>' +
+        tablaSem(['Closer','Cash cobrado','Pagos','Shows','Cierres','% cierre'], filasHtml, 'Sin datos de closers esta semana.') +
+        '<div class="chart-status" style="margin-bottom:0;">' + (hayR ? 'Cash: pestaña Ventas del Tracker. Shows y cierres: pestaña Shows del Tracker; solo cuentan los que alguien cargó ahí. Los no shows se van a medir solos desde GHL.' : 'No hay cobros ni shows cargados esta semana.') + '</div>';
     }
   }
 
