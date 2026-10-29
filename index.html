@@ -972,6 +972,12 @@
   .sem-nav button{ background:rgba(255,255,255,0.06); border:1px solid var(--border); color:var(--cream); border-radius:999px; padding:9px 16px; font:inherit; font-size:14px; cursor:pointer; }
   .sem-nav button:hover{ border-color:var(--blush-2); }
   .sem-nav .sem-label{ font-family:"Playfair Display",Georgia,serif; font-size:22px; font-weight:600; }
+  .grupo-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .grupo-btn{ flex:1; min-width:150px; text-align:center; color:var(--cream); cursor:pointer; font-family:inherit; font-size:16px; font-weight:700; letter-spacing:.02em;
+    background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:14px; padding:14px 16px; transition:background .18s ease, border-color .18s ease; }
+  .grupo-btn:hover{ background:rgba(255,255,255,0.12); }
+  .grupo-btn.active{ background:rgba(240,168,190,0.18); border-color:var(--blush-2); }
+  .sem-mes{ margin:6px 0 16px; }
   .sem-bloque{ margin-bottom:34px; padding-bottom:10px; border-bottom:1px solid var(--border); }
   .sem-titulo{ font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--blush); margin-bottom:10px; font-weight:700; }
   .sem-bloque .sem-nav .sem-label{ font-size:19px; }
@@ -2779,6 +2785,103 @@
     }
   }
 
+  // ===== Menú por secciones (Resumen / Marketing / Ventas) y orden de cada pestaña: día → semana → mes =====
+  const GRUPOS_DASH = [
+    ['Resumen', ['general', 'ghl']],
+    ['Marketing', ['leads', 'ads', 'utm', 'webinar', 'email']],
+    ['Ventas', ['llamadas', 'setters', 'closers', 'ventas', 'matematica']],
+  ];
+  function iniciarGruposDash(){
+    const nav = document.getElementById('dashTabNav');
+    if(!nav || document.getElementById('dashGrupos')) return;
+    const fila = document.createElement('div');
+    fila.className = 'grupo-row'; fila.id = 'dashGrupos';
+    fila.innerHTML = GRUPOS_DASH.map(g => '<button type="button" class="grupo-btn" data-grupo="' + g[0] + '">' + g[0] + '</button>').join('');
+    nav.parentNode.insertBefore(fila, nav);
+    nav.style.marginTop = '0';
+    // las pestañas quedan en el orden de su sección
+    GRUPOS_DASH.forEach(g => g[1].forEach(t => { const b = nav.querySelector('[data-tab="' + t + '"]'); if(b) nav.appendChild(b); }));
+    const grupoDe = t => (GRUPOS_DASH.find(g => g[1].indexOf(t) > -1) || [])[0];
+    const mostrar = nombre => {
+      fila.querySelectorAll('.grupo-btn').forEach(b => b.classList.toggle('active', b.dataset.grupo === nombre));
+      nav.querySelectorAll('.quick-nav-btn').forEach(b => { b.style.display = grupoDe(b.dataset.tab) === nombre ? '' : 'none'; });
+    };
+    fila.addEventListener('click', e => {
+      const b = e.target.closest('.grupo-btn'); if(!b) return;
+      mostrar(b.dataset.grupo);
+      const primera = nav.querySelector('.quick-nav-btn[data-tab="' + GRUPOS_DASH.find(g => g[0] === b.dataset.grupo)[1][0] + '"]');
+      if(primera) primera.click();
+    });
+    nav.querySelectorAll('.quick-nav-btn').forEach(b => b.addEventListener('click', () => mostrar(grupoDe(b.dataset.tab))));
+    const activa = nav.querySelector('.quick-nav-btn.active');
+    mostrar(grupoDe(activa ? activa.dataset.tab : 'general'));
+  }
+
+  function inyectarDias(){
+    ['leads','llamadas','setters','closers','ventas'].forEach(t => {
+      const panel = document.querySelector('[data-tab-panel="' + t + '"]');
+      if(!panel || panel.querySelector('.sem-dia')) return;
+      const lab = panel.querySelector('.section-label'); if(!lab) return;
+      const div = document.createElement('div');
+      div.className = 'sem-bloque sem-dia'; div.dataset.dia = t;
+      div.innerHTML = '<div class="sem-titulo">Hoy y últimos 7 días</div><div class="sem-cuerpo"></div>';
+      lab.insertAdjacentElement('afterend', div);
+    });
+    document.querySelectorAll('.sem-bloque[data-sem]').forEach(b => {
+      if(b.nextElementSibling && b.nextElementSibling.classList.contains('sem-mes')) return;
+      b.insertAdjacentHTML('afterend', '<div class="sem-titulo sem-mes">El mes (según el mes activo de arriba)</div>');
+    });
+  }
+
+  let diaLeadsPedido = 0;
+  function renderDias(filas, rank){
+    const cuerpo = t => document.querySelector('.sem-dia[data-dia="' + t + '"] .sem-cuerpo');
+    const h0 = new Date(); h0.setHours(0, 0, 0, 0);
+    const dias = [0,1,2,3,4,5,6].map(i => masDias(h0, -i));
+    const nom = (d, i) => (i === 0 ? 'Hoy' : i === 1 ? 'Ayer' : DIAS_ES[(d.getDay() + 6) % 7]) + ' ' + d.getDate();
+    const T = d => filas.filter(r => +r.fecha === +d), R = d => (rank || []).filter(r => +r.fecha === +d);
+    const vacio = '<div class="chart-status" style="margin-bottom:0;">Todavía no hay datos cargados hoy.</div>';
+    let el = cuerpo('llamadas');
+    if(el){
+      const hoy = T(dias[0]), ayer = T(dias[1]), ll = sumaDe(hoy, 'llamadas'), ag = sumaDe(hoy, 'agendadas');
+      const f = dias.map((d, i) => { const x = T(d), l = sumaDe(x, 'llamadas'); return '<tr><td>' + nom(d, i) + '</td><td>' + l.toLocaleString('es-AR') + '</td><td>' + sumaDe(x, 'agendadas') + '</td><td>' + pc(sumaDe(x, 'agendadas'), l) + '</td><td>' + pc(sumaDe(x, 'noAtendieron'), l) + '</td><td>' + sumaDe(x, 'infoWhatsapp') + '</td></tr>'; }).join('');
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Llamadas hoy', ll.toLocaleString('es-AR'), delta(ll, sumaDe(ayer, 'llamadas')).replace('semana anterior', 'ayer')) + kpiSem('Agendadas hoy', ag, '') + kpiSem('% a agenda', pc(ag, ll), '') + kpiSem('No atienden', pc(sumaDe(hoy, 'noAtendieron'), ll), '') + '</div>' + tablaSem(['Día','Llamadas','Agendadas','% agenda','No atienden','Info WhatsApp'], f, '');
+    }
+    el = cuerpo('setters');
+    if(el){
+      const hoy = T(dias[0]);
+      const por = {}; hoy.forEach(r => { const o = por[r.setter] || (por[r.setter] = { l: 0, a: 0, n: 0, m: 0 }); o.l += r.llamadas; o.a += r.agendadas; o.n += r.noAtendieron; o.m += r.llamarMasTarde; });
+      const hoyHtml = Object.keys(por).sort((a, b) => por[b].l - por[a].l).map(n => { const o = por[n]; return '<tr><td>' + n + '</td><td>' + o.l + '</td><td>' + o.a + '</td><td>' + pc(o.a, o.l) + '</td><td>' + pc(o.n, o.l) + '</td><td>' + o.m + '</td></tr>'; }).join('');
+      const f = dias.map((d, i) => { const x = T(d), l = sumaDe(x, 'llamadas'); const quienes = [...new Set(x.filter(r => r.llamadas > 0).map(r => r.setter))]; return '<tr><td>' + nom(d, i) + '</td><td>' + l.toLocaleString('es-AR') + '</td><td>' + sumaDe(x, 'agendadas') + '</td><td>' + pc(sumaDe(x, 'agendadas'), l) + '</td><td style="text-align:left">' + (quienes.join(', ') || '–') + '</td></tr>'; }).join('');
+      el.innerHTML = '<div class="mim-nota" style="margin-bottom:8px;">Hoy, por setter</div>' + tablaSem(['Setter','Llamadas','Agendadas','% agenda','No atienden','Llamar más tarde'], hoyHtml, 'Todavía no hay datos cargados hoy.') + '<div class="mim-nota" style="margin-bottom:8px;">Últimos 7 días</div>' + tablaSem(['Día','Llamadas','Agendadas','% agenda','Quién cargó'], f, '');
+    }
+    el = cuerpo('closers');
+    if(el){
+      const f = dias.map((d, i) => { const x = R(d); return '<tr><td>' + nom(d, i) + '</td><td>' + dinero(sumaDe(x, 'monto')) + '</td><td>' + x.filter(r => r.monto > 0).length + '</td><td>' + sumaDe(x, 'shows') + '</td><td>' + sumaDe(x, 'noShows') + '</td><td>' + sumaDe(x, 'cierres') + '</td></tr>'; }).join('');
+      const hoy = R(dias[0]);
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado hoy', dinero(sumaDe(hoy, 'monto')), '') + kpiSem('Pagos hoy', hoy.filter(r => r.monto > 0).length, '') + '</div>' + tablaSem(['Día','Cash','Pagos','Shows','No shows','Cierres'], f, '');
+    }
+    el = cuerpo('ventas');
+    if(el){
+      const f = dias.map((d, i) => { const x = R(d); return '<tr><td>' + nom(d, i) + '</td><td>' + dinero(sumaDe(x, 'monto')) + '</td><td>' + x.filter(r => r.monto > 0).length + '</td><td>' + dinero(sumaDe(T(d), 'ventas')) + '</td></tr>'; }).join('');
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado hoy', dinero(sumaDe(R(dias[0]), 'monto')), '') + kpiSem('Ventas que reportan las setters hoy', dinero(sumaDe(T(dias[0]), 'ventas')), '') + '</div>' + tablaSem(['Día','Cash cobrado','Pagos','Ventas que reportan las setters'], f, '');
+    }
+    el = cuerpo('leads');
+    if(el){
+      const pedido = ++diaLeadsPedido;
+      el.innerHTML = '<div class="chart-status">Cargando leads de GHL…</div>';
+      fetch(WORKER_URL + '/leads-por-dia?start=' + dias[6].getTime() + '&end=' + masDias(dias[0], 1).getTime()).then(r => r.json()).then(data => {
+        if(pedido !== diaLeadsPedido) return;
+        if(!data.ok) throw new Error(data.error || 'error');
+        const clave = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        const n = d => (data.dias[clave(d)] && data.dias[clave(d)].total) || 0;
+        const prom = dias.reduce((t, d) => t + n(d), 0) / 7;
+        el.innerHTML = '<div class="sem-kpis">' + kpiSem('Leads hoy', n(dias[0]), delta(n(dias[0]), n(dias[1])).replace('semana anterior', 'ayer')) + kpiSem('Leads ayer', n(dias[1]), '') + kpiSem('Promedio de los últimos 7 días', f1(prom), '') + '</div>' + tablaSem(['Día','Leads'], dias.map((d, i) => '<tr><td>' + nom(d, i) + '</td><td>' + n(d).toLocaleString('es-AR') + '</td></tr>').join(''), '');
+      }).catch(e => { if(pedido === diaLeadsPedido) el.innerHTML = '<div class="chart-status">No se pudo leer GHL: ' + (e.message || e) + '</div>'; });
+    }
+  }
+
+
   async function renderSemanas(){
     const [filas, rank] = await Promise.all([obtenerFilasTracker(), obtenerFilasRanking()]);
     const L = semLunes, F = masDias(L, 7), L0 = masDias(L, -7), fin = masDias(L, 6);
@@ -2787,11 +2890,12 @@
     const R = (rank || []).filter(r => dentro(r.fecha, L, F)), R0 = (rank || []).filter(r => dentro(r.fecha, L0, L));
     document.querySelectorAll('[data-sem-label]').forEach(e => { e.textContent = fCorta(L) + ' – ' + fCorta(fin) + ' ' + fin.getFullYear(); });
     const actual = +L === +lunesDe(new Date());
-    document.querySelectorAll('.sem-titulo').forEach(e => { e.textContent = actual ? 'Esta semana' : 'Semana seleccionada'; });
+    document.querySelectorAll('.sem-bloque[data-sem] > .sem-titulo').forEach(e => { e.textContent = actual ? 'Esta semana' : 'Semana seleccionada'; });
     const cuerpo = t => document.querySelector('.sem-bloque[data-sem="' + t + '"] .sem-cuerpo');
     const dia = i => DIAS_ES[i] + ' ' + masDias(L, i).getDate();
     const hayR = R.length > 0;
     renderSemanaLeads();
+    renderDias(filas, rank);
 
     // ----- Setters -----
     let el = cuerpo('setters');
@@ -2909,6 +3013,8 @@
   }
 
   inyectarSemanas();
+  inyectarDias();
+  iniciarGruposDash();
 
   // ===== Tarjetas "espejo": una cifra que ya se calcula en otro lado
   // (ej. Cash collected) se repite en la sección que la usa. Se copia
