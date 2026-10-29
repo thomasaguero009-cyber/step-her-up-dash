@@ -972,6 +972,8 @@
   .sem-nav button{ background:rgba(255,255,255,0.06); border:1px solid var(--border); color:var(--cream); border-radius:999px; padding:9px 16px; font:inherit; font-size:14px; cursor:pointer; }
   .sem-nav button:hover{ border-color:var(--blush-2); }
   .sem-nav .sem-label{ font-family:"Playfair Display",Georgia,serif; font-size:22px; font-weight:600; }
+  [data-oculto]{ display:none !important; }
+  @media (min-width:900px){ .kpi-grid[data-cols]{ grid-template-columns:repeat(var(--kpi-cols),1fr); } }
   .grupo-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
   .grupo-btn{ flex:1; min-width:150px; text-align:center; color:var(--cream); cursor:pointer; font-family:inherit; font-size:16px; font-weight:700; letter-spacing:.02em;
     background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:14px; padding:14px 16px; transition:background .18s ease, border-color .18s ease; }
@@ -1489,35 +1491,35 @@
             <div class="kpi-label">AOV (ticket promedio)</div>
             <div class="kpi-value" id="ghlAov">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Tasa de agendado</div>
             <div class="kpi-value" id="mateAgendado">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Show rate</div>
             <div class="kpi-value" id="mateShowRate">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Tasa de cierre</div>
             <div class="kpi-value" id="mateCierre">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Conversión de la llamada (show → venta)</div>
             <div class="kpi-value" id="mateConversion">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Conversión del funnel completo (lead → venta)</div>
             <div class="kpi-value" id="mateConversionFunnel">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Gasto en ads</div>
             <div class="kpi-value" id="adsGasto">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">ROAS de ads</div>
             <div class="kpi-value" id="adsRoasAds">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">ROAS general</div>
             <div class="kpi-value" id="adsRoasGeneral">–</div>
           </div>
@@ -1638,7 +1640,7 @@
             <div class="kpi-label">Mejor día</div>
             <div class="kpi-value" id="leadsMejor">–</div>
           </div>
-          <div class="kpi-card" data-espejo="mateConversionFunnel">
+          <div class="kpi-card" data-oculto="1" data-espejo="mateConversionFunnel">
             <div class="kpi-label">Conversión del funnel completo (lead → venta)</div>
             <div class="kpi-value">–</div>
           </div>
@@ -1718,7 +1720,7 @@
           </div>
         </div>
         <div class="value-grid">
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Ticket promedio</div>
             <div class="kpi-value" id="mateTicket">–</div>
           </div>
@@ -1758,11 +1760,11 @@
             <div class="kpi-label">Shows</div>
             <div class="kpi-value">–</div>
           </div>
-          <div class="kpi-card" data-espejo="mateAgendado">
+          <div class="kpi-card" data-oculto="1" data-espejo="mateAgendado">
             <div class="kpi-label">Tasa de agendado</div>
             <div class="kpi-value">–</div>
           </div>
-          <div class="kpi-card" data-espejo="mateShowRate">
+          <div class="kpi-card" data-oculto="1" data-espejo="mateShowRate">
             <div class="kpi-label">Show rate</div>
             <div class="kpi-value">–</div>
           </div>
@@ -2817,6 +2819,16 @@
     mostrar(grupoDe(activa ? activa.dataset.tab : 'general'));
   }
 
+  // Tarjetas repetidas u ocultas: la grilla se reparte entre las que quedan visibles (en pantallas grandes).
+  function ordenarKpisDash(){
+    document.querySelectorAll('.tab-panel .kpi-grid').forEach(g => {
+      const n = [...g.children].filter(c => !c.hasAttribute('data-oculto')).length;
+      if(n === 0) return;
+      const cols = n <= 5 ? n : (n % 3 === 0 ? 3 : (n % 4 === 0 ? 4 : 5));
+      g.setAttribute('data-cols', cols); g.style.setProperty('--kpi-cols', cols);
+    });
+  }
+
   function inyectarDias(){
     ['leads','llamadas','setters','closers','ventas'].forEach(t => {
       const panel = document.querySelector('[data-tab-panel="' + t + '"]');
@@ -3015,6 +3027,7 @@
   inyectarSemanas();
   inyectarDias();
   iniciarGruposDash();
+  ordenarKpisDash();
 
   // ===== Tarjetas "espejo": una cifra que ya se calcula en otro lado
   // (ej. Cash collected) se repite en la sección que la usa. Se copia
