@@ -975,6 +975,7 @@
   [data-oculto]{ display:none !important; }
   @media (min-width:900px){ .kpi-grid[data-cols]{ grid-template-columns:repeat(var(--kpi-cols),1fr); } }
   .ayuda-fab{ position:fixed; right:20px; bottom:20px; z-index:9000; display:flex; align-items:center; gap:10px; background:linear-gradient(135deg,#f8cad8 0%,#ec93b0 100%); color:#2a0c14; border:1px solid rgba(255,255,255,.35); border-radius:999px; padding:12px 20px 12px 14px; font:inherit; font-weight:700; font-size:14.5px; cursor:pointer; box-shadow:0 10px 30px rgba(236,147,176,.28), 0 8px 24px rgba(0,0,0,.45); transition:transform .18s ease, box-shadow .18s ease; animation:ayudaLatido 3.2s ease-in-out infinite; }
+  .en-demo .ayuda-fab, .en-demo .ayuda-panel{ display:none !important; }
   .ayuda-fab:hover{ transform:translateY(-2px); box-shadow:0 14px 34px rgba(236,147,176,.4), 0 10px 26px rgba(0,0,0,.5); }
   .ayuda-fab svg{ width:22px; height:22px; flex:none; }
   .ayuda-fab.abierto{ animation:none; padding:12px 16px; }
@@ -2524,8 +2525,25 @@
     location.reload();
   }
 
+  // Las demos se muestran a las leads en la llamada: pantalla completa (sin barra de direcciones ni pestañas) y sin el asistente. Se pide dentro del clic para que el navegador lo permita.
+  function entrarPantallaCompleta(){
+    try {
+      const d = document.documentElement;
+      if(document.fullscreenElement || document.webkitFullscreenElement) return;
+      const p = (d.requestFullscreen || d.webkitRequestFullscreen || d.msRequestFullscreen);
+      if(p){ const r = p.call(d); if(r && r.catch) r.catch(() => {}); }
+    } catch(e){}
+  }
+  function salirPantallaCompleta(){
+    try {
+      if(!(document.fullscreenElement || document.webkitFullscreenElement)) return;
+      const x = document.exitFullscreen || document.webkitExitFullscreen;
+      if(x){ const r = x.call(document); if(r && r.catch) r.catch(() => {}); }
+    } catch(e){}
+  }
   async function abrirRecurso(id){
     const r = RECURSOS.find(x => x.id === id);
+    if(r && !r.externo) entrarPantallaCompleta();
     const estado = document.getElementById('recEstado');
     const frame = document.getElementById('recFrame');
     // Link público: se abre directo (o en otra pestaña si es una página externa).
@@ -2533,6 +2551,7 @@
       if(r.externo){ window.open(r.url, '_blank', 'noopener'); return; }
       frame.removeAttribute('srcdoc'); frame.src = r.url;
       document.getElementById('recViewer').hidden = false;
+      document.body.classList.add('en-demo');
       document.body.style.overflow = 'hidden';
       return;
     }
@@ -2548,6 +2567,7 @@
       estado.textContent = '';
       frame.removeAttribute('src'); frame.srcdoc = html;
       document.getElementById('recViewer').hidden = false;
+      document.body.classList.add('en-demo');
       document.body.style.overflow = 'hidden';
     } catch(e){
       estado.textContent = 'No se pudo conectar. Revisá tu internet y probá de nuevo.';
@@ -2557,6 +2577,8 @@
     document.getElementById('recViewer').hidden = true;
     const f = document.getElementById('recFrame'); f.srcdoc = ''; f.removeAttribute('src');
     document.body.style.overflow = '';
+    document.body.classList.remove('en-demo');
+    salirPantallaCompleta();
   }
   document.getElementById('recCerrar').addEventListener('click', cerrarRecurso);
   document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && !document.getElementById('recViewer').hidden) cerrarRecurso(); });
