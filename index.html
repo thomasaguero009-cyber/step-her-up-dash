@@ -972,6 +972,9 @@
   .sem-nav button{ background:rgba(255,255,255,0.06); border:1px solid var(--border); color:var(--cream); border-radius:999px; padding:9px 16px; font:inherit; font-size:14px; cursor:pointer; }
   .sem-nav button:hover{ border-color:var(--blush-2); }
   .sem-nav .sem-label{ font-family:"Playfair Display",Georgia,serif; font-size:22px; font-weight:600; }
+  .sem-bloque{ margin-bottom:34px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+  .sem-titulo{ font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--blush); margin-bottom:10px; font-weight:700; }
+  .sem-bloque .sem-nav .sem-label{ font-size:19px; }
   .sem-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:26px; }
   .sem-kpi{ background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:16px; padding:16px 18px; }
   .sem-kpi .l{ font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); }
@@ -1423,7 +1426,6 @@
         <button type="button" class="quick-nav-btn" data-tab="ads">Ads</button>
         <button type="button" class="quick-nav-btn" data-tab="ventas">Ventas del mes</button>
         <button type="button" class="quick-nav-btn" data-tab="llamadas">Llamadas</button>
-        <button type="button" class="quick-nav-btn" data-tab="semanas">Semanas</button>
         <button type="button" class="quick-nav-btn" data-tab="matematica">Matemática del éxito</button>
         <button type="button" class="quick-nav-btn" data-tab="setters">Setters</button>
         <button type="button" class="quick-nav-btn" data-tab="closers">Closers</button>
@@ -1925,26 +1927,6 @@
           <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Envío</th><th>Fecha</th><th>Enviados</th><th>Entregados</th><th>Abiertos</th><th>Clics</th><th>Rebotados</th><th>Fallidos</th><th>Omitidos</th></tr></thead><tbody id="emailEnvios"></tbody></table></div>
         </div>
         <div class="chart-status" id="statusEmail" style="margin-bottom:44px;">Cargando…</div>
-      </div>
-
-      <!-- Semanas: métricas semanales por setter (sale del mismo Tracker, sin cargar nada nuevo). -->
-      <div class="tab-panel" data-tab-panel="semanas">
-        <div class="section-label" id="semanas">Semanas</div>
-        <div class="sem-nav">
-          <button type="button" id="semPrev">← Semana anterior</button>
-          <span class="sem-label" id="semLabel">–</span>
-          <button type="button" id="semNext">Semana siguiente →</button>
-          <button type="button" id="semHoy">Esta semana</button>
-        </div>
-        <div class="sem-kpis" id="semKpis"></div>
-        <div class="chart-panel" style="margin-bottom:18px;">
-          <div class="mim-frase" id="semDestacada"></div>
-          <div class="utm-wrap"><table class="utm-table">
-            <thead><tr><th>Setter</th><th>Días</th><th>Llamadas</th><th>Llam/día</th><th>Agendadas</th><th>Agend/día</th><th>% agenda</th><th>No atienden</th><th>Meta/día</th><th>Avance</th></tr></thead>
-            <tbody id="semTabla"></tbody>
-          </table></div>
-        </div>
-        <div class="chart-status" id="statusSemanas" style="margin-bottom:44px;"></div>
       </div>
 
       <!-- Closers: sale de la pestaña "Ranking" del Sheet (Fecha | Closer | Monto),
@@ -2704,7 +2686,7 @@
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === tab));
       if(tab === 'webinar') cargarWebinar();
       if(tab === 'email') cargarEmail();
-      if(tab === 'semanas') cargarSemanas();
+      if(['setters','closers','ventas','llamadas'].indexOf(tab) > -1) renderSemanas();
       if(tab === 'matematica') iniciarMiMatematica();
     });
   });
@@ -2740,47 +2722,102 @@
     return '<span class="' + (sube ? 'sem-up' : 'sem-down') + '">' + (sube ? '▲ ' : '▼ ') + txt + ' vs. semana anterior</span>';
   };
 
-  async function cargarSemanas(){
-    const filas = await obtenerFilasTracker();
-    const fin = masDias(semLunes, 6);
-    document.getElementById('semLabel').textContent = fCorta(semLunes) + ' – ' + fCorta(fin) + ' ' + fin.getFullYear();
-    const act = resumirSemana(filas, semLunes), ant = resumirSemana(filas, masDias(semLunes, -7));
-    const tot = o => Object.values(o).reduce((t, x) => ({ llamadas: t.llamadas + x.llamadas, agendadas: t.agendadas + x.agendadas, shows: t.shows + x.shows, cierres: t.cierres + x.cierres, ventas: t.ventas + x.ventas }), { llamadas: 0, agendadas: 0, shows: 0, cierres: 0, ventas: 0 });
-    const T = tot(act), P = tot(ant);
-    const kpi = (l, v, d) => '<div class="sem-kpi"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + (d || '&nbsp;') + '</div></div>';
-    document.getElementById('semKpis').innerHTML =
-      kpi('Llamadas', T.llamadas.toLocaleString('es-AR'), delta(T.llamadas, P.llamadas)) +
-      kpi('Agendadas', T.agendadas.toLocaleString('es-AR'), delta(T.agendadas, P.agendadas)) +
-      kpi('% de llamadas a agenda', pc(T.agendadas, T.llamadas), P.llamadas > 0 ? 'Semana anterior: ' + pc(P.agendadas, P.llamadas) : '') +
-      kpi('Shows', T.shows.toLocaleString('es-AR'), delta(T.shows, P.shows)) +
-      kpi('Cierres', T.cierres.toLocaleString('es-AR'), delta(T.cierres, P.cierres)) +
-      kpi('Ventas ($)', '$' + Math.round(T.ventas).toLocaleString('es-AR'), delta(T.ventas, P.ventas));
-    const nombres = Object.keys(act).filter(n => act[n].llamadas > 0 || act[n].agendadas > 0).sort((a, b) => act[b].agendadas - act[a].agendadas);
-    const semIdx = Math.floor((semLunes - ESCALERA_INICIO) / (7 * 86400000));
-    let mejor = null;
-    const html = nombres.map(n => {
-      const o = act[n], dias = o.dias.size || 1, ld = o.llamadas / dias, ad = o.agendadas / dias;
-      const prev = ant[n]; let dAd = null;
-      if(prev && prev.dias.size) { dAd = ad - prev.agendadas / prev.dias.size; if(dAd > 0 && (!mejor || dAd > mejor.d)) mejor = { n, d: dAd }; }
-      let meta = '–', avance = '<span class="mim-nota">–</span>';
-      const esc = ESCALERA[n];
-      if(esc && semIdx >= 0){
-        const m = esc[Math.min(semIdx, esc.length - 1)];
-        meta = m[0] + ' / ' + m[1];
-        const av = Math.min(100, Math.round((ld / m[0] * 0.5 + ad / m[1] * 0.5) * 100));
-        avance = '<div class="sem-barra"><i style="width:' + av + '%"></i></div><span class="mim-nota">' + av + '%</span>';
-      }
-      return '<tr><td>' + n + '</td><td>' + o.dias.size + '</td><td>' + o.llamadas.toLocaleString('es-AR') + '</td><td>' + f1(ld) + '</td><td>' + o.agendadas + '</td><td>' + f1(ad) + '</td><td>' + pc(o.agendadas, o.llamadas) + '</td><td>' + pc(o.noAtend, o.llamadas) + '</td><td>' + meta + '</td><td>' + avance + '</td></tr>';
-    }).join('');
-    document.getElementById('semTabla').innerHTML = html || '<tr><td colspan="10" style="text-align:center;color:var(--text-dim);">Sin datos cargados esta semana.</td></tr>';
-    document.getElementById('semDestacada').innerHTML = mejor ? '🏆 Quien más subió respecto a la semana anterior: <b>' + mejor.n + '</b> (+' + f1(mejor.d) + ' agendas por día).' : '';
-    document.getElementById('statusSemanas').textContent = semIdx < 0
-      ? 'La escalera de metas empieza el lunes 2 de noviembre; hasta entonces la columna Meta/día queda vacía.'
-      : 'Meta/día = llamadas / agendas por día de la escalera de esta semana. Avance = mitad llamadas, mitad agendas. Los shows y cierres dependen de que se carguen en el Tracker.';
+  const DIAS_ES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const kpiSem = (l, v, d) => '<div class="sem-kpi"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + (d || '&nbsp;') + '</div></div>';
+  const sumaDe = (arr, k) => arr.reduce((t, r) => t + (r[k] || 0), 0);
+  const dinero = n => '$' + Math.round(n).toLocaleString('es-AR');
+  const tablaSem = (cab, filas, vacio) => '<div class="chart-panel" style="margin-bottom:18px;"><div class="utm-wrap"><table class="utm-table"><thead><tr>' + cab.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>' + (filas || '<tr><td colspan="' + cab.length + '" style="text-align:center;color:var(--text-dim);">' + vacio + '</td></tr>') + '</tbody></table></div></div>';
+
+  function inyectarSemanas(){
+    ['setters','closers','ventas','llamadas'].forEach(t => {
+      const panel = document.querySelector('[data-tab-panel="' + t + '"]');
+      if(!panel || panel.querySelector('.sem-bloque')) return;
+      const lab = panel.querySelector('.section-label');
+      if(!lab) return;
+      const div = document.createElement('div');
+      div.className = 'sem-bloque'; div.dataset.sem = t;
+      div.innerHTML = '<div class="sem-titulo">Esta semana</div><div class="sem-nav"><button type="button" data-sem-act="prev">← Semana anterior</button><span class="sem-label" data-sem-label>–</span><button type="button" data-sem-act="next">Semana siguiente →</button><button type="button" data-sem-act="hoy">Esta semana</button></div><div class="sem-cuerpo"></div>';
+      lab.insertAdjacentElement('afterend', div);
+    });
+    document.addEventListener('click', e => {
+      const b = e.target.closest && e.target.closest('[data-sem-act]');
+      if(!b) return;
+      semLunes = b.dataset.semAct === 'prev' ? masDias(semLunes, -7) : b.dataset.semAct === 'next' ? masDias(semLunes, 7) : lunesDe(new Date());
+      renderSemanas();
+    });
   }
-  document.getElementById('semPrev').addEventListener('click', () => { semLunes = masDias(semLunes, -7); cargarSemanas(); });
-  document.getElementById('semNext').addEventListener('click', () => { semLunes = masDias(semLunes, 7); cargarSemanas(); });
-  document.getElementById('semHoy').addEventListener('click', () => { semLunes = lunesDe(new Date()); cargarSemanas(); });
+
+  async function renderSemanas(){
+    const [filas, rank] = await Promise.all([obtenerFilasTracker(), obtenerFilasRanking()]);
+    const L = semLunes, F = masDias(L, 7), L0 = masDias(L, -7), fin = masDias(L, 6);
+    const dentro = (f, a, b) => f >= a && f < b;
+    const T = filas.filter(r => dentro(r.fecha, L, F)), T0 = filas.filter(r => dentro(r.fecha, L0, L));
+    const R = (rank || []).filter(r => dentro(r.fecha, L, F)), R0 = (rank || []).filter(r => dentro(r.fecha, L0, L));
+    document.querySelectorAll('[data-sem-label]').forEach(e => { e.textContent = fCorta(L) + ' – ' + fCorta(fin) + ' ' + fin.getFullYear(); });
+    const actual = +L === +lunesDe(new Date());
+    document.querySelectorAll('.sem-titulo').forEach(e => { e.textContent = actual ? 'Esta semana' : 'Semana seleccionada'; });
+    const cuerpo = t => document.querySelector('.sem-bloque[data-sem="' + t + '"] .sem-cuerpo');
+    const dia = i => DIAS_ES[i] + ' ' + masDias(L, i).getDate();
+    const hayR = R.length > 0;
+
+    // ----- Setters -----
+    let el = cuerpo('setters');
+    if(el){
+      const act = resumirSemana(filas, L), ant = resumirSemana(filas, L0);
+      const tt = sumaDe(T, 'llamadas'), ta = sumaDe(T, 'agendadas'), tt0 = sumaDe(T0, 'llamadas'), ta0 = sumaDe(T0, 'agendadas');
+      const semIdx = Math.floor((L - ESCALERA_INICIO) / (7 * 86400000));
+      let mejor = null;
+      const nombres = Object.keys(act).filter(n => act[n].llamadas > 0 || act[n].agendadas > 0).sort((a, b) => act[b].agendadas - act[a].agendadas);
+      const filasHtml = nombres.map(n => {
+        const o = act[n], dias = o.dias.size || 1, ld = o.llamadas / dias, ad = o.agendadas / dias, prev = ant[n];
+        if(prev && prev.dias.size){ const d = ad - prev.agendadas / prev.dias.size; if(d > 0 && (!mejor || d > mejor.d)) mejor = { n, d }; }
+        let meta = '–', avance = '–';
+        const esc = ESCALERA[n];
+        if(esc && semIdx >= 0){
+          const m = esc[Math.min(semIdx, esc.length - 1)];
+          meta = m[0] + ' / ' + m[1];
+          const av = Math.min(100, Math.round((ld / m[0] * 0.5 + ad / m[1] * 0.5) * 100));
+          avance = '<div class="sem-barra"><i style="width:' + av + '%"></i></div><span class="mim-nota">' + av + '%</span>';
+        }
+        return '<tr><td>' + n + '</td><td>' + o.dias.size + '</td><td>' + o.llamadas.toLocaleString('es-AR') + '</td><td>' + f1(ld) + '</td><td>' + o.agendadas + '</td><td>' + f1(ad) + '</td><td>' + pc(o.agendadas, o.llamadas) + '</td><td>' + pc(o.noAtend, o.llamadas) + '</td><td>' + meta + '</td><td>' + avance + '</td></tr>';
+      }).join('');
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Llamadas', tt.toLocaleString('es-AR'), delta(tt, tt0)) + kpiSem('Agendadas', ta, delta(ta, ta0)) + kpiSem('% de llamadas a agenda', pc(ta, tt), tt0 > 0 ? 'Semana anterior: ' + pc(ta0, tt0) : '') + kpiSem('Shows', sumaDe(T, 'shows'), delta(sumaDe(T, 'shows'), sumaDe(T0, 'shows'))) + kpiSem('Cierres', sumaDe(T, 'cierres'), delta(sumaDe(T, 'cierres'), sumaDe(T0, 'cierres'))) + '</div>' +
+        (mejor ? '<div class="mim-frase">🏆 Quien más subió respecto a la semana anterior: <b>' + mejor.n + '</b> (+' + f1(mejor.d) + ' agendas por día).</div>' : '') +
+        tablaSem(['Setter','Días','Llamadas','Llam/día','Agendadas','Agend/día','% agenda','No atienden','Meta/día','Avance'], filasHtml, 'Sin datos cargados esta semana.') +
+        '<div class="chart-status" style="margin-bottom:0;">' + (semIdx < 0 ? 'La escalera de metas empieza el lunes 2 de noviembre; hasta entonces la columna Meta/día queda vacía.' : 'Meta/día = llamadas / agendas por día de la escalera de esta semana. Avance = mitad llamadas, mitad agendas.') + '</div>';
+    }
+
+    // ----- Llamadas -----
+    el = cuerpo('llamadas');
+    if(el){
+      const tt = sumaDe(T, 'llamadas'), tt0 = sumaDe(T0, 'llamadas');
+      const porDia = [0,1,2,3,4,5,6].map(i => { const d = masDias(L, i); const x = T.filter(r => +r.fecha === +d); const ll = sumaDe(x, 'llamadas'), ag = sumaDe(x, 'agendadas'); return '<tr><td>' + dia(i) + '</td><td>' + ll.toLocaleString('es-AR') + '</td><td>' + ag + '</td><td>' + pc(ag, ll) + '</td><td>' + pc(sumaDe(x, 'noAtendieron'), ll) + '</td></tr>'; }).join('');
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Llamadas', tt.toLocaleString('es-AR'), delta(tt, tt0)) + kpiSem('No atienden', pc(sumaDe(T, 'noAtendieron'), tt), sumaDe(T, 'noAtendieron').toLocaleString('es-AR') + ' llamadas') + kpiSem('Info por WhatsApp', sumaDe(T, 'infoWhatsapp'), '') + kpiSem('Cortaron / colgaron', sumaDe(T, 'cortaron'), '') + kpiSem('Llamar más tarde', sumaDe(T, 'llamarMasTarde'), '') + kpiSem('No califican', sumaDe(T, 'noCalifica'), '') + '</div>' +
+        tablaSem(['Día','Llamadas','Agendadas','% agenda','No atienden'], porDia, '');
+    }
+
+    // ----- Ventas -----
+    el = cuerpo('ventas');
+    if(el){
+      const cash = sumaDe(R, 'monto'), cash0 = sumaDe(R0, 'monto'), pagos = R.filter(r => r.monto > 0).length;
+      const porDia = [0,1,2,3,4,5,6].map(i => { const d = masDias(L, i); const x = R.filter(r => +r.fecha === +d); return '<tr><td>' + dia(i) + '</td><td>' + dinero(sumaDe(x, 'monto')) + '</td><td>' + x.filter(r => r.monto > 0).length + '</td></tr>'; }).join('');
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado', dinero(cash), delta(cash, cash0)) + kpiSem('Pagos registrados', pagos, '') + kpiSem('Ticket promedio', pagos ? dinero(cash / pagos) : '–', '') + kpiSem('Cierres (según Ranking)', sumaDe(R, 'cierres'), '') + kpiSem('Ventas que reportan las setters', dinero(sumaDe(T, 'ventas')), delta(sumaDe(T, 'ventas'), sumaDe(T0, 'ventas'))) + '</div>' +
+        tablaSem(['Día','Cash cobrado','Pagos'], porDia, '') +
+        '<div class="chart-status" style="margin-bottom:0;">Cash cobrado = montos de la pestaña Ranking del Tracker. «Ventas que reportan las setters» sale de lo que cargan en Métricas; son dos fuentes distintas.</div>';
+    }
+
+    // ----- Closers -----
+    el = cuerpo('closers');
+    if(el){
+      const por = {};
+      R.forEach(r => { const o = por[r.closer] || (por[r.closer] = { monto: 0, pagos: 0, agendas: 0, shows: 0, noShows: 0, cierres: 0 }); o.monto += r.monto; if(r.monto > 0) o.pagos++; o.agendas += r.agendas; o.shows += r.shows; o.noShows += r.noShows; o.cierres += r.cierres; });
+      const cash = sumaDe(R, 'monto'), cash0 = sumaDe(R0, 'monto');
+      const filasHtml = Object.keys(por).sort((a, b) => por[b].monto - por[a].monto).map(n => { const o = por[n]; return '<tr><td>' + n + '</td><td>' + dinero(o.monto) + '</td><td>' + o.pagos + '</td><td>' + o.agendas + '</td><td>' + o.shows + '</td><td>' + o.noShows + '</td><td>' + o.cierres + '</td><td>' + pc(o.shows, o.shows + o.noShows) + '</td><td>' + pc(o.cierres, o.shows) + '</td></tr>'; }).join('');
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado', dinero(cash), delta(cash, cash0)) + kpiSem('Pagos registrados', R.filter(r => r.monto > 0).length, '') + kpiSem('Shows', sumaDe(R, 'shows'), '') + kpiSem('No shows', sumaDe(R, 'noShows'), '') + kpiSem('Cierres', sumaDe(R, 'cierres'), '') + '</div>' +
+        tablaSem(['Closer','Cash','Pagos','Agendas','Shows','No shows','Cierres','Show rate','% cierre'], filasHtml, 'Sin datos de closers esta semana.') +
+        '<div class="chart-status" style="margin-bottom:0;">' + (hayR ? 'Agendas, shows, no shows y cierres solo cuentan si las closers los cargan en la pestaña Ranking; hoy casi solo se carga el monto.' : 'No hay montos cargados en el Ranking para esta semana.') + '</div>';
+    }
+  }
 
   // ----- Mi matemática del éxito -----
   let mimListo = false, mimDatos = null;
@@ -2837,6 +2874,8 @@
     sel.addEventListener('change', () => { mimPonerRitmo(); mimCalcular(); });
     ['mimComision','mimPct','mimTicket','mimShow','mimCierre','mimAgenda','mimDias'].forEach(i => document.getElementById(i).addEventListener('input', mimCalcular));
   }
+
+  inyectarSemanas();
 
   // ===== Tarjetas "espejo": una cifra que ya se calcula en otro lado
   // (ej. Cash collected) se repite en la sección que la usa. Se copia
