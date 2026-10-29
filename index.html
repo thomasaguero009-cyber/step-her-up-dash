@@ -3176,8 +3176,8 @@
     }
     el = cuerpo('ventas');
     if(el){
-      const f = dias.map((d, i) => { const x = R(d); return '<tr><td>' + nom(d, i) + '</td><td>' + dinero(sumaDe(x, 'monto')) + '</td><td>' + x.filter(r => r.monto > 0).length + '</td><td>' + dinero(sumaDe(T(d), 'ventas')) + '</td></tr>'; }).join('');
-      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado hoy', dinero(sumaDe(R(dias[0]), 'monto')), '') + kpiSem('Ventas que reportan las setters hoy', dinero(sumaDe(T(dias[0]), 'ventas')), '') + '</div>' + tablaSem(['Día','Cash cobrado','Pagos','Ventas que reportan las setters'], f, '');
+      const f = dias.map((d, i) => { const x = R(d); return '<tr><td>' + nom(d, i) + '</td><td>' + dinero(sumaDe(x, 'monto')) + '</td><td>' + x.filter(r => r.monto > 0).length + '</td></tr>'; }).join('');
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado hoy', dinero(sumaDe(R(dias[0]), 'monto')), '') + '</div>' + tablaSem(['Día','Cash cobrado','Pagos'], f, '');
     }
     el = cuerpo('leads');
     if(el){
@@ -3254,9 +3254,9 @@
     if(el){
       const cash = sumaDe(R, 'monto'), cash0 = sumaDe(R0, 'monto'), pagos = R.filter(r => r.monto > 0).length;
       const porDia = [0,1,2,3,4,5,6].map(i => { const d = masDias(L, i); const x = R.filter(r => +r.fecha === +d); return '<tr><td>' + dia(i) + '</td><td>' + dinero(sumaDe(x, 'monto')) + '</td><td>' + x.filter(r => r.monto > 0).length + '</td></tr>'; }).join('');
-      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado', dinero(cash), delta(cash, cash0)) + kpiSem('Pagos registrados', pagos, '') + kpiSem('Ticket promedio', pagos ? dinero(cash / pagos) : '–', '') + kpiSem('Cierres (pestaña Shows)', sumaDe(R, 'cierres'), '') + kpiSem('Ventas que reportan las setters', dinero(sumaDe(T, 'ventas')), delta(sumaDe(T, 'ventas'), sumaDe(T0, 'ventas'))) + '</div>' +
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado', dinero(cash), delta(cash, cash0)) + kpiSem('Pagos registrados', pagos, '') + kpiSem('Ticket promedio', pagos ? dinero(cash / pagos) : '–', '') + kpiSem('Cierres (pestaña Shows)', sumaDe(R, 'cierres'), '') + '</div>' +
         tablaSem(['Día','Cash cobrado','Pagos'], porDia, '') +
-        '<div class="chart-status" style="margin-bottom:0;">Cash cobrado = cada cobro de la pestaña Ventas del Tracker (incluye cuotas), la misma fuente de la Vista General y de la meta del mes. «Ventas que reportan las setters» sale de lo que cargan en Métricas.</div>';
+        '<div class="chart-status" style="margin-bottom:0;">Cash cobrado = cada cobro de la pestaña Ventas del Tracker (incluye cuotas), la misma fuente de la Vista General y de la meta del mes.</div>';
     }
 
     // ----- Closers -----
@@ -6326,10 +6326,19 @@
         data.totales.cierres = Math.max(data.totales.cierres, showsTracker.filter(s => s.resultado === 'Cierre').length);
         pintarShows(showsTracker);
       }
+      // Llamadas y agendadas: lo que cargan las setters en Métricas (GHL solo cuenta las tarjetas que alguien movió de etapa y se queda corto).
+      try {
+        const filasSetters = (await obtenerFilasTracker()).filter(f => f.fecha.getFullYear() === anio && f.fecha.getMonth() === mes);
+        if(pedido !== ghlPedidoActual) return;
+        if(filasSetters.length){
+          data.totales.llamadas = filasSetters.reduce((a, f) => a + f.llamadas, 0);
+          data.totales.agendadas = filasSetters.reduce((a, f) => a + f.agendadas, 0);
+        }
+      } catch(e){}
       fijarValorNumero('ghlLlamadas', data.totales.llamadas.toLocaleString('es-AR'));
       fijarValorNumero('ghlAgendadas', data.totales.agendadas.toLocaleString('es-AR'));
       fijarValorNumero('ghlShows', data.totales.shows.toLocaleString('es-AR'));
-      fijarValorNumero('ghlCierres', data.totales.cierres.toLocaleString('es-AR'));
+      fijarValorNumero('ghlCierres', ((data.totales.cierres || 0) + (data.totales.cierresWebinar || 0)).toLocaleString('es-AR'));
       // Cash collected = ventas de llamadas + ventas del webinar ($997 y upsell). Las tasas de llamadas
       // (cierre, conversión) siguen usando solo los cierres de llamadas.
       const cashTotal = (data.totales.ventas || 0) + (data.totales.ventasWebinar || 0);
@@ -6343,6 +6352,7 @@
       cashRealDelMes(anio, mes).then(real => {
         if(real == null || pedido !== ghlPedidoActual) return;
         fijarValorNumero('ghlVentas', '$' + Math.round(real).toLocaleString('es-AR'));
+        fijarValorNumero('ghlAov', cierresTotal > 0 ? '$' + Math.round(real / cierresTotal).toLocaleString('es-AR') : '–'); // el ticket promedio usa el mismo cash real
         const el = document.getElementById('ghlVentas');
         if(el) el.title = 'Suma de la pestaña Ventas del Tracker (incluye cuotas y cobros de ventas anteriores). GHL marcaba $' + Math.round(cashTotal).toLocaleString('es-AR') + '.';
       });
@@ -6839,43 +6849,33 @@
     document.getElementById('rankingFoot').textContent = huboDatos
       ? (nombres.length + (nombres.length === 1 ? ' ' + etiqueta : ' ' + etiqueta + 's'))
       : 'Sin datos todavía para ' + mesElegido + (esCloser
-        ? ' — cargá filas en la pestaña "Ranking" del Google Sheet'
-        : ' — cargá filas en la pestaña "Tracker" del Google Sheet');
+        ? ' — cargá cobros en la pestaña "Ventas" del Google Sheet'
+        : ' — cargá cobros en la pestaña "Ventas" del Google Sheet');
   }
 
   async function cargarYPintarRanking(){
     const { anio, mes } = mesElegidoAYyyyMm();
     const hoy = new Date();
 
-    const filasRanking = await obtenerFilasRanking();
+    // El dinero del ranking sale de la pestaña "Ventas" del Tracker (cada cobro, con su closer y su setter): la misma fuente de las tarjetas y de la meta del mes, para que todo cuadre.
+    const ventasMes = await leerVentasMes(anio, mes);
+    const ventasHoy = (hoy.getFullYear() === anio && hoy.getMonth() === mes) ? ventasMes : await leerVentasMes(hoy.getFullYear(), hoy.getMonth());
     let totalMes = 0, totalDia = 0;
-    huboDatosCloserActual = false;
-    porCloserActual = new Map();
-    filasRanking.forEach(f => {
-      if(f.fecha.getFullYear() === anio && f.fecha.getMonth() === mes){
-        huboDatosCloserActual = true;
-        totalMes += f.monto;
-        porCloserActual.set(f.closer, (porCloserActual.get(f.closer) || 0) + f.monto);
-      }
-      if(mismoDia(f.fecha, hoy)) totalDia += f.monto;
+    huboDatosCloserActual = false; huboDatosSetterActual = false;
+    porCloserActual = new Map(); porSetterVentasActual = new Map();
+    (ventasMes || []).forEach(v => {
+      huboDatosCloserActual = true; huboDatosSetterActual = true;
+      totalMes += v.cash || 0;
+      const c = v.closer || 'Sin closer asignado', st = v.setter || 'Sin setter asignada';
+      porCloserActual.set(c, (porCloserActual.get(c) || 0) + (v.cash || 0));
+      porSetterVentasActual.set(st, (porSetterVentasActual.get(st) || 0) + (v.cash || 0));
     });
+    (ventasHoy || []).forEach(v => { const f = parseFechaSheet(v.fecha); if(f && mismoDia(f, hoy)) totalDia += v.cash || 0; });
 
     document.getElementById('gaugeMaxMes').textContent = META_CASH_MES.toLocaleString('es-AR');
     document.getElementById('gaugeMaxDia').textContent = META_CASH_DIA.toLocaleString('es-AR');
     pintarGauge('gaugeArcMes', 'gaugeValMes', totalMes, META_CASH_MES);
     pintarGauge('gaugeArcDia', 'gaugeValDia', totalDia, META_CASH_DIA);
-
-    // Ranking de setters — reaprovecha la misma pestaña "Tracker" que ya
-    // usa el Dashboard, sin pegarle un fetch aparte.
-    const filasTracker = await obtenerFilasTracker();
-    huboDatosSetterActual = false;
-    porSetterVentasActual = new Map();
-    filasTracker.forEach(f => {
-      if(f.fecha.getFullYear() === anio && f.fecha.getMonth() === mes){
-        huboDatosSetterActual = true;
-        porSetterVentasActual.set(f.setter, (porSetterVentasActual.get(f.setter) || 0) + f.ventas);
-      }
-    });
 
     renderRankingTabla();
   }
