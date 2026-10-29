@@ -1466,28 +1466,36 @@
             <circle class="mm-bg" cx="60" cy="60" r="52"/><circle class="mm-arc" id="mmArc" cx="60" cy="60" r="52" stroke-dasharray="0 999"/><text class="mm-pct" id="mmPct" x="60" y="60">0%</text></svg>
           <div><div class="mm-tit">Meta del mes</div><div class="mm-val" id="mmVal">–</div><div class="mm-sub" id="mmSub">Esperando los números del mes…</div></div>
         </div>
+        <div class="chart-panel" id="esencial" style="margin-bottom:26px;">
+          <div class="sem-titulo">Lo esencial · hoy, esta semana y este mes</div>
+          <div class="utm-wrap"><table class="utm-table" style="min-width:520px;">
+            <thead><tr><th>Métrica</th><th>Hoy</th><th>Esta semana</th><th id="esencialMes">Este mes</th></tr></thead>
+            <tbody id="esencialTabla"><tr><td colspan="4" style="text-align:center;color:var(--text-dim);">Cargando…</td></tr></tbody>
+          </table></div>
+          <div class="chart-status" id="esencialNota" style="margin-bottom:0;"></div>
+        </div>
         <div class="kpi-grid">
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Llamadas</div>
             <div class="kpi-value" id="ghlLlamadas">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Agendadas</div>
             <div class="kpi-value" id="ghlAgendadas">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Shows</div>
             <div class="kpi-value" id="ghlShows">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Cierres</div>
             <div class="kpi-value" id="ghlCierres">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Cash collected</div>
             <div class="kpi-value" id="ghlVentas">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">AOV (ticket promedio)</div>
             <div class="kpi-value" id="ghlAov">–</div>
           </div>
@@ -2694,6 +2702,7 @@
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === tab));
       if(tab === 'webinar') cargarWebinar();
       if(tab === 'email') cargarEmail();
+      if(tab === 'general') renderEsencial();
       if(['leads','setters','closers','ventas','llamadas'].indexOf(tab) > -1) renderSemanas();
       if(tab === 'matematica') iniciarMiMatematica();
     });
@@ -2823,11 +2832,53 @@
   function ordenarKpisDash(){
     document.querySelectorAll('.tab-panel .kpi-grid').forEach(g => {
       const n = [...g.children].filter(c => !c.hasAttribute('data-oculto')).length;
-      if(n === 0) return;
+      if(n === 0){ g.setAttribute('data-oculto', '1'); return; }
       const cols = n <= 5 ? n : (n % 3 === 0 ? 3 : (n % 4 === 0 ? 4 : 5));
       g.setAttribute('data-cols', cols); g.style.setProperty('--kpi-cols', cols);
     });
   }
+
+  // ===== "Lo esencial": hoy / esta semana / este mes en una sola tabla, al abrir el dashboard =====
+  let esencialPedido = 0;
+  async function renderEsencial(){
+    const tb = document.getElementById('esencialTabla');
+    if(!tb) return;
+    const pedido = ++esencialPedido;
+    const [filas, rank] = await Promise.all([obtenerFilasTracker(), obtenerFilasRanking()]);
+    const h0 = new Date(); h0.setHours(0, 0, 0, 0);
+    const manana = masDias(h0, 1), L = lunesDe(h0), L0 = masDias(L, -7);
+    const { anio, mes } = mesElegidoAYyyyMm();
+    const m0 = new Date(anio, mes, 1), m1 = new Date(anio, mes + 1, 1), mp0 = new Date(anio, mes - 1, 1);
+    const thMes = document.getElementById('esencialMes'); if(thMes) thMes.textContent = 'Este mes (' + MESES_ES[mes].toLowerCase() + ')';
+    const per = { hoy: [h0, manana], ayer: [masDias(h0, -1), h0], sem: [L, masDias(L, 7)], semAnt: [L0, L], mes: [m0, m1], mesAnt: [mp0, m0] };
+    const T = k => filas.filter(r => r.fecha >= per[k][0] && r.fecha < per[k][1]);
+    const R = k => (rank || []).filter(r => r.fecha >= per[k][0] && r.fecha < per[k][1]);
+    let leads = null, cortado = false;
+    try {
+      const ini = new Date(Math.min(+mp0, +L0));
+      const res = await fetch(WORKER_URL + '/leads-por-dia?start=' + ini.getTime() + '&end=' + manana.getTime());
+      const d = await res.json();
+      if(res.ok && d.ok){ leads = d; cortado = !!d.cortadoPorLimite; }
+    } catch(e){ leads = null; }
+    if(pedido !== esencialPedido) return;
+    const clave = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const leadsEn = k => { if(!leads) return null; let t = 0; for(let d = new Date(per[k][0]); d < per[k][1] && d < manana; d = masDias(d, 1)){ const x = leads.dias[clave(d)]; t += (x && x.total) || 0; } return t; };
+    const celda = (v, ant, etq, fmt) => '<td><div style="font-size:20px;font-weight:700;">' + (v === null ? '–' : fmt(v)) + '</div><div class="mim-nota">' + etq + ' ' + (ant === null ? '–' : fmt(ant)) + '</div></td>';
+    const num = n => Math.round(n).toLocaleString('es-AR');
+    const fila = (nombre, f, fmt, etqs) => '<tr><td><b>' + nombre + '</b></td>' + ['hoy', 'sem', 'mes'].map((k, i) => { const ant = k === 'hoy' ? 'ayer' : k === 'sem' ? 'semAnt' : 'mesAnt'; return celda(f(k), f(ant), etqs[i], fmt); }).join('') + '</tr>';
+    const etqs = ['ayer', 'semana pasada', 'mes pasado'];
+    const ll = k => sumaDe(T(k), 'llamadas'), ag = k => sumaDe(T(k), 'agendadas');
+    tb.innerHTML =
+      fila('Leads nuevos', leadsEn, num, etqs) +
+      fila('Llamadas', ll, num, etqs) +
+      fila('Agendadas', ag, num, etqs) +
+      fila('% de llamadas a agenda', k => ll(k) > 0 ? ag(k) / ll(k) * 100 : null, v => f1(v) + '%', etqs) +
+      fila('Shows', k => sumaDe(T(k), 'shows'), num, etqs) +
+      fila('Cierres', k => sumaDe(T(k), 'cierres'), num, etqs) +
+      fila('Cash cobrado', k => sumaDe(R(k), 'monto'), dinero, etqs);
+    document.getElementById('esencialNota').textContent = 'Leads: GHL. Llamadas, agendadas, shows y cierres: lo que cargan las setters en Métricas. Cash: pestaña Ranking del Tracker. Debajo de cada número, el período anterior completo para comparar.' + (cortado ? ' Ojo: hay más contactos de los que se pudieron leer.' : '');
+  }
+
 
   function inyectarDias(){
     ['leads','llamadas','setters','closers','ventas'].forEach(t => {
@@ -3028,6 +3079,8 @@
   inyectarDias();
   iniciarGruposDash();
   ordenarKpisDash();
+  setTimeout(renderEsencial, 400); // después de que el resto del script ya declaró el mes elegido
+  (function(){ const lab = document.getElementById('dashMonthLabel'); if(lab) new MutationObserver(() => renderEsencial()).observe(lab, { childList: true, characterData: true, subtree: true }); const rb = document.getElementById('refreshDashBtn'); if(rb) rb.addEventListener('click', () => setTimeout(renderEsencial, 1500)); })();
 
   // ===== Tarjetas "espejo": una cifra que ya se calcula en otro lado
   // (ej. Cash collected) se repite en la sección que la usa. Se copia
