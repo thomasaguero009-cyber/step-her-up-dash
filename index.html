@@ -974,22 +974,45 @@
   .sem-nav .sem-label{ font-family:"Playfair Display",Georgia,serif; font-size:22px; font-weight:600; }
   [data-oculto]{ display:none !important; }
   @media (min-width:900px){ .kpi-grid[data-cols]{ grid-template-columns:repeat(var(--kpi-cols),1fr); } }
-  .ayuda-fab{ position:fixed; right:18px; bottom:18px; z-index:9000; display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#f6c3d2,#e88aa8); color:#2a0c14; border:none; border-radius:999px; padding:12px 18px; font:inherit; font-weight:700; font-size:14.5px; cursor:pointer; box-shadow:0 8px 28px rgba(0,0,0,.45); }
-  .ayuda-fab:hover{ filter:brightness(1.06); }
-  .ayuda-panel{ position:fixed; right:18px; bottom:72px; z-index:9000; width:360px; max-width:calc(100vw - 36px); max-height:calc(100vh - 100px); overflow:auto; padding:16px; background:#1b0a10; border:1px solid var(--border); border-radius:16px; box-shadow:0 14px 44px rgba(0,0,0,.55); text-align:left; }
-  .ayuda-panel[hidden], .ayuda-clave[hidden], .ayuda-resp[hidden]{ display:none; }
-  .ayuda-cerrar{ float:right; background:none; border:none; color:var(--text-dim); font-size:20px; line-height:1; cursor:pointer; }
-  .ayuda-titulo{ font-family:"Playfair Display",Georgia,serif; font-size:20px; font-weight:600; margin-bottom:10px; }
-  .ayuda-fila{ display:flex; gap:8px; flex-wrap:wrap; }
-  .ayuda-fila input, .ayuda-clave input{ flex:1; min-width:180px; background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:10px; padding:11px 12px; color:var(--cream); font:inherit; font-size:15px; }
-  .ayuda-fila input:focus, .ayuda-clave input:focus{ outline:none; border-color:var(--blush-2); }
-  .ayuda-fila button, .ayuda-clave button{ background:rgba(240,168,190,0.18); border:1px solid var(--blush-2); color:var(--cream); border-radius:10px; padding:11px 16px; font:inherit; font-weight:600; cursor:pointer; }
-  .ayuda-chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-  .ayuda-chips button{ background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text-dim); border-radius:999px; padding:6px 12px; font:inherit; font-size:12.5px; cursor:pointer; }
-  .ayuda-chips button:hover{ color:var(--cream); border-color:var(--blush-2); }
-  .ayuda-clave{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-  .ayuda-resp{ margin-top:12px; padding:12px 14px; background:rgba(255,255,255,0.05); border-radius:12px; font-size:15px; line-height:1.55; white-space:pre-wrap; }
-  .ayuda-nota{ margin-top:10px; font-size:12px; color:var(--text-dim); text-align:center; }
+  .ayuda-fab{ position:fixed; right:20px; bottom:20px; z-index:9000; display:flex; align-items:center; gap:10px; background:linear-gradient(135deg,#f8cad8 0%,#ec93b0 100%); color:#2a0c14; border:1px solid rgba(255,255,255,.35); border-radius:999px; padding:12px 20px 12px 14px; font:inherit; font-weight:700; font-size:14.5px; cursor:pointer; box-shadow:0 10px 30px rgba(236,147,176,.28), 0 8px 24px rgba(0,0,0,.45); transition:transform .18s ease, box-shadow .18s ease; animation:ayudaLatido 3.2s ease-in-out infinite; }
+  .ayuda-fab:hover{ transform:translateY(-2px); box-shadow:0 14px 34px rgba(236,147,176,.4), 0 10px 26px rgba(0,0,0,.5); }
+  .ayuda-fab svg{ width:22px; height:22px; flex:none; }
+  .ayuda-fab.abierto{ animation:none; padding:12px 16px; }
+  @keyframes ayudaLatido{ 0%,100%{ box-shadow:0 10px 30px rgba(236,147,176,.28), 0 8px 24px rgba(0,0,0,.45); } 50%{ box-shadow:0 10px 38px rgba(236,147,176,.55), 0 8px 24px rgba(0,0,0,.45); } }
+  .ayuda-panel{ position:fixed; right:20px; bottom:80px; z-index:9000; width:380px; max-width:calc(100vw - 32px); max-height:calc(100vh - 110px); overflow:auto; padding:20px; text-align:left; color:var(--cream);
+    background:linear-gradient(160deg, rgba(60,18,30,.94), rgba(22,7,12,.96)); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    border:1px solid rgba(240,168,190,.28); border-radius:22px; box-shadow:0 24px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.07);
+    transform-origin:bottom right; animation:ayudaEntra .22s ease; }
+  @keyframes ayudaEntra{ from{ opacity:0; transform:translateY(10px) scale(.96); } to{ opacity:1; transform:none; } }
+  .ayuda-panel[hidden], .ayuda-resp[hidden]{ display:none; }
+  .ayuda-cabecera{ display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .ayuda-insignia{ width:38px; height:38px; border-radius:12px; flex:none; display:grid; place-items:center; background:linear-gradient(135deg,#f8cad8,#ec93b0); color:#2a0c14; }
+  .ayuda-insignia svg{ width:20px; height:20px; }
+  .ayuda-titulo{ font-family:"Playfair Display",Georgia,serif; font-size:19px; font-weight:600; line-height:1.15; }
+  .ayuda-sub{ font-size:12.5px; color:var(--text-dim); margin-top:2px; }
+  .ayuda-cerrar{ margin-left:auto; background:rgba(255,255,255,.07); border:none; color:var(--text-dim); width:30px; height:30px; border-radius:50%; font-size:18px; line-height:1; cursor:pointer; flex:none; }
+  .ayuda-cerrar:hover{ color:var(--cream); background:rgba(255,255,255,.13); }
+  .ayuda-fila{ display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:5px 5px 5px 14px; transition:border-color .15s ease, background .15s ease; }
+  .ayuda-fila:focus-within{ border-color:rgba(240,168,190,.7); background:rgba(255,255,255,.09); }
+  .ayuda-fila svg.lupa{ width:18px; height:18px; flex:none; color:var(--text-dim); }
+  .ayuda-fila input{ flex:1; min-width:0; background:none; border:none; outline:none; color:var(--cream); font:inherit; font-size:15px; padding:9px 4px; }
+  .ayuda-fila input::placeholder{ color:rgba(255,255,255,.4); }
+  .ayuda-fila button{ width:38px; height:38px; flex:none; display:grid; place-items:center; border:none; border-radius:12px; cursor:pointer; background:linear-gradient(135deg,#f8cad8,#ec93b0); color:#2a0c14; transition:transform .15s ease; }
+  .ayuda-fila button:hover{ transform:scale(1.06); }
+  .ayuda-fila button svg{ width:18px; height:18px; }
+  .ayuda-etq{ font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--text-dim); margin:16px 0 8px; }
+  .ayuda-chips{ display:flex; gap:8px; flex-wrap:wrap; }
+  .ayuda-chips button{ background:rgba(240,168,190,.08); border:1px solid rgba(240,168,190,.22); color:var(--cream); border-radius:999px; padding:7px 13px; font:inherit; font-size:13px; cursor:pointer; text-align:left; transition:background .15s ease, border-color .15s ease; }
+  .ayuda-chips button:hover{ background:rgba(240,168,190,.18); border-color:rgba(240,168,190,.5); }
+  .ayuda-resp{ margin-top:16px; padding:14px 16px; background:rgba(255,255,255,.06); border-left:3px solid #ec93b0; border-radius:4px 14px 14px 4px; font-size:14.5px; line-height:1.55; white-space:pre-wrap; animation:ayudaEntra .2s ease; }
+  .ayuda-resp .ayuda-destino{ display:flex; width:fit-content; align-items:center; gap:6px; margin-top:10px; padding:5px 11px; border-radius:999px; background:rgba(240,168,190,.16); color:#f8cad8; font-size:12.5px; font-weight:600; white-space:normal; }
+  .ayuda-puntos{ display:inline-flex; gap:5px; align-items:center; height:20px; }
+  .ayuda-puntos i{ width:7px; height:7px; border-radius:50%; background:#ec93b0; animation:ayudaPunto 1s ease-in-out infinite; }
+  .ayuda-puntos i:nth-child(2){ animation-delay:.15s; } .ayuda-puntos i:nth-child(3){ animation-delay:.3s; }
+  @keyframes ayudaPunto{ 0%,80%,100%{ opacity:.25; transform:scale(.8); } 40%{ opacity:1; transform:scale(1.1); } }
+  .ayuda-nota{ margin-top:14px; font-size:11.5px; color:var(--text-dim); text-align:center; }
+  @media (max-width:520px){ .ayuda-fab span{ display:none; } .ayuda-fab{ padding:14px; } .ayuda-panel{ right:12px; left:12px; width:auto; bottom:78px; } }
+  @media (prefers-reduced-motion:reduce){ .ayuda-fab, .ayuda-panel, .ayuda-resp, .ayuda-puntos i{ animation:none; } }
   .grupo-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
   .grupo-btn{ flex:1; min-width:150px; text-align:center; color:var(--cream); cursor:pointer; font-family:inherit; font-size:16px; font-weight:700; letter-spacing:.02em;
     background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:14px; padding:14px 16px; transition:background .18s ease, border-color .18s ease; }
@@ -1158,19 +1181,27 @@
   <!-- Candado de entrada a toda la plataforma — una sola contraseña
        compartida, no por usuario. Se persiste en localStorage para no
        pedirla de nuevo en cada visita desde el mismo navegador. -->
-  <button type="button" class="ayuda-fab" id="ayudaFab" aria-label="¿En qué te puedo ayudar?">✦ ¿En qué te puedo ayudar?</button>
-  <div class="ayuda-panel" id="ayudaPanel" hidden>
-    <button type="button" class="ayuda-cerrar" id="ayudaCerrar" aria-label="Cerrar">×</button>
-    <div class="ayuda-titulo">¿Qué estás buscando?</div>
-    <div class="ayuda-fila"><input id="ayudaInput" type="text" maxlength="400" autocomplete="off" placeholder="Ej.: cargar mis números, ver el ranking…"><button type="button" id="ayudaBtn">Ir</button></div>
+  <button type="button" class="ayuda-fab" id="ayudaFab" aria-label="¿En qué te puedo ayudar?"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2zm7 11l.9 2.6 2.6.9-2.6.9L19 20l-.9-2.6-2.6-.9 2.6-.9L19 13zM5 14l.7 2 2 .7-2 .7L5 19.5l-.7-2.1-2-.7 2-.7L5 14z"/></svg><span>¿En qué te puedo ayudar?</span></button>
+  <div class="ayuda-panel" id="ayudaPanel" hidden role="dialog" aria-label="Asistente">
+    <div class="ayuda-cabecera">
+      <div class="ayuda-insignia"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2zm7 11l.9 2.6 2.6.9-2.6.9L19 20l-.9-2.6-2.6-.9 2.6-.9L19 13zM5 14l.7 2 2 .7-2 .7L5 19.5l-.7-2.1-2-.7 2-.7L5 14z"/></svg></div>
+      <div><div class="ayuda-titulo">¿En qué te puedo ayudar?</div><div class="ayuda-sub">Dime qué buscas y te llevo ahí</div></div>
+      <button type="button" class="ayuda-cerrar" id="ayudaCerrar" aria-label="Cerrar">×</button>
+    </div>
+    <div class="ayuda-fila">
+      <svg class="lupa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="ayudaInput" type="text" maxlength="400" autocomplete="off" placeholder="Ej.: cargar mis números, ver el ranking…">
+      <button type="button" id="ayudaBtn" aria-label="Ir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="ayuda-resp" id="ayudaResp" hidden></div>
+    <div class="ayuda-etq">Prueba con</div>
     <div class="ayuda-chips" id="ayudaChips">
-      <button type="button">Quiero cargar mis números de hoy</button>
+      <button type="button">Cargar mis números de hoy</button>
       <button type="button">Ver el ranking</button>
       <button type="button">¿Cuántas llamadas me tocan por día?</button>
       <button type="button">Calcular cuántas llamadas necesito para ganar más</button>
     </div>
-    <div class="ayuda-resp" id="ayudaResp" hidden></div>
-    <div class="ayuda-nota">Escribe lo que buscas y te llevo ahí. También respondo dudas del SOP de setters.</div>
+    <div class="ayuda-nota">También respondo dudas del SOP de setters.</div>
   </div>
   <div id="siteGateOverlay" style="position:fixed; inset:0; z-index:9999; background:radial-gradient(1.4px 1.4px at 176px 222px,rgba(255,214,224,0.8),transparent 100%),radial-gradient(1.2px 1.2px at 229px 413px,rgba(255,255,255,0.95),transparent 100%),radial-gradient(1.0px 1.0px at 525px 278px,rgba(255,226,234,0.3),transparent 100%),radial-gradient(0.9px 0.9px at 446px 43px,rgba(255,255,255,0.89),transparent 100%),radial-gradient(1.6px 1.6px at 51px 231px,rgba(255,214,224,0.88),transparent 100%),radial-gradient(1.6px 1.6px at 460px 25px,rgba(255,255,255,0.72),transparent 100%),radial-gradient(0.9px 0.9px at 385px 19px,rgba(255,255,255,0.93),transparent 100%),radial-gradient(0.9px 0.9px at 28px 240px,rgba(255,214,224,0.86),transparent 100%),radial-gradient(0.9px 0.9px at 504px 85px,rgba(255,255,255,0.32),transparent 100%),radial-gradient(1.0px 1.0px at 84px 407px,rgba(255,255,255,0.82),transparent 100%),radial-gradient(1.2px 1.2px at 133px 294px,rgba(255,255,255,0.94),transparent 100%),radial-gradient(0.9px 0.9px at 357px 480px,rgba(255,226,234,0.72),transparent 100%),radial-gradient(1.2px 1.2px at 381px 496px,rgba(255,214,224,0.59),transparent 100%),radial-gradient(0.8px 0.8px at 403px 144px,rgba(255,214,224,0.36),transparent 100%),radial-gradient(0.9px 0.9px at 10px 259px,rgba(255,255,255,0.77),transparent 100%),radial-gradient(0.9px 0.9px at 593px 631px,rgba(255,255,255,0.8),transparent 100%),radial-gradient(0.8px 0.8px at 193px 693px,rgba(255,226,234,0.42),transparent 100%),radial-gradient(1.3px 1.3px at 362px 619px,rgba(255,255,255,0.35),transparent 100%),radial-gradient(1.2px 1.2px at 75px 186px,rgba(255,255,255,0.43),transparent 100%),radial-gradient(1.2px 1.2px at 700px 540px,rgba(255,214,224,0.78),transparent 100%),radial-gradient(0.7px 0.7px at 175px 612px,rgba(255,214,224,0.42),transparent 100%),radial-gradient(1.3px 1.3px at 690px 261px,rgba(255,255,255,0.35),transparent 100%),radial-gradient(1.2px 1.2px at 457px 425px,rgba(255,226,234,0.5),transparent 100%),radial-gradient(1.1px 1.1px at 61px 272px,rgba(255,255,255,0.23),transparent 100%),radial-gradient(0.7px 0.7px at 182px 411px,rgba(255,255,255,0.41),transparent 100%),radial-gradient(0.7px 0.7px at 162px 498px,rgba(255,214,224,0.28),transparent 100%),radial-gradient(1.2px 1.2px at 36px 225px,rgba(255,255,255,0.42),transparent 100%),radial-gradient(1.2px 1.2px at 385px 623px,rgba(255,214,224,0.5),transparent 100%),radial-gradient(1.0px 1.0px at 323px 150px,rgba(255,255,255,0.36),transparent 100%),radial-gradient(0.8px 0.8px at 399px 709px,rgba(255,226,234,0.63),transparent 100%),radial-gradient(1.1px 1.1px at 615px 341px,rgba(255,214,224,0.72),transparent 100%),radial-gradient(0.9px 0.9px at 271px 707px,rgba(255,255,255,0.78),transparent 100%), radial-gradient(ellipse 85% 75% at 50% 38%, transparent 35%, rgba(8,1,4,0.55) 100%), linear-gradient(160deg, var(--wine-3), #0d0304); background-size:613px 509px, 613px 509px, 613px 509px, 613px 509px, 613px 509px, 613px 509px, 613px 509px, 613px 509px, 613px 509px, 613px 509px, 613px 509px, 613px 509px, 613px 509px, 613px 509px, 613px 509px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 809px 727px, 100% 100%, 100% 100%; display:flex; align-items:center; justify-content:center; padding:20px;">
     <div class="modal-card" style="max-width:360px; text-align:center;">
@@ -2981,28 +3012,34 @@
     const fab = document.getElementById('ayudaFab'), panel = document.getElementById('ayudaPanel'), inp = document.getElementById('ayudaInput');
     if(!fab || !panel) return;
     const resp = document.getElementById('ayudaResp');
-    const mostrar = t => { resp.hidden = false; resp.textContent = t; };
-    const abrir = () => { panel.hidden = false; fab.textContent = '× Cerrar'; inp.focus(); };
-    const cerrar = () => { panel.hidden = true; fab.textContent = '✦ ¿En qué te puedo ayudar?'; };
+    const mostrar = (t, destino) => {
+      resp.hidden = false; resp.textContent = t;
+      if(destino){ const e = document.createElement('div'); e.className = 'ayuda-destino'; e.textContent = '→ ' + destino; resp.appendChild(e); }
+    };
+    const cargando = () => { resp.hidden = false; resp.innerHTML = '<span class="ayuda-puntos"><i></i><i></i><i></i></span>'; };
+    const FAB_HTML = fab.innerHTML;
+    const abrir = () => { panel.hidden = false; fab.classList.add('abierto'); fab.innerHTML = '<span style="display:inline">×</span>'; fab.setAttribute('aria-label', 'Cerrar'); inp.focus(); };
+    const cerrar = () => { panel.hidden = true; fab.classList.remove('abierto'); fab.innerHTML = FAB_HTML; fab.setAttribute('aria-label', '¿En qué te puedo ayudar?'); };
     fab.addEventListener('click', () => panel.hidden ? abrir() : cerrar());
     document.getElementById('ayudaCerrar').addEventListener('click', cerrar);
     document.addEventListener('keydown', e => { if(e.key === 'Escape' && !panel.hidden) cerrar(); });
     async function preguntar(q){
       q = (q || '').trim();
       if(q.length < 3){ mostrar('Escribe lo que buscas (al menos 3 letras).'); return; }
-      mostrar('Buscando…');
+      cargando();
       const cat = catalogoAyuda();
       try {
         const r = await fetch(WORKER_URL + '/ayuda', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q, destinos: cat.map(x => ({ id: x.id, nombre: x.nombre, desc: x.desc })) }) });
         const d = await r.json();
         if(!d.ok){ mostrar(d.detalle || 'No pude responder ahora. Intenta de nuevo en un momento.'); return; }
-        mostrar(d.mensaje);
         const dest = d.accion === 'ir' ? cat.find(x => x.id === d.destino) : null;
+        mostrar(d.mensaje, dest ? dest.nombre.replace('Dashboard · ', '') : '');
         if(dest){ setTimeout(() => { dest.ir(); window.scrollTo(0, 0); }, 500); setTimeout(cerrar, 3500); }
       } catch(e){ mostrar('No pude conectarme. Revisa tu internet e intenta otra vez.'); }
     }
     document.getElementById('ayudaBtn').addEventListener('click', () => preguntar(inp.value));
     inp.addEventListener('keydown', e => { if(e.key === 'Enter') preguntar(inp.value); });
+    inp.addEventListener('input', () => { resp.hidden = true; });
     document.querySelectorAll('#ayudaChips button').forEach(b => b.addEventListener('click', () => { inp.value = b.textContent; preguntar(b.textContent); }));
   }
 
