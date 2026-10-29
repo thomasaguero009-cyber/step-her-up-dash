@@ -1013,6 +1013,15 @@
   .ayuda-nota{ margin-top:14px; font-size:11.5px; color:var(--text-dim); text-align:center; }
   @media (max-width:520px){ .ayuda-fab span{ display:none; } .ayuda-fab{ padding:14px; } .ayuda-panel{ right:12px; left:12px; width:auto; bottom:78px; } }
   @media (prefers-reduced-motion:reduce){ .ayuda-fab, .ayuda-panel, .ayuda-resp, .ayuda-puntos i{ animation:none; } }
+  .kpi-delta{ font-size:12.5px; color:var(--text-dim); margin-top:8px; line-height:1.4; }
+  .kpi-delta b{ color:var(--cream); font-weight:600; }
+  .sem-med{ color:#f0b46c !important; }
+  .emb-fila{ display:grid; grid-template-columns:110px 1fr 150px; gap:10px; align-items:center; margin:8px 0; font-size:14px; }
+  .emb-barra{ height:26px; border-radius:8px; background:rgba(255,255,255,.06); overflow:hidden; }
+  .emb-barra i{ display:block; height:100%; border-radius:8px; background:linear-gradient(90deg,#f8cad8,#ec93b0); min-width:3px; }
+  .emb-num{ font-variant-numeric:tabular-nums; }
+  .emb-num small{ color:var(--text-dim); margin-left:6px; }
+  @media(max-width:620px){ .emb-fila{ grid-template-columns:80px 1fr 110px; font-size:13px; } }
   .grupo-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
   .grupo-btn{ flex:1; min-width:150px; text-align:center; color:var(--cream); cursor:pointer; font-family:inherit; font-size:16px; font-weight:700; letter-spacing:.02em;
     background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:14px; padding:14px 16px; transition:background .18s ease, border-color .18s ease; }
@@ -2763,7 +2772,7 @@
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === tab));
       if(tab === 'webinar') cargarWebinar();
       if(tab === 'email') cargarEmail();
-      if(tab === 'general') renderEsencial();
+      if(tab === 'general'){ renderEsencial(); renderEmbudo(); pintarCambiosMes(); }
       if(['leads','setters','closers','ventas','llamadas'].indexOf(tab) > -1) renderSemanas();
       if(tab === 'matematica') iniciarMiMatematica();
     });
@@ -2801,6 +2810,8 @@
   };
 
   const DIAS_ES = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const SOP_LLAMADAS = 125, SOP_SETS = 5; // metas diarias del SOP para setters con 5 o más días
+  const claseMeta = pct => pct >= 100 ? 'sem-up' : pct >= 60 ? 'sem-med' : 'sem-down';
   const kpiSem = (l, v, d) => '<div class="sem-kpi"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + (d || '&nbsp;') + '</div></div>';
   const sumaDe = (arr, k) => arr.reduce((t, r) => t + (r[k] || 0), 0);
   const dinero = n => '$' + Math.round(n).toLocaleString('es-AR');
@@ -3044,6 +3055,80 @@
   }
 
 
+  // ===== Tarjetas de la Vista General: meta y mes pasado debajo de cada número (sin juzgar un mes en curso contra uno completo) =====
+  const META_TARJETA = { ghlVentas: () => META_CASH_MES };
+  let prevMesPedido = 0;
+  async function pintarCambiosMes(){
+    const pedido = ++prevMesPedido;
+    const { anio, mes } = mesElegidoAYyyyMm();
+    const pa = mes === 0 ? anio - 1 : anio, pm = mes === 0 ? 11 : mes - 1;
+    let tot = null;
+    try {
+      const r = await fetch(WORKER_URL + '/leads-summary?start=' + new Date(pa, pm, 1).getTime() + '&end=' + new Date(pa, pm + 1, 1).getTime());
+      const d = await r.json(); if(d && d.ok) tot = d.totales;
+    } catch(e){}
+    const [sh, cash] = await Promise.all([leerShows(pa, pm), cashRealDelMes(pa, pm)]);
+    if(pedido !== prevMesPedido || !tot) return;
+    const shows = Math.max(tot.shows || 0, sh ? sh.length : 0);
+    const cierres = Math.max(tot.cierres || 0, sh ? sh.filter(x => x.resultado === 'Cierre').length : 0);
+    const cierresTot = cierres + (tot.cierresWebinar || 0);
+    const cashPrev = cash == null ? (tot.ventas || 0) + (tot.ventasWebinar || 0) : cash;
+    const previos = { ghlLlamadas: tot.llamadas || 0, ghlAgendadas: tot.agendadas || 0, ghlShows: shows, ghlCierres: cierres, ghlVentas: cashPrev, ghlAov: cierresTot > 0 ? cashPrev / cierresTot : 0 };
+    const hoy = new Date(), esActual = anio === hoy.getFullYear() && mes === hoy.getMonth();
+    const num = t => { const v = parseFloat(String(t || '').replace(/[^0-9,\-]/g, '').replace(/\./g, '').replace(',', '.')); return isNaN(v) ? null : v; };
+    Object.keys(previos).forEach(id => {
+      const el = document.getElementById(id); if(!el) return;
+      let sub = el.parentElement.querySelector('.kpi-delta');
+      if(!sub){ sub = document.createElement('div'); sub.className = 'kpi-delta'; el.insertAdjacentElement('afterend', sub); }
+      const prev = previos[id], dinero = id === 'ghlVentas' || id === 'ghlAov', fmt = v => dinero ? '$' + Math.round(v).toLocaleString('es-AR') : Math.round(v).toLocaleString('es-AR');
+      const actual = num(el._final || el.textContent);
+      let t = prev > 0 ? 'Mes pasado: <b>' + fmt(prev) + '</b>' : 'Mes pasado: sin datos';
+      if(actual != null && prev >= 10 && actual / prev <= 4){
+        const p = actual / prev * 100;
+        t += esActual ? ' · llevas <b>' + Math.round(p) + '%</b>' : ' · <span class="' + (p >= 100 ? 'sem-up' : 'sem-down') + '">' + (p >= 100 ? '▲ +' : '▼ ') + Math.abs(Math.round(p - 100)) + '%</span>';
+      }
+      if(META_TARJETA[id]) t = 'Meta <b>' + fmt(META_TARJETA[id]()) + '</b>' + (actual != null ? ' · <b>' + Math.round(actual / META_TARJETA[id]() * 100) + '%</b>' : '') + '<br>' + t;
+      sub.innerHTML = t;
+    });
+  }
+
+  // ===== Embudo del mes por fuente: Leads → Agendadas → Shows → Cierres → Cash. La fuente sale del tipo de UTM (anuncio pagado, correo, orgánico) y el cash real de la columna Source de la pestaña Ventas. =====
+  let embudoFuente = 'todas', embudoPedido = 0;
+  const EMB_GRUPOS = [['todas', 'Todas'], ['ads', 'Anuncios'], ['organico', 'Orgánico'], ['email', 'Email'], ['sin', 'Sin fuente']];
+  const grupoMedio = m => m === 'paid' ? 'ads' : m === 'email' ? 'email' : m ? 'organico' : 'sin';
+  const grupoCash = t => /ads|anunc/i.test(t || '') ? 'ads' : /org/i.test(t || '') ? 'organico' : 'sin';
+  async function renderEmbudo(){
+    const cont = document.getElementById('embudoFuente'); if(!cont) return;
+    const pedido = ++embudoPedido;
+    const { anio, mes } = mesElegidoAYyyyMm();
+    const ventas = await leerVentasMes(anio, mes);
+    if(pedido !== embudoPedido) return;
+    const g = { ads: { l: 0, a: 0, s: 0, c: 0, $: 0 }, organico: { l: 0, a: 0, s: 0, c: 0, $: 0 }, email: { l: 0, a: 0, s: 0, c: 0, $: 0 }, sin: { l: 0, a: 0, s: 0, c: 0, $: 0 } };
+    const med = (utmResumen && utmResumen.med) || {}, leadsMed = (leadsData && leadsData.utmLeads && leadsData.utmLeads.med) || {};
+    Object.keys(med).forEach(k => { const x = g[grupoMedio(k)], v = med[k]; x.a += v.agendadas || 0; x.s += v.shows || 0; x.c += v.cierres || 0; });
+    Object.keys(leadsMed).forEach(k => { g[grupoMedio(k)].l += leadsMed[k] || 0; });
+    (ventas || []).forEach(v => { g[grupoCash(v.source)].$ += v.cash || 0; });
+    const sel = embudoFuente === 'todas' ? Object.values(g).reduce((t, x) => ({ l: t.l + x.l, a: t.a + x.a, s: t.s + x.s, c: t.c + x.c, $: t.$ + x.$ }), { l: 0, a: 0, s: 0, c: 0, $: 0 }) : g[embudoFuente];
+    const etapas = [['Leads', sel.l], ['Agendadas', sel.a], ['Shows', sel.s], ['Cierres', sel.c]];
+    const max = Math.max(1, ...etapas.map(e => e[1]));
+    const n = v => Math.round(v).toLocaleString('es-AR');
+    const filas = etapas.map((e, i) => '<div class="emb-fila"><span>' + e[0] + '</span><div class="emb-barra"><i style="width:' + Math.round(e[1] / max * 100) + '%"></i></div><span class="emb-num"><b>' + n(e[1]) + '</b>' + (i > 0 && etapas[i - 1][1] > 0 && e[1] <= etapas[i - 1][1] ? '<small>' + Math.round(e[1] / etapas[i - 1][1] * 100) + '% de la anterior</small>' : '') + '</span></div>').join('');
+    const totalCash = Object.values(g).reduce((t, x) => t + x.$, 0);
+    const sinAtribuir = g.sin.$, totalLeads = Object.values(g).reduce((t, x) => t + x.l, 0);
+    cont.innerHTML =
+      '<div class="chart-chips">' + EMB_GRUPOS.map(x => '<button type="button" class="chart-chip' + (x[0] === embudoFuente ? ' active' : '') + '" data-emb="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
+      filas + '<div class="emb-fila"><span>Cash cobrado</span><div></div><span class="emb-num"><b>$' + n(sel.$) + '</b></span></div>' +
+      '<div class="chart-status" style="margin:10px 0 0;">' + (totalCash > 0 ? 'Cash sin atribuir a una fuente: <b>$' + n(sinAtribuir) + '</b> (' + Math.round(sinAtribuir / totalCash * 100) + '% del cash del mes). ' : '') +
+      (totalLeads > 0 ? 'Leads sin fuente: ' + Math.round(g.sin.l / totalLeads * 100) + '%. ' : '') +
+      'La fuente de leads, agendas y cierres sale de las etiquetas UTM en GHL; el cash, de la columna Source de la pestaña Ventas. Los cierres incluyen compras directas del webinar, por eso pueden ser más que las agendadas.</div>';
+    cont.querySelectorAll('[data-emb]').forEach(b => b.addEventListener('click', () => { embudoFuente = b.dataset.emb; renderEmbudo(); }));
+  }
+  (function(){
+    const panel = document.querySelector('[data-tab-panel="general"]'), grid = panel && panel.querySelector('.kpi-grid');
+    if(grid && !document.getElementById('embudoFuente')) grid.insertAdjacentHTML('afterend', '<div class="chart-panel" style="margin-bottom:26px;"><div class="sem-titulo">Embudo del mes por fuente</div><div id="embudoFuente"><div class="chart-status">Cargando…</div></div></div>');
+  })();
+
+
   function inyectarDias(){
     ['leads','llamadas','setters','closers','ventas'].forEach(t => {
       const panel = document.querySelector('[data-tab-panel="' + t + '"]');
@@ -3150,6 +3235,8 @@
       el.innerHTML = '<div class="sem-kpis">' + kpiSem('Llamadas', tt.toLocaleString('es-AR'), delta(tt, tt0)) + kpiSem('Agendadas', ta, delta(ta, ta0)) + kpiSem('% de llamadas a agenda', pc(ta, tt), tt0 > 0 ? 'Semana anterior: ' + pc(ta0, tt0) : '') + kpiSem('Shows', sumaDe(R, 'shows'), delta(sumaDe(R, 'shows'), sumaDe(R0, 'shows'))) + kpiSem('Cierres', sumaDe(R, 'cierres'), delta(sumaDe(R, 'cierres'), sumaDe(R0, 'cierres'))) + '</div>' +
         (mejor ? '<div class="mim-frase">🏆 Quien más subió respecto a la semana anterior: <b>' + mejor.n + '</b> (+' + f1(mejor.d) + ' agendas por día).</div>' : '') +
         tablaSem(['Setter','Días','Llamadas','Llam/día','Agendadas','Agend/día','% agenda','No atienden','Meta/día','Avance'], filasHtml, 'Sin datos cargados esta semana.') +
+        '<div class="mim-nota" style="margin:6px 0 8px;">Contra las metas del SOP: ' + SOP_LLAMADAS + '+ llamadas y ' + SOP_SETS + '+ citas por día (verde = cumple, naranja = va por buen camino, rojo = lejos)</div>' +
+        tablaSem(['Setter','Llamadas/día','% de la meta','Citas/día','% de la meta','Contestan'], nombres.map(n => { const o = act[n], d = o.dias.size || 1, ld = o.llamadas / d, ad = o.agendadas / d, pl = ld / SOP_LLAMADAS * 100, pa = ad / SOP_SETS * 100; return '<tr><td>' + n + '</td><td>' + f1(ld) + '</td><td><b class="' + claseMeta(pl) + '">' + Math.round(pl) + '%</b></td><td>' + f1(ad) + '</td><td><b class="' + claseMeta(pa) + '">' + Math.round(pa) + '%</b></td><td>' + pc(o.llamadas - o.noAtend, o.llamadas) + '</td></tr>'; }).join(''), 'Sin datos cargados esta semana.') +
         '<div class="chart-status" style="margin-bottom:0;">' + (semIdx < 0 ? 'La escalera de metas empieza el lunes 2 de noviembre; hasta entonces la columna Meta/día queda vacía.' : 'Meta/día = llamadas / agendas por día de la escalera de esta semana. Avance = mitad llamadas, mitad agendas.') + '</div>';
     }
 
@@ -3246,8 +3333,8 @@
   iniciarGruposDash();
   iniciarAyuda();
   ordenarKpisDash();
-  setTimeout(renderEsencial, 400); // después de que el resto del script ya declaró el mes elegido
-  (function(){ const lab = document.getElementById('dashMonthLabel'); if(lab) new MutationObserver(() => renderEsencial()).observe(lab, { childList: true, characterData: true, subtree: true }); const rb = document.getElementById('refreshDashBtn'); if(rb) rb.addEventListener('click', () => setTimeout(renderEsencial, 1500)); })();
+  setTimeout(() => { renderEsencial(); renderEmbudo(); setTimeout(pintarCambiosMes, 4000); }, 400); // después de que el resto del script ya declaró el mes elegido
+  (function(){ const lab = document.getElementById('dashMonthLabel'); if(lab) new MutationObserver(() => { renderEsencial(); renderEmbudo(); setTimeout(pintarCambiosMes, 4000); }).observe(lab, { childList: true, characterData: true, subtree: true }); const rb = document.getElementById('refreshDashBtn'); if(rb) rb.addEventListener('click', () => setTimeout(() => { renderEsencial(); renderEmbudo(); pintarCambiosMes(); }, 3000)); })();
 
   // ===== Tarjetas "espejo": una cifra que ya se calcula en otro lado
   // (ej. Cash collected) se repite en la sección que la usa. Se copia
@@ -5943,6 +6030,7 @@
         ? 'Todavía no hay leads con UTM este mes. Cuando entren por links con UTM (anuncios o el generador del Admin) van a aparecer acá.'
         : 'Sin datos este mes todavía.';
     }
+    try { renderEmbudo(); } catch(e){}
     const totalAg = filas.reduce((a, f) => a + f.agendadas, 0);
     const agConUtm = conUtm.reduce((a, f) => a + f.agendadas, 0);
     status.textContent = totalAg > 0
