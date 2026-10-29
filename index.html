@@ -1466,7 +1466,7 @@
             <circle class="mm-bg" cx="60" cy="60" r="52"/><circle class="mm-arc" id="mmArc" cx="60" cy="60" r="52" stroke-dasharray="0 999"/><text class="mm-pct" id="mmPct" x="60" y="60">0%</text></svg>
           <div><div class="mm-tit">Meta del mes</div><div class="mm-val" id="mmVal">–</div><div class="mm-sub" id="mmSub">Esperando los números del mes…</div></div>
         </div>
-        <div class="chart-panel" id="esencial" style="margin-bottom:26px;">
+        <div class="chart-panel" id="esencial" data-oculto="1" style="margin-bottom:26px;">
           <div class="sem-titulo">Lo esencial · hoy, esta semana y este mes</div>
           <div class="utm-wrap"><table class="utm-table" style="min-width:520px;">
             <thead><tr><th>Métrica</th><th>Hoy</th><th>Esta semana</th><th id="esencialMes">Este mes</th></tr></thead>
@@ -1475,27 +1475,27 @@
           <div class="chart-status" id="esencialNota" style="margin-bottom:0;"></div>
         </div>
         <div class="kpi-grid">
-          <div class="kpi-card" data-oculto="1">
+          <div class="kpi-card">
             <div class="kpi-label">Llamadas</div>
             <div class="kpi-value" id="ghlLlamadas">–</div>
           </div>
-          <div class="kpi-card" data-oculto="1">
+          <div class="kpi-card">
             <div class="kpi-label">Agendadas</div>
             <div class="kpi-value" id="ghlAgendadas">–</div>
           </div>
-          <div class="kpi-card" data-oculto="1">
+          <div class="kpi-card">
             <div class="kpi-label">Shows</div>
             <div class="kpi-value" id="ghlShows">–</div>
           </div>
-          <div class="kpi-card" data-oculto="1">
+          <div class="kpi-card">
             <div class="kpi-label">Cierres</div>
             <div class="kpi-value" id="ghlCierres">–</div>
           </div>
-          <div class="kpi-card" data-oculto="1">
+          <div class="kpi-card">
             <div class="kpi-label">Cash collected</div>
             <div class="kpi-value" id="ghlVentas">–</div>
           </div>
-          <div class="kpi-card" data-oculto="1">
+          <div class="kpi-card">
             <div class="kpi-label">AOV (ticket promedio)</div>
             <div class="kpi-value" id="ghlAov">–</div>
           </div>
@@ -2842,7 +2842,7 @@
   let esencialPedido = 0;
   async function renderEsencial(){
     const tb = document.getElementById('esencialTabla');
-    if(!tb) return;
+    if(!tb || tb.closest('[data-oculto]')) return; // la tabla está guardada pero oculta: Thomas prefirió las tarjetas
     const pedido = ++esencialPedido;
     const [filas, rank] = await Promise.all([obtenerFilasTracker(), obtenerFilasRanking()]);
     const h0 = new Date(); h0.setHours(0, 0, 0, 0);
