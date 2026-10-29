@@ -1169,7 +1169,6 @@
       <button type="button">¿Cuántas llamadas me tocan por día?</button>
       <button type="button">Calcular cuántas llamadas necesito para ganar más</button>
     </div>
-    <div class="ayuda-clave" id="ayudaClave" hidden><input id="ayudaClaveInput" type="password" autocomplete="off" placeholder="Código del equipo"><button type="button" id="ayudaClaveBtn">Guardar y buscar</button></div>
     <div class="ayuda-resp" id="ayudaResp" hidden></div>
     <div class="ayuda-nota">Escribe lo que buscas y te llevo ahí. También respondo dudas del SOP de setters.</div>
   </div>
@@ -2981,8 +2980,7 @@
   function iniciarAyuda(){
     const fab = document.getElementById('ayudaFab'), panel = document.getElementById('ayudaPanel'), inp = document.getElementById('ayudaInput');
     if(!fab || !panel) return;
-    const resp = document.getElementById('ayudaResp'), claveBox = document.getElementById('ayudaClave'), claveInp = document.getElementById('ayudaClaveInput');
-    let pendiente = '';
+    const resp = document.getElementById('ayudaResp');
     const mostrar = t => { resp.hidden = false; resp.textContent = t; };
     const abrir = () => { panel.hidden = false; fab.textContent = '× Cerrar'; inp.focus(); };
     const cerrar = () => { panel.hidden = true; fab.textContent = '✦ ¿En qué te puedo ayudar?'; };
@@ -2992,14 +2990,11 @@
     async function preguntar(q){
       q = (q || '').trim();
       if(q.length < 3){ mostrar('Escribe lo que buscas (al menos 3 letras).'); return; }
-      let clave = ''; try { clave = localStorage.getItem('shu_ayuda_key') || ''; } catch(e){}
-      if(!clave){ pendiente = q; claveBox.hidden = false; mostrar('Para usar el asistente escribe el código del equipo (te lo da tu líder).'); claveInp.focus(); return; }
       mostrar('Buscando…');
       const cat = catalogoAyuda();
       try {
-        const r = await fetch(WORKER_URL + '/ayuda', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Team-Key': clave }, body: JSON.stringify({ q, destinos: cat.map(x => ({ id: x.id, nombre: x.nombre, desc: x.desc })) }) });
+        const r = await fetch(WORKER_URL + '/ayuda', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q, destinos: cat.map(x => ({ id: x.id, nombre: x.nombre, desc: x.desc })) }) });
         const d = await r.json();
-        if(r.status === 401){ try { localStorage.removeItem('shu_ayuda_key'); } catch(e){} pendiente = q; claveBox.hidden = false; mostrar('Ese código no es correcto. Escríbelo otra vez.'); return; }
         if(!d.ok){ mostrar(d.detalle || 'No pude responder ahora. Intenta de nuevo en un momento.'); return; }
         mostrar(d.mensaje);
         const dest = d.accion === 'ir' ? cat.find(x => x.id === d.destino) : null;
@@ -3009,9 +3004,6 @@
     document.getElementById('ayudaBtn').addEventListener('click', () => preguntar(inp.value));
     inp.addEventListener('keydown', e => { if(e.key === 'Enter') preguntar(inp.value); });
     document.querySelectorAll('#ayudaChips button').forEach(b => b.addEventListener('click', () => { inp.value = b.textContent; preguntar(b.textContent); }));
-    const guardar = () => { const v = claveInp.value.trim(); if(!v) return; try { localStorage.setItem('shu_ayuda_key', v); } catch(e){} claveInp.value = ''; claveBox.hidden = true; preguntar(pendiente || inp.value); };
-    document.getElementById('ayudaClaveBtn').addEventListener('click', guardar);
-    claveInp.addEventListener('keydown', e => { if(e.key === 'Enter') guardar(); });
   }
 
 
