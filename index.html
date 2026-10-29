@@ -1422,7 +1422,7 @@
       <div class="quick-nav-row" id="dashTabNav">
         <button type="button" class="quick-nav-btn active" data-tab="general">Vista General</button>
         <button type="button" class="quick-nav-btn" data-tab="ghl">GHL en vivo</button>
-        <button type="button" class="quick-nav-btn" data-tab="leads">Leads por día</button>
+        <button type="button" class="quick-nav-btn" data-tab="leads">Leads</button>
         <button type="button" class="quick-nav-btn" data-tab="ads">Ads</button>
         <button type="button" class="quick-nav-btn" data-tab="ventas">Ventas del mes</button>
         <button type="button" class="quick-nav-btn" data-tab="llamadas">Llamadas</button>
@@ -1612,7 +1612,7 @@
            "Tendencia diaria del funnel" (arriba, panel "ghl") como una
            serie más — acá solo quedan los 3 totales del mes. -->
       <div class="tab-panel" data-tab-panel="leads">
-        <div class="section-label" id="leads">Leads por día</div>
+        <div class="section-label" id="leads">Leads</div>
         <div class="chart-panel">
           <div class="chart-wrap">
             <svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartLeads"></svg>
@@ -2686,7 +2686,7 @@
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === tab));
       if(tab === 'webinar') cargarWebinar();
       if(tab === 'email') cargarEmail();
-      if(['setters','closers','ventas','llamadas'].indexOf(tab) > -1) renderSemanas();
+      if(['leads','setters','closers','ventas','llamadas'].indexOf(tab) > -1) renderSemanas();
       if(tab === 'matematica') iniciarMiMatematica();
     });
   });
@@ -2729,7 +2729,7 @@
   const tablaSem = (cab, filas, vacio) => '<div class="chart-panel" style="margin-bottom:18px;"><div class="utm-wrap"><table class="utm-table"><thead><tr>' + cab.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>' + (filas || '<tr><td colspan="' + cab.length + '" style="text-align:center;color:var(--text-dim);">' + vacio + '</td></tr>') + '</tbody></table></div></div>';
 
   function inyectarSemanas(){
-    ['setters','closers','ventas','llamadas'].forEach(t => {
+    ['leads','setters','closers','ventas','llamadas'].forEach(t => {
       const panel = document.querySelector('[data-tab-panel="' + t + '"]');
       if(!panel || panel.querySelector('.sem-bloque')) return;
       const lab = panel.querySelector('.section-label');
@@ -2747,6 +2747,38 @@
     });
   }
 
+  // ----- Leads por semana (contactos nuevos de GHL, Worker /leads-por-dia): 5 semanas de barras + detalle día por día -----
+  let semLeadsPedido = 0;
+  async function renderSemanaLeads(){
+    const el = document.querySelector('.sem-bloque[data-sem="leads"] .sem-cuerpo');
+    if(!el) return;
+    const pedido = ++semLeadsPedido, L = semLunes;
+    el.innerHTML = '<div class="chart-status">Cargando leads de GHL…</div>';
+    try {
+      const res = await fetch(WORKER_URL + '/leads-por-dia?start=' + masDias(L, -28).getTime() + '&end=' + masDias(L, 7).getTime());
+      const data = await res.json();
+      if(!res.ok || !data.ok) throw new Error(data.error || ('HTTP ' + res.status));
+      if(pedido !== semLeadsPedido) return;
+      const clave = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const tot = d => (data.dias[clave(d)] && data.dias[clave(d)].total) || 0;
+      const suma = lunes => [0,1,2,3,4,5,6].reduce((t, i) => t + tot(masDias(lunes, i)), 0);
+      const semanas = [4,3,2,1,0].map(k => { const l = masDias(L, -7 * k); return { l, n: suma(l) }; });
+      const act = semanas[4].n, ant = semanas[3].n, max = Math.max(1, ...semanas.map(x => x.n));
+      const hoy = new Date(); hoy.setHours(0,0,0,0);
+      const transcurridos = [0,1,2,3,4,5,6].filter(i => masDias(L, i) <= hoy).length || 0;
+      const dias7 = [0,1,2,3,4,5,6].map(i => ({ i, n: tot(masDias(L, i)), fut: masDias(L, i) > hoy }));
+      const mejor = dias7.reduce((m, x) => x.n > m.n ? x : m, { n: 0, i: -1 });
+      const barras = semanas.map((x, idx) => '<tr><td>' + fCorta(x.l) + ' – ' + fCorta(masDias(x.l, 6)) + (idx === 4 ? ' <b>(la que ves)</b>' : '') + '</td><td>' + x.n.toLocaleString('es-AR') + '</td><td style="width:45%"><div class="sem-barra" style="min-width:160px;"><i style="width:' + Math.round(x.n / max * 100) + '%;background:#ffd166"></i></div></td></tr>').join('');
+      const porDia = dias7.map(x => '<tr><td>' + DIAS_ES[x.i] + ' ' + masDias(L, x.i).getDate() + '</td><td>' + (x.fut ? '–' : x.n.toLocaleString('es-AR')) + '</td></tr>').join('');
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Leads de la semana', act.toLocaleString('es-AR'), delta(act, ant)) + kpiSem('Promedio por día', transcurridos ? f1(act / transcurridos) : '–', transcurridos ? 'en ' + transcurridos + ' día' + (transcurridos > 1 ? 's' : '') : '') + kpiSem('Mejor día', mejor.n > 0 ? mejor.n.toLocaleString('es-AR') : '–', mejor.n > 0 ? DIAS_ES[mejor.i] + ' ' + masDias(L, mejor.i).getDate() : '') + '</div>' +
+        tablaSem(['Últimas 5 semanas','Leads',''], barras, '') + tablaSem(['Día','Leads'], porDia, '') +
+        (data.cortadoPorLimite ? '<div class="chart-status" style="margin-bottom:0;">Ojo: hay más contactos de los que se pudieron leer; las semanas más antiguas pueden verse cortas.</div>' : '');
+    } catch(e){
+      if(pedido !== semLeadsPedido) return;
+      el.innerHTML = '<div class="chart-status">No se pudo leer GHL: ' + (e.message || e) + '</div>';
+    }
+  }
+
   async function renderSemanas(){
     const [filas, rank] = await Promise.all([obtenerFilasTracker(), obtenerFilasRanking()]);
     const L = semLunes, F = masDias(L, 7), L0 = masDias(L, -7), fin = masDias(L, 6);
@@ -2759,6 +2791,7 @@
     const cuerpo = t => document.querySelector('.sem-bloque[data-sem="' + t + '"] .sem-cuerpo');
     const dia = i => DIAS_ES[i] + ' ' + masDias(L, i).getDate();
     const hayR = R.length > 0;
+    renderSemanaLeads();
 
     // ----- Setters -----
     let el = cuerpo('setters');
