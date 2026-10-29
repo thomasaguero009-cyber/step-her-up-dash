@@ -968,6 +968,22 @@
      en el Sheet ese mes), por eso auto-fill en vez de una columna fija. */
   .breakdown-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; margin-bottom:10px; }
   .utm-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:18px; background:var(--card); }
+  .sem-nav{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:22px; }
+  .sem-nav button{ background:rgba(255,255,255,0.06); border:1px solid var(--border); color:var(--cream); border-radius:999px; padding:9px 16px; font:inherit; font-size:14px; cursor:pointer; }
+  .sem-nav button:hover{ border-color:var(--blush-2); }
+  .sem-nav .sem-label{ font-family:"Playfair Display",Georgia,serif; font-size:22px; font-weight:600; }
+  .sem-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:26px; }
+  .sem-kpi{ background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:16px; padding:16px 18px; }
+  .sem-kpi .l{ font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); }
+  .sem-kpi .v{ font-size:28px; font-weight:700; margin-top:6px; font-variant-numeric:tabular-nums; }
+  .sem-kpi .d{ font-size:13px; margin-top:4px; color:var(--text-dim); }
+  .sem-up{ color:#5fd39a !important; } .sem-down{ color:#f0716c !important; }
+  .sem-barra{ height:8px; border-radius:99px; background:rgba(255,255,255,0.1); overflow:hidden; min-width:90px; }
+  .sem-barra i{ display:block; height:100%; background:#5fd39a; }
+  .mim-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; margin:14px 0 22px; }
+  .mim-res{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:16px; }
+  .mim-nota{ font-size:13px; color:var(--text-dim); line-height:1.55; }
+  .mim-frase{ font-size:16px; line-height:1.6; margin:6px 0 14px; }
   .utm-table{ width:100%; border-collapse:collapse; min-width:620px; font-size:14px; }
   .utm-table th{ text-align:right; font-weight:600; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); padding:14px 16px; border-bottom:1px solid var(--border); white-space:nowrap; }
   .utm-table td{ text-align:right; padding:13px 16px; border-bottom:1px solid rgba(255,255,255,0.06); font-variant-numeric:tabular-nums; }
@@ -1407,6 +1423,7 @@
         <button type="button" class="quick-nav-btn" data-tab="ads">Ads</button>
         <button type="button" class="quick-nav-btn" data-tab="ventas">Ventas del mes</button>
         <button type="button" class="quick-nav-btn" data-tab="llamadas">Llamadas</button>
+        <button type="button" class="quick-nav-btn" data-tab="semanas">Semanas</button>
         <button type="button" class="quick-nav-btn" data-tab="matematica">Matemática del éxito</button>
         <button type="button" class="quick-nav-btn" data-tab="setters">Setters</button>
         <button type="button" class="quick-nav-btn" data-tab="closers">Closers</button>
@@ -1817,6 +1834,24 @@
           <div class="chart-status" id="statusProyeccion">Sin datos todavía — se va a conectar a un Google Sheet</div>
         </div>
         <div class="chart-status" id="statusMatematica" style="margin-bottom:44px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
+        <div class="chart-panel" id="miMate" style="margin-top:26px;margin-bottom:44px;">
+          <div class="section-label" style="margin-bottom:10px;">Mi matemática del éxito</div>
+          <div class="mim-nota">Elige tu nombre, escribe cuánto quieres ganar de comisión al mes y el dashboard calcula hacia atrás cuántas ventas, shows, agendas y llamadas necesitas, con tu propio ritmo de las últimas 4 semanas. Juega con los números.</div>
+          <div class="mim-grid">
+            <div class="metricas-field"><label for="mimNombre">Quién eres</label><select id="mimNombre"></select></div>
+            <div class="metricas-field"><label for="mimComision">Comisión que quiero al mes ($)</label><input id="mimComision" type="number" min="0" step="100" value="3000"></div>
+            <div class="metricas-field"><label for="mimPct">Mi comisión por venta (%)</label><input id="mimPct" type="number" min="0" step="0.5" value="10"></div>
+            <div class="metricas-field"><label for="mimTicket">Ticket promedio ($)</label><input id="mimTicket" type="number" min="0" step="50" value="3000"></div>
+            <div class="metricas-field"><label for="mimShow">De agendadas a show (%)</label><input id="mimShow" type="number" min="1" max="100" step="1" value="60"></div>
+            <div class="metricas-field"><label for="mimCierre">De show a venta (%)</label><input id="mimCierre" type="number" min="1" max="100" step="1" value="30"></div>
+            <div class="metricas-field"><label for="mimAgenda">Mi % de llamadas a agenda</label><input id="mimAgenda" type="number" min="0.1" max="100" step="0.1" value="2"></div>
+            <div class="metricas-field"><label for="mimDias">Días que trabajo al mes</label><input id="mimDias" type="number" min="1" max="31" step="1" value="22"></div>
+          </div>
+          <div class="mim-frase" id="mimFrase"></div>
+          <div class="mim-res" id="mimRes"></div>
+          <div class="mim-frase" id="mimCompara"></div>
+          <div class="mim-nota" id="mimNotaDatos"></div>
+        </div>
       </div>
 
       <div class="tab-panel" data-tab-panel="setters">
@@ -1890,6 +1925,26 @@
           <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Envío</th><th>Fecha</th><th>Enviados</th><th>Entregados</th><th>Abiertos</th><th>Clics</th><th>Rebotados</th><th>Fallidos</th><th>Omitidos</th></tr></thead><tbody id="emailEnvios"></tbody></table></div>
         </div>
         <div class="chart-status" id="statusEmail" style="margin-bottom:44px;">Cargando…</div>
+      </div>
+
+      <!-- Semanas: métricas semanales por setter (sale del mismo Tracker, sin cargar nada nuevo). -->
+      <div class="tab-panel" data-tab-panel="semanas">
+        <div class="section-label" id="semanas">Semanas</div>
+        <div class="sem-nav">
+          <button type="button" id="semPrev">← Semana anterior</button>
+          <span class="sem-label" id="semLabel">–</span>
+          <button type="button" id="semNext">Semana siguiente →</button>
+          <button type="button" id="semHoy">Esta semana</button>
+        </div>
+        <div class="sem-kpis" id="semKpis"></div>
+        <div class="chart-panel" style="margin-bottom:18px;">
+          <div class="mim-frase" id="semDestacada"></div>
+          <div class="utm-wrap"><table class="utm-table">
+            <thead><tr><th>Setter</th><th>Días</th><th>Llamadas</th><th>Llam/día</th><th>Agendadas</th><th>Agend/día</th><th>% agenda</th><th>No atienden</th><th>Meta/día</th><th>Avance</th></tr></thead>
+            <tbody id="semTabla"></tbody>
+          </table></div>
+        </div>
+        <div class="chart-status" id="statusSemanas" style="margin-bottom:44px;"></div>
       </div>
 
       <!-- Closers: sale de la pestaña "Ranking" del Sheet (Fecha | Closer | Monto),
@@ -2649,9 +2704,139 @@
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === tab));
       if(tab === 'webinar') cargarWebinar();
       if(tab === 'email') cargarEmail();
+      if(tab === 'semanas') cargarSemanas();
+      if(tab === 'matematica') iniciarMiMatematica();
     });
   });
 
+
+
+  // ===== Semanas + "Mi matemática del éxito" (setters). Todo sale del mismo Tracker y del Ranking:
+  // no se carga nada nuevo. La escalera de metas es una propuesta y se cambia acá abajo. =====
+  const ESCALERA_INICIO = new Date(2026, 10, 2); // lunes 2-nov-2026 = semana 1
+  const ESCALERA = { Paula: [[75,2],[90,3],[105,4],[125,5]], Mia: [[70,1],[80,2],[95,3],[110,3]], Belen: [[55,1],[70,2],[85,2],[100,3]] }; // [llamadas/día, agendas/día] por semana
+  const MESES_CORTO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const lunesDe = d => new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() + 6) % 7));
+  const masDias = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const fCorta = d => d.getDate() + ' ' + MESES_CORTO[d.getMonth()];
+  let semLunes = lunesDe(new Date());
+
+  function resumirSemana(filas, lunes){
+    const fin = masDias(lunes, 7), por = {};
+    filas.forEach(r => {
+      if(r.fecha < lunes || r.fecha >= fin) return;
+      const o = por[r.setter] || (por[r.setter] = { dias: new Set(), llamadas: 0, agendadas: 0, noAtend: 0, shows: 0, cierres: 0, ventas: 0 });
+      if(r.llamadas > 0) o.dias.add(r.fecha.getTime());
+      o.llamadas += r.llamadas; o.agendadas += r.agendadas; o.noAtend += r.noAtendieron; o.shows += r.shows; o.cierres += r.cierres; o.ventas += r.ventas;
+    });
+    return por;
+  }
+  const f1 = n => (Math.round(n * 10) / 10).toLocaleString('es-AR');
+  const pc = (a, b) => b > 0 ? f1(a / b * 100) + '%' : '–';
+  const delta = (a, b) => {
+    if(!(b > 0)) return '';
+    if(a === b) return 'Igual que la semana anterior';
+    const sube = a > b, txt = b < 10 ? (sube ? '+' : '–') + Math.abs(Math.round(a - b)) : Math.abs(Math.round((a - b) / b * 100)) + '%';
+    return '<span class="' + (sube ? 'sem-up' : 'sem-down') + '">' + (sube ? '▲ ' : '▼ ') + txt + ' vs. semana anterior</span>';
+  };
+
+  async function cargarSemanas(){
+    const filas = await obtenerFilasTracker();
+    const fin = masDias(semLunes, 6);
+    document.getElementById('semLabel').textContent = fCorta(semLunes) + ' – ' + fCorta(fin) + ' ' + fin.getFullYear();
+    const act = resumirSemana(filas, semLunes), ant = resumirSemana(filas, masDias(semLunes, -7));
+    const tot = o => Object.values(o).reduce((t, x) => ({ llamadas: t.llamadas + x.llamadas, agendadas: t.agendadas + x.agendadas, shows: t.shows + x.shows, cierres: t.cierres + x.cierres, ventas: t.ventas + x.ventas }), { llamadas: 0, agendadas: 0, shows: 0, cierres: 0, ventas: 0 });
+    const T = tot(act), P = tot(ant);
+    const kpi = (l, v, d) => '<div class="sem-kpi"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + (d || '&nbsp;') + '</div></div>';
+    document.getElementById('semKpis').innerHTML =
+      kpi('Llamadas', T.llamadas.toLocaleString('es-AR'), delta(T.llamadas, P.llamadas)) +
+      kpi('Agendadas', T.agendadas.toLocaleString('es-AR'), delta(T.agendadas, P.agendadas)) +
+      kpi('% de llamadas a agenda', pc(T.agendadas, T.llamadas), P.llamadas > 0 ? 'Semana anterior: ' + pc(P.agendadas, P.llamadas) : '') +
+      kpi('Shows', T.shows.toLocaleString('es-AR'), delta(T.shows, P.shows)) +
+      kpi('Cierres', T.cierres.toLocaleString('es-AR'), delta(T.cierres, P.cierres)) +
+      kpi('Ventas ($)', '$' + Math.round(T.ventas).toLocaleString('es-AR'), delta(T.ventas, P.ventas));
+    const nombres = Object.keys(act).filter(n => act[n].llamadas > 0 || act[n].agendadas > 0).sort((a, b) => act[b].agendadas - act[a].agendadas);
+    const semIdx = Math.floor((semLunes - ESCALERA_INICIO) / (7 * 86400000));
+    let mejor = null;
+    const html = nombres.map(n => {
+      const o = act[n], dias = o.dias.size || 1, ld = o.llamadas / dias, ad = o.agendadas / dias;
+      const prev = ant[n]; let dAd = null;
+      if(prev && prev.dias.size) { dAd = ad - prev.agendadas / prev.dias.size; if(dAd > 0 && (!mejor || dAd > mejor.d)) mejor = { n, d: dAd }; }
+      let meta = '–', avance = '<span class="mim-nota">–</span>';
+      const esc = ESCALERA[n];
+      if(esc && semIdx >= 0){
+        const m = esc[Math.min(semIdx, esc.length - 1)];
+        meta = m[0] + ' / ' + m[1];
+        const av = Math.min(100, Math.round((ld / m[0] * 0.5 + ad / m[1] * 0.5) * 100));
+        avance = '<div class="sem-barra"><i style="width:' + av + '%"></i></div><span class="mim-nota">' + av + '%</span>';
+      }
+      return '<tr><td>' + n + '</td><td>' + o.dias.size + '</td><td>' + o.llamadas.toLocaleString('es-AR') + '</td><td>' + f1(ld) + '</td><td>' + o.agendadas + '</td><td>' + f1(ad) + '</td><td>' + pc(o.agendadas, o.llamadas) + '</td><td>' + pc(o.noAtend, o.llamadas) + '</td><td>' + meta + '</td><td>' + avance + '</td></tr>';
+    }).join('');
+    document.getElementById('semTabla').innerHTML = html || '<tr><td colspan="10" style="text-align:center;color:var(--text-dim);">Sin datos cargados esta semana.</td></tr>';
+    document.getElementById('semDestacada').innerHTML = mejor ? '🏆 Quien más subió respecto a la semana anterior: <b>' + mejor.n + '</b> (+' + f1(mejor.d) + ' agendas por día).' : '';
+    document.getElementById('statusSemanas').textContent = semIdx < 0
+      ? 'La escalera de metas empieza el lunes 2 de noviembre; hasta entonces la columna Meta/día queda vacía.'
+      : 'Meta/día = llamadas / agendas por día de la escalera de esta semana. Avance = mitad llamadas, mitad agendas. Los shows y cierres dependen de que se carguen en el Tracker.';
+  }
+  document.getElementById('semPrev').addEventListener('click', () => { semLunes = masDias(semLunes, -7); cargarSemanas(); });
+  document.getElementById('semNext').addEventListener('click', () => { semLunes = masDias(semLunes, 7); cargarSemanas(); });
+  document.getElementById('semHoy').addEventListener('click', () => { semLunes = lunesDe(new Date()); cargarSemanas(); });
+
+  // ----- Mi matemática del éxito -----
+  let mimListo = false, mimDatos = null;
+  const mimN = id => parseFloat(document.getElementById(id).value) || 0;
+  function mimGuardar(){ try { ['mimNombre','mimComision','mimPct','mimTicket','mimShow','mimCierre','mimAgenda','mimDias'].forEach(i => localStorage.setItem('shu_' + i, document.getElementById(i).value)); } catch(e){} }
+  function mimRitmo(nombre){
+    // últimas 4 semanas (incluida la actual) de ese setter
+    const desde = masDias(lunesDe(new Date()), -21), dias = new Set(); let ll = 0, ag = 0;
+    mimDatos.filas.forEach(r => { if(r.setter === nombre && r.fecha >= desde && r.llamadas > 0){ dias.add(r.fecha.getTime()); ll += r.llamadas; ag += r.agendadas; } });
+    return { dias: dias.size, ll, ag, llDia: dias.size ? ll / dias.size : 0, agDia: dias.size ? ag / dias.size : 0, pctAg: ll > 0 ? ag / ll * 100 : 0 };
+  }
+  function mimCalcular(){
+    if(!mimDatos) return;
+    const comision = mimN('mimComision'), pct = mimN('mimPct') / 100, ticket = mimN('mimTicket'), show = mimN('mimShow') / 100, cierre = mimN('mimCierre') / 100, ag = mimN('mimAgenda') / 100, dias = Math.max(1, mimN('mimDias'));
+    const porVenta = ticket * pct, mi = mimRitmo(document.getElementById('mimNombre').value);
+    if(!(porVenta > 0 && show > 0 && cierre > 0 && ag > 0)){ document.getElementById('mimFrase').textContent = 'Completa los porcentajes y el ticket para calcular.'; document.getElementById('mimRes').innerHTML = ''; document.getElementById('mimCompara').textContent = ''; return; }
+    const ventas = Math.ceil(comision / porVenta), shows = Math.ceil(ventas / cierre), agendas = Math.ceil(shows / show), llamadas = Math.ceil(agendas / ag);
+    const llDia = Math.ceil(llamadas / dias), agDia = Math.ceil(agendas / dias * 10) / 10;
+    document.getElementById('mimFrase').innerHTML = 'Cada venta te deja <b>$' + Math.round(porVenta).toLocaleString('es-AR') + '</b>. Para ganar <b>$' + Math.round(comision).toLocaleString('es-AR') + '</b> al mes necesitas <b>' + ventas + ' ventas</b>.';
+    const k = (l, v, d) => '<div class="sem-kpi"><div class="l">' + l + '</div><div class="v">' + v + '</div><div class="d">' + (d || '&nbsp;') + '</div></div>';
+    document.getElementById('mimRes').innerHTML = k('Ventas al mes', ventas, '') + k('Shows al mes', shows, 'al ' + Math.round(cierre * 100) + '% de cierre') + k('Agendadas al mes', agendas, 'al ' + Math.round(show * 100) + '% de show') + k('Llamadas al mes', llamadas.toLocaleString('es-AR'), 'a tu ' + f1(ag * 100) + '% de agenda') + k('Llamadas por día', llDia, f1(agDia) + ' agendas por día');
+    let t = '';
+    if(mi.dias > 0){
+      const hoy = Math.round(mi.llDia);
+      t = 'Hoy haces unas <b>' + hoy + ' llamadas por día</b> y <b>' + f1(mi.agDia) + ' agendas/día</b> (últimas 4 semanas, ' + mi.dias + ' días con datos). ';
+      t += llDia <= hoy ? '¡Con tu ritmo actual ya llegas a esa meta! 🎉' : 'Te faltan <b>' + (llDia - hoy) + ' llamadas por día</b> para esa meta.';
+      const agIn = ag * 100, ll2 = Math.ceil(agendas / ((agIn + 1) / 100) / dias);
+      t += ' <br><br>Si subes tu % de agenda de <b>' + f1(agIn) + '%</b> a <b>' + f1(agIn + 1) + '%</b>, necesitas solo <b>' + ll2 + ' llamadas por día</b> en vez de ' + llDia + '. Mejorar la conversación vale tanto como llamar más.';
+    } else t = 'Todavía no hay llamadas tuyas cargadas en las últimas 4 semanas.';
+    document.getElementById('mimCompara').innerHTML = t;
+    document.getElementById('mimNotaDatos').textContent = mimDatos.nota;
+    mimGuardar();
+  }
+  function mimPonerRitmo(){ const mi = mimRitmo(document.getElementById('mimNombre').value); if(mi.pctAg > 0) document.getElementById('mimAgenda').value = f1(mi.pctAg).replace(',', '.'); }
+  async function iniciarMiMatematica(){
+    if(mimListo) return; mimListo = true;
+    const [filas, ranking] = await Promise.all([obtenerFilasTracker(), obtenerFilasRanking()]);
+    const nombres = [...new Set(filas.filter(r => r.fecha >= masDias(lunesDe(new Date()), -28) && r.llamadas > 0).map(r => r.setter))].filter(n => n !== 'Sin asignar').sort();
+    const sel = document.getElementById('mimNombre');
+    sel.innerHTML = nombres.map(n => '<option>' + n + '</option>').join('') || '<option>–</option>';
+    // supuestos: los shows y cierres del Tracker todavía se cargan a medias, así que solo se usan si hay volumen suficiente
+    const T = filas.reduce((t, r) => ({ ag: t.ag + r.agendadas, sh: t.sh + r.shows, ci: t.ci + r.cierres }), { ag: 0, sh: 0, ci: 0 });
+    let show = 60, cierre = 30, nota = 'Los porcentajes de show (60%) y de cierre (30%) son supuestos tuyos para jugar: los shows y cierres del Tracker todavía no se cargan completos. Cámbialos cuando tengas tus propios datos.';
+    if(T.ag >= 40 && T.sh >= T.ag * 0.3 && T.sh >= 15){ show = Math.round(T.sh / T.ag * 100); cierre = T.sh > 0 ? Math.round(T.ci / T.sh * 100) || cierre : cierre; nota = 'Los porcentajes de show y cierre salen del promedio del equipo en el Tracker. Cámbialos si quieres probar otro escenario.'; }
+    const montos = (ranking || []).map(r => r.monto).filter(m => m >= 1000).sort((a, b) => a - b);
+    const ticket = montos.length ? Math.round(montos[Math.floor(montos.length / 2)] / 50) * 50 : 3000;
+    mimDatos = { filas, nota };
+    document.getElementById('mimShow').value = show; document.getElementById('mimCierre').value = cierre; document.getElementById('mimTicket').value = ticket;
+    let guardado = {}; try { ['mimNombre','mimComision','mimPct'].forEach(i => { const v = localStorage.getItem('shu_' + i); if(v) guardado[i] = v; }); } catch(e){}
+    if(guardado.mimNombre && nombres.includes(guardado.mimNombre)) sel.value = guardado.mimNombre;
+    if(guardado.mimComision) document.getElementById('mimComision').value = guardado.mimComision;
+    if(guardado.mimPct) document.getElementById('mimPct').value = guardado.mimPct;
+    mimPonerRitmo(); mimCalcular();
+    sel.addEventListener('change', () => { mimPonerRitmo(); mimCalcular(); });
+    ['mimComision','mimPct','mimTicket','mimShow','mimCierre','mimAgenda','mimDias'].forEach(i => document.getElementById(i).addEventListener('input', mimCalcular));
+  }
 
   // ===== Tarjetas "espejo": una cifra que ya se calcula en otro lado
   // (ej. Cash collected) se repite en la sección que la usa. Se copia
