@@ -1139,6 +1139,10 @@
   .tabla-campanas td{ text-align:right; padding:12px 14px; border-top:1px solid var(--border); white-space:nowrap; font-variant-numeric:tabular-nums; }
   .tabla-campanas th:first-child, .tabla-campanas td:first-child{ text-align:left; white-space:normal; min-width:180px; font-weight:600; }
   .tabla-campanas tfoot td{ font-weight:700; }
+  @media (max-width:620px){ .tabla-campanas{ font-size:12px; } .tabla-campanas th{ font-size:9px; letter-spacing:0; padding:8px 3px; white-space:normal; } .tabla-campanas td{ padding:9px 3px; white-space:normal; } .tabla-campanas th:first-child, .tabla-campanas td:first-child{ min-width:0; width:34%; padding-left:8px; } .estado-ads{ padding:1px 5px; font-size:9px; } }
+  .estado-ads{ display:inline-block; padding:2px 10px; border-radius:99px; font-size:11px; font-weight:600; border:1px solid var(--border); color:var(--text-dim); }
+  .estado-ads.verde{ color:#7fe0a8; border-color:rgba(127,224,168,.5); background:rgba(127,224,168,.1); }
+  .estado-ads.rojo{ color:#ff9b9b; border-color:rgba(255,155,155,.5); background:rgba(255,155,155,.1); }
   .ranking-table{ background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden; margin-bottom:10px; }
   .ranking-head-row, .ranking-row{
     display:grid; grid-template-columns:44px 1fr 130px; align-items:center; gap:12px; padding:14px 20px;
@@ -1816,9 +1820,7 @@
             <div class="kpi-value" id="adsTabCpr">–</div>
           </div>
         </div>
-        <div class="section-label" style="margin-top:28px;" id="adsNivelTitulo">Gasto por campaña</div>
-        <div class="chart-chips" id="adsNivel" style="margin-bottom:12px;"></div>
-        <div class="ranking-table" style="overflow-x:auto;"><table class="tabla-campanas" id="adsCampanasTabla"><thead></thead><tbody></tbody></table></div>
+        <div id="adsNiveles"></div>
         <div class="chart-status" id="adsCampanasVacio" style="margin-bottom:44px;">Cargá filas en la pestaña "Ads" del Tracker (con Campaña, Conjunto de anuncios y Anuncio) para ver el gasto de cada uno.</div>
       </div>
 
@@ -5365,7 +5367,20 @@
   // Un fetch sin límite de tiempo puede quedarse colgado para siempre
   // sin resolver ni rechazar (visto en SetterFlow) — por eso siempre
   // con AbortController + timeout.
+  // Las hojas del Tracker se leen por el Apps Script (solo las pestañas permitidas, sin datos de clientas); si todavía no tiene esa acción, se usa el CSV publicado.
+  const HOJAS_POR_GID = { '0': 'Tracker', '2131673267': 'Ranking', '2112331594': 'Ads', '1088004922': 'Lecciones', '866565308': 'Lecciones_Setters', '1805456753': 'Lecciones_Closers', '827298124': 'Lecciones_Ventas' };
   async function fetchTextConTimeout(url, ms){
+    const m = /docs\.google\.com\/spreadsheets\/d\/e\/[^/]+\/pub\?.*?gid=(\d+)/.exec(String(url));
+    const hoja = m && HOJAS_POR_GID[m[1]];
+    if(hoja){
+      try {
+        const t = await fetchTextBase(LECCIONES_WRITE_URL + '?action=csv&hoja=' + hoja, ms);
+        if(t && !/^\s*[{<]/.test(t) && !/^ERROR:/.test(t)) return t;
+      } catch(e){}
+    }
+    return fetchTextBase(url, ms);
+  }
+  async function fetchTextBase(url, ms){
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), ms);
     try {
@@ -5827,21 +5842,27 @@
     const resTot = d.totResultados > 0 ? d.totResultados : d.totLeadsMeta;
     document.getElementById('adsTabResultados').textContent = ok && resTot > 0 ? resTot.toLocaleString('es-AR') : '–';
     document.getElementById('adsTabCpr').textContent = ok && resTot > 0 ? dec(d.totGastoAds / resTot) : '–';
-    // Tabla por campaña: gasto, impresiones, clics, CTR, resultados y CPR de cada una.
-    pintarChips('adsNivel', ADS_NIVELES, adsNivel, v => { adsNivel = v; renderAdsTab(); });
-    const nivelTxt = (ADS_NIVELES.find(x => x.valor === adsNivel) || ADS_NIVELES[0]).texto;
-    const tit = document.getElementById('adsNivelTitulo'); if(tit) tit.textContent = 'Gasto por ' + nivelTxt.toLowerCase();
-    const camps = [...(((d.porNivel || {})[adsNivel]) || new Map()).entries()].sort((a, b) => b[1].gasto - a[1].gasto);
-    const thead = document.querySelector('#adsCampanasTabla thead'), tbody = document.querySelector('#adsCampanasTabla tbody');
-    const vacioEl = document.getElementById('adsCampanasVacio');
-    if(thead && tbody){
+    // Tres cuadros separados (campañas, conjuntos de anuncios y anuncios): se ve qué trae resultados y qué no. Estado: Ganador / Mantener / Revisar / Pausar.
+    const contNiv = document.getElementById('adsNiveles'), vacioEl = document.getElementById('adsCampanasVacio');
+    if(contNiv){
       const pct = (a, b) => b > 0 ? (a / b * 100).toLocaleString('es-AR', { maximumFractionDigits: 2 }) + '%' : '–';
-      const fila = (nombre, c) => { const r = c.res > 0 ? c.res : c.leads; return '<td>' + escapeHtml(nombre) + '</td><td>' + dec(c.gasto) + '</td><td>' + (d.totGastoAds > 0 ? Math.round(c.gasto / d.totGastoAds * 100) + '%' : '–') + '</td><td>' + (c.imp ? c.imp.toLocaleString('es-AR') : '–') + '</td><td>' + (c.clics ? c.clics.toLocaleString('es-AR') : '–') + '</td><td>' + pct(c.clics, c.imp) + '</td><td>' + (r ? r.toLocaleString('es-AR') : '–') + '</td><td>' + (r > 0 ? dec(c.gasto / r) : '–') + '</td>'; };
-      thead.innerHTML = '<tr><th>' + nivelTxt + '</th><th>Gasto</th><th>% del gasto</th><th>Impresiones</th><th>Clics</th><th>CTR</th><th>Resultados</th><th>CPR</th></tr>';
-      tbody.innerHTML = camps.map(([n, c]) => '<tr>' + fila(n, c) + '</tr>').join('')
-        + (camps.length > 1 ? '<tr style="font-weight:700;">' + fila('Total', camps.reduce((a, [, c]) => ({ gasto: a.gasto + c.gasto, imp: a.imp + c.imp, clics: a.clics + c.clics, leads: a.leads + c.leads, res: a.res + c.res }), { gasto: 0, imp: 0, clics: 0, leads: 0, res: 0 })) + '</tr>' : '');
-      if(vacioEl) vacioEl.hidden = camps.length > 0;
-      thead.parentNode.parentNode.hidden = camps.length === 0;
+      let hayAlgo = false;
+      contNiv.innerHTML = [['campana', 'Campañas', 'Campaña'], ['conjunto', 'Conjuntos de anuncios', 'Conjunto de anuncios'], ['anuncio', 'Anuncios', 'Anuncio']].map(([k, titulo, sing]) => {
+        const filas = [...(((d.porNivel || {})[k]) || new Map()).entries()].map(([n, c]) => ({ n, c, r: c.res > 0 ? c.res : c.leads })).sort((a, b) => b.c.gasto - a.c.gasto);
+        if(!filas.length) return '';
+        hayAlgo = true;
+        const gT = filas.reduce((a, f) => a + f.c.gasto, 0), rT = filas.reduce((a, f) => a + f.r, 0), cprProm = rT > 0 ? gT / rT : 0;
+        const estado = (f) => {
+          if(f.r === 0) return cprProm > 0 && f.c.gasto > 2 * cprProm ? ['Pausar', 'rojo'] : ['Poco gasto', 'gris'];
+          const cpr = f.c.gasto / f.r;
+          if(f.r >= 20 && cpr < cprProm) return ['Ganador', 'verde'];
+          return cprProm > 0 && cpr > 1.5 * cprProm ? ['Revisar', 'rojo'] : ['Mantener', 'gris'];
+        };
+        const fila = (f) => { const [txt, col] = estado(f); return '<tr><td>' + escapeHtml(f.n) + '</td><td>' + dec(f.c.gasto) + '</td><td>' + (f.r || '–') + '</td><td>' + (f.r > 0 ? dec(f.c.gasto / f.r) : '–') + '</td><td>' + pct(f.c.clics, f.c.imp) + '</td><td><span class="estado-ads ' + col + '">' + txt + '</span></td></tr>'; };
+        const total = '<tr style="font-weight:700;"><td>Total</td><td>' + dec(gT) + '</td><td>' + (rT || '–') + '</td><td>' + (rT > 0 ? dec(gT / rT) : '–') + '</td><td>' + pct(filas.reduce((a, f) => a + f.c.clics, 0), filas.reduce((a, f) => a + f.c.imp, 0)) + '</td><td></td></tr>';
+        return '<div class="section-label" style="margin-top:28px;">' + titulo + '</div><div class="ranking-table" style="overflow-x:auto;"><table class="tabla-campanas"><thead><tr><th>' + sing + '</th><th>Gasto</th><th>Result.</th><th>CPR</th><th>CTR</th><th>Estado</th></tr></thead><tbody>' + filas.map(fila).join('') + (filas.length > 1 ? total : '') + '</tbody></table></div>';
+      }).join('');
+      if(vacioEl) vacioEl.hidden = hayAlgo;
     }
   }
 
