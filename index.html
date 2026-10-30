@@ -5222,7 +5222,7 @@
   // la web → elegir la pestaña "Ads" (no "Documento completo") → formato
   // CSV → pegar acá el link. Hasta que se reemplace este placeholder
   // vacío, la sección "Ads" del dashboard queda en "Sin datos todavía".
-  const SHEET_ADS_CSV_URL = '';
+  const SHEET_ADS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMxiZqAisKJw9lMZO9nD37vE6ZaXB_0BD-MHu64HeTtxz2xDJf9qfrQIwBVLLiobAukmiUprOYSzsk/pub?gid=2112331594&single=true&output=csv';
 
   // ===== Lecciones del onboarding — pestaña "Lecciones" del mismo
   // Google Sheet: Orden | Titulo | VideoURL | Descripcion. VideoURL
@@ -5547,8 +5547,10 @@
         const r = filas[i];
         const fecha = parseFechaSheet(r[idx.fecha]);
         if(!fecha) continue;
-        const col = (k) => idx[k] >= 0 ? (parseNumSheet(r[idx[k]]) || 0) : 0;
-        datos.push({ fecha, gasto: parseNumSheet(r[idx.gasto]), impresiones: col('imp'), clics: col('clics'), leadsMeta: col('leads'), resultados: col('res'), campana: idx.camp >= 0 ? String(r[idx.camp] || '').trim() : '', conjunto: idx.conj >= 0 ? String(r[idx.conj] || '').trim() : '', anuncio: idx.anun >= 0 ? String(r[idx.anun] || '').trim() : '' });
+        // La hoja Ads sale en formato latino: 33.263 (miles con punto) y $142,48 (decimales con coma).
+        const nAds = (v) => { let t = String(v == null ? '' : v).replace(/[^0-9,.\-]/g, ''); if(!t) return 0; if(t.includes(',')) t = t.replace(/\./g, '').replace(',', '.'); else if(/^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, ''); const n = parseFloat(t); return isNaN(n) ? 0 : n; };
+        const col = (k) => idx[k] >= 0 ? nAds(r[idx[k]]) : 0;
+        datos.push({ fecha, gasto: nAds(r[idx.gasto]), impresiones: col('imp'), clics: col('clics'), leadsMeta: col('leads'), resultados: col('res'), campana: idx.camp >= 0 ? String(r[idx.camp] || '').trim() : '', conjunto: idx.conj >= 0 ? String(r[idx.conj] || '').trim() : '', anuncio: idx.anun >= 0 ? String(r[idx.anun] || '').trim() : '' });
       }
       filasAdsCache = datos;
     } catch(e){
@@ -5765,9 +5767,14 @@
     // "ads"; "general" cuenta TODAS las ventas del mes contra el mismo
     // gasto. Necesita la pestaña "Ads" del Sheet (SHEET_ADS_CSV_URL). =====
     const roas = (num, den) => den > 0 ? (num / den).toFixed(2) + 'x' : '–';
+    // El ROAS y el margen usan el cash real de la pestaña Ventas (la misma cifra del resto del dashboard); "de ads" cuenta solo los cobros cuya fuente dice Ads.
+    const ventasTab = await leerVentasMes(anio, mes);
+    const hayVentasTab = (ventasTab || []).length > 0;
+    const ventasRoas = hayVentasTab ? ventasTab.reduce((a, v) => a + (v.cash || 0), 0) : totVentas;
+    const ventasAdsRoas = hayVentasTab ? ventasTab.filter(v => /ads/i.test(v.source || '')).reduce((a, v) => a + (v.cash || 0), 0) : totVentasAds;
     document.getElementById('adsGasto').textContent = huboDatosAds ? '$' + Math.round(totGastoAds).toLocaleString('es-AR') : '–';
-    document.getElementById('adsRoasAds').textContent = huboDatosAds ? roas(totVentasAds, totGastoAds) : '–';
-    document.getElementById('adsRoasGeneral').textContent = huboDatosAds ? roas(totVentas, totGastoAds) : '–';
+    document.getElementById('adsRoasAds').textContent = huboDatosAds ? roas(ventasAdsRoas, totGastoAds) : '–';
+    document.getElementById('adsRoasGeneral').textContent = huboDatosAds ? roas(ventasRoas, totGastoAds) : '–';
     const estadoAds = huboDatosAds
       ? 'Datos en vivo — ' + mesElegido
       : (SHEET_ADS_CSV_URL
@@ -5777,10 +5784,10 @@
 
     // Pestaña "Ads": mismos ROAS + gasto diario; el costo por lead se
     // completa en renderAdsTab cuando también llegaron los leads de GHL.
-    document.getElementById('adsTabRoasAds').textContent = huboDatosAds ? roas(totVentasAds, totGastoAds) : '–';
-    document.getElementById('adsTabRoasGeneral').textContent = huboDatosAds ? roas(totVentas, totGastoAds) : '–';
+    document.getElementById('adsTabRoasAds').textContent = huboDatosAds ? roas(ventasAdsRoas, totGastoAds) : '–';
+    document.getElementById('adsTabRoasGeneral').textContent = huboDatosAds ? roas(ventasRoas, totGastoAds) : '–';
     document.getElementById('statusAdsTab').textContent = estadoAds;
-    adsTabDatos = { totResultados, porNivel: { campana: porCampana, conjunto: porConjunto, anuncio: porAnuncio }, porCampana, totImp, totClics, totLeadsMeta, huboDatosAds, totGastoAds, totVentas, totCierres, totVentasAds, totCierresAds, gastoPorDia, dias, diasAMostrar, anio, mes };
+    adsTabDatos = { totResultados, porNivel: { campana: porCampana, conjunto: porConjunto, anuncio: porAnuncio }, porCampana, totImp, totClics, totLeadsMeta, huboDatosAds, totGastoAds, totVentas: ventasRoas, totCierres, totVentasAds: ventasAdsRoas, totCierresAds, gastoPorDia, dias, diasAMostrar, anio, mes };
     renderAdsTab();
   }
 
