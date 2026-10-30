@@ -5827,8 +5827,19 @@
     equipo.pendiente = false;
     if(ultimoMapaSetters) renderBreakdownSetters(ultimoMapaSetters);
     if(ultimoMapaClosers) renderBreakdownClosers(ultimoMapaClosers);
+    try { renderGraficoClosers(); renderGraficoSetters(); } catch(e){}
   }
   const mismaPersona = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+  // Cash por día del mes activo salido de la pestaña Ventas del Tracker (la misma fuente que el resto del dashboard). campo = 'closer' | 'setter'; nombre 'Todos' = todo lo que tenga a alguien en ese rol.
+  function serieCashEq(campo, nombre){
+    const out = new Array(ctxMes.dias).fill(0);
+    equipo.ventas.forEach(x => {
+      if(nombre === 'Todos' ? !String(x[campo] || '').trim() : !mismaPersona(x[campo], nombre)) return;
+      const d = parseInt(String(x.fecha).slice(0, 2), 10);
+      if(d >= 1 && d <= out.length) out[d - 1] += x.cash || 0;
+    });
+    return out;
+  }
   // Shows y cierres de una persona según la pestaña "Shows" del Tracker (una sola fuente, así coinciden con los totales). null si no hay datos.
   function showsDePersona(campo, nombre){
     if(!equipo.shows.length) return null;
@@ -5885,14 +5896,14 @@
     if(setterFiltro === 'Comparar'){
       const esCash = setterMetrica === 'ventas';
       const series = nombres.map((n, i) => {
-        const base = datosSetters.has(n) ? datosSetters.get(n)[setterMetrica] : new Array(ctxMes.dias).fill(0);
+        const base = (esCash && equipo.ventas.length) ? serieCashEq('setter', n) : (datosSetters.has(n) ? datosSetters.get(n)[setterMetrica] : new Array(ctxMes.dias).fill(0));
         return { nombre: n, color: colorDeSetter(n, i), valores: (esCash ? acumular(base) : base).slice(0, ctxMes.diasAMostrar) };
       });
       leyenda.innerHTML = series.map(x => `<span><i style="background:${x.color}"></i>${escapeHtml(x.nombre)}</span>`).join('') + (esCash ? '<span style="opacity:.7">· cash acumulado del mes</span>' : '');
       drawMultiChart('chartSetters', 'tooltipSetters', series, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
     } else {
       leyenda.innerHTML = '';
-      let serie = sumarSeries(datosSetters, setterFiltro, setterMetrica, ctxMes.dias);
+      let serie = (setterMetrica === 'ventas' && equipo.ventas.length) ? serieCashEq('setter', setterFiltro) : sumarSeries(datosSetters, setterFiltro, setterMetrica, ctxMes.dias);
       if(setterMetrica === 'ventas'){ serie = acumular(serie); leyenda.innerHTML = '<span style="opacity:.7">Cash acumulado del mes</span>'; }
       serie = serie.slice(0, ctxMes.diasAMostrar);
       drawChart('chartSetters', 'tooltipSetters', serie, m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
@@ -5914,7 +5925,7 @@
     if(closerFiltro !== 'Todos' && !datosClosers.has(closerFiltro)) closerFiltro = 'Todos';
     pintarChips('closersMetrica', METRICAS_CLOSER.map(x => ({ valor: x.valor, texto: x.texto })), closerMetrica, v => { closerMetrica = v; closerMetricaElegida = true; renderGraficoClosers(); });
     pintarChips('closersFiltro', ['Todos', ...datosClosers.keys()].map(n => ({ valor: n, texto: n === 'Todos' ? 'Todos los closers' : n })), closerFiltro, v => { closerFiltro = v; renderGraficoClosers(); });
-    let serie = sumarSeries(datosClosers, closerFiltro, closerMetrica, ctxMes.dias);
+    let serie = (closerMetrica === 'cash' && equipo.ventas.length) ? serieCashEq('closer', closerFiltro) : sumarSeries(datosClosers, closerFiltro, closerMetrica, ctxMes.dias);
     if(closerMetrica === 'cash') serie = acumular(serie);
     serie = serie.slice(0, ctxMes.diasAMostrar);
     drawChart('chartClosers', 'tooltipClosers', serie, m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio: 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' cargado este mes' });
@@ -5927,7 +5938,7 @@
     const suma = (arr) => arr.reduce((a, b) => a + b, 0);
     const filas = [...mapa.entries()].map(([nombre, s]) => {
       const vt = equipo.ventas.filter(x => mismaPersona(x.closer, nombre));
-      const cash = vt.length ? vt.reduce((a, x) => a + x.cash, 0) : suma(s.cash);
+      const cash = (vt.length || equipo.ventas.length) ? vt.reduce((a, x) => a + x.cash, 0) : suma(s.cash);
       const sh = showsDePersona('cerro', nombre);
       // Cierres de una closer = ventas que cerró según la pestaña Ventas (incluye las del webinar); si no hay, la pestaña Shows o Métricas.
       return { nombre, cash, agendas: suma(s.agendas), shows: sh ? sh.shows : suma(s.shows), noShows: suma(s.noShows), cierres: vt.length ? vt.length : (sh ? sh.cierres : suma(s.cierres)) };
@@ -5936,7 +5947,7 @@
     const totalCash = filas.reduce((a, f) => a + f.cash, 0);
     document.getElementById('closersVisual').innerHTML = `<div class="vz-grid">
       <div><p class="vz-titulo">Quién cierra el cash</p><div class="vz-donut">${donutEq(filas.map(f => ({ nombre: f.nombre, valor: f.cash, color: colores[f.nombre], texto: usdEq(f.cash) })), usdEq(totalCash), 'cerrado')}
-        <div class="vz-leyenda">${filas.map(f => `<div><i style="background:${colores[f.nombre]}"></i>${escapeHtml(f.nombre)}<b>${usdEq(f.cash)} · ${totalCash > 0 ? Math.round(f.cash / totalCash * 100) : 0}%</b></div>`).join('')}</div></div></div>
+        <div class="vz-leyenda">${filas.map(f => `<div><i style="background:${colores[f.nombre]}"></i>${escapeHtml(f.nombre)}<b>${usdEq(f.cash)} · ${totalCash > 0 ? Math.round(f.cash / totalCash * 100) : 0}%</b></div>`).join('')}</div><p class="chart-status" style="margin:8px 0 0;">Cash total del mes: <b>${usdEq(equipo.ventas.reduce((a, x) => a + (x.cash || 0), 0))}</b>. Sin closer asignado: <b>${usdEq(equipo.ventas.filter(x => !String(x.closer || '').trim()).reduce((a, x) => a + (x.cash || 0), 0))}</b> (pendiente de confirmar en la hoja de ventas).</p></div></div>
       <div><p class="vz-titulo">Sus llamadas, comparadas</p><div class="vz-multi">${[['Agendas', 'agendas'], ['Shows', 'shows'], ['No shows', 'noShows'], ['Cierres', 'cierres']].map(([tit, k]) => minisEq(tit, filas.map(f => ({ nombre: f.nombre, valor: f[k], color: colores[f.nombre] })))).join('')}</div></div></div>`;
     grid.innerHTML = filas.map((f, i) => {
       const color = colores[f.nombre];
@@ -6829,15 +6840,17 @@
     const vacio = () => ({ llamadas: 0, noCalifica: 0, noRespondio: 0, noAtendieron: 0, infoWhatsapp: 0, cortaron: 0, llamarMasTarde: 0, agendadas: 0, shows: 0, cierres: 0, ventas: 0 });
     const todos = new Map(mapa);
     SETTERS_FIJOS.forEach(n => { if(!todos.has(n)) todos.set(n, vacio()); });
-    const cashDe = (n) => { const v = equipo.ventas.filter(x => mismaPersona(x.setter, n)); return v.length ? v.reduce((a, x) => a + x.cash, 0) : (todos.get(n).ventas || 0); };
+    const cashDe = (n) => equipo.ventas.length ? equipo.ventas.filter(x => mismaPersona(x.setter, n)).reduce((a, x) => a + x.cash, 0) : (todos.get(n).ventas || 0);
+    const cashComoCloser = (n) => equipo.ventas.filter(x => mismaPersona(x.closer, n)).reduce((a, x) => a + x.cash, 0);
+    const cashMes = equipo.ventas.reduce((a, x) => a + (x.cash || 0), 0);
     const nombres = [...todos.keys()].filter(n => !esSetterInactivo(n)).sort((a, b) => cashDe(b) - cashDe(a));
     const colores = Object.fromEntries(nombres.map((n, i) => [n, colorDeSetter(n, i)]));
     const totalCash = nombres.reduce((a, n) => a + cashDe(n), 0);
     // Arriba: reparto del cash (dona) + una mini gráfica de barras por etapa del embudo.
     const etapas = [['Llamadas', 'llamadas'], ['Agendadas', 'agendadas'], ['Shows', 'shows'], ['Cierres', 'cierres']];
     document.getElementById('settersVisual').innerHTML = `<div class="vz-grid">
-      <div><p class="vz-titulo">Quién trae el cash</p><div class="vz-donut">${donutEq(nombres.map(n => ({ nombre: n, valor: cashDe(n), color: colores[n], texto: usdEq(cashDe(n)) })), usdEq(totalCash), 'cash del mes')}
-        <div class="vz-leyenda">${nombres.map(n => `<div><i style="background:${colores[n]}"></i>${escapeHtml(n)}<b>${usdEq(cashDe(n))} · ${totalCash > 0 ? Math.round(cashDe(n) / totalCash * 100) : 0}%</b></div>`).join('')}</div></div></div>
+      <div><p class="vz-titulo">Cash por setter (quién agendó la venta)</p><div class="vz-donut">${donutEq(nombres.map(n => ({ nombre: n, valor: cashDe(n), color: colores[n], texto: usdEq(cashDe(n)) })), usdEq(totalCash), 'con setter')}
+        <div class="vz-leyenda">${nombres.map(n => `<div><i style="background:${colores[n]}"></i>${escapeHtml(n)}<b>${usdEq(cashDe(n))} · ${totalCash > 0 ? Math.round(cashDe(n) / totalCash * 100) : 0}%</b></div>`).join('')}</div><p class="chart-status" style="margin:8px 0 0;">Cash total del mes: <b>${usdEq(cashMes)}</b>. Con setter anotado: <b>${usdEq(totalCash)}</b>. Sin setter: <b>${usdEq(cashMes - totalCash)}</b> (compras directas del webinar o sin anotar). El cash de cada closer está en la pestaña Closers.</p></div></div>
       <div><p class="vz-titulo">El embudo, comparado</p><div class="vz-multi">${etapas.map(([tit, k]) => minisEq(tit, nombres.map(n => ({ nombre: n, valor: (showsDePersona('agendo', n) || {})[k] ?? (todos.get(n)[k] || 0), color: colores[n] })))).join('')}</div></div></div>`;
     grid.innerHTML = nombres.map((nombre, i) => {
       const sh = showsDePersona('agendo', nombre);
@@ -6846,7 +6859,8 @@
       return `<div class="breakdown-card">
         <div class="eq-head"><span style="width:10px;height:10px;border-radius:50%;background:${color};"></span><h4>${escapeHtml(nombre)}</h4>${cash > 0 && i === 0 ? '<span class="eq-rank">#1 en cash</span>' : ''}</div>
         <div class="eq-cash">${usdEq(cash)}</div>
-        <div class="eq-cash-sub">cash collected · ${s.llamadas.toLocaleString('es-AR')} llamadas</div>
+        <div class="eq-cash-sub">cash como setter · ${s.llamadas.toLocaleString('es-AR')} llamadas</div>
+        <div class="eq-cash-sub">Como closer: <b>${usdEq(cashComoCloser(nombre))}</b> · Total setter + closer: <b>${usdEq(cash + cashComoCloser(nombre))}</b></div>
         <div class="vz-gauges">${anilloEq(tasaEq(s.agendadas, s.llamadas), color, 'Agendó')}${anilloEq(tasaEq(s.shows, s.agendadas), color, 'Show')}${anilloEq(tasaEq(s.cierres, s.shows), color, 'Cierre')}</div>
         <div class="vz-cap"><span>Qué pasó con sus llamadas</span><span>${seg.reduce((a, x) => a + x[1], 0).toLocaleString('es-AR')}</span></div>
         ${barraApilada(seg.map(x => ({ valor: x[1], color: COL_LLAMADAS[x[0]], titulo: x[2] + ': ' + x[1] })))}
