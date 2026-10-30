@@ -1774,6 +1774,30 @@
             <div class="kpi-label">Margen</div>
             <div class="kpi-value" id="adsTabMargen">–</div>
           </div>
+          <div class="kpi-card">
+            <div class="kpi-label">CPM (por mil impresiones)</div>
+            <div class="kpi-value" id="adsTabCpm">–</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">CTR (clics / impresiones)</div>
+            <div class="kpi-value" id="adsTabCtr">–</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Costo por clic</div>
+            <div class="kpi-value" id="adsTabCpc">–</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Costo por lead (según Meta)</div>
+            <div class="kpi-value" id="adsTabCplMeta">–</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">De clic a lead</div>
+            <div class="kpi-value" id="adsTabClicLead">–</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Costo por agenda</div>
+            <div class="kpi-value" id="adsTabCostoAgenda">–</div>
+          </div>
         </div>
       </div>
 
@@ -5496,13 +5520,14 @@
       const texto = await fetchTextConTimeout(SHEET_ADS_CSV_URL, 8000);
       const filas = parseCSVSheet(texto);
       const header = (filas[0] || []).map(normalizarEncabezado);
-      const idx = { fecha: header.indexOf('fecha'), gasto: header.indexOf('gasto') };
+      const idx = { fecha: header.indexOf('fecha'), gasto: header.indexOf('gasto'), imp: header.indexOf('impresiones'), clics: header.indexOf('clics'), leads: header.indexOf('leads') };
       const datos = [];
       for(let i=1;i<filas.length;i++){
         const r = filas[i];
         const fecha = parseFechaSheet(r[idx.fecha]);
         if(!fecha) continue;
-        datos.push({ fecha, gasto: parseNumSheet(r[idx.gasto]) });
+        const col = (k) => idx[k] >= 0 ? (parseNumSheet(r[idx[k]]) || 0) : 0;
+        datos.push({ fecha, gasto: parseNumSheet(r[idx.gasto]), impresiones: col('imp'), clics: col('clics'), leadsMeta: col('leads') });
       }
       filasAdsCache = datos;
     } catch(e){
@@ -5622,12 +5647,12 @@
       sc.agendas[dia] += f.agendas; sc.shows[dia] += f.shows; sc.noShows[dia] += f.noShows; sc.cierres[dia] += f.cierres;
     });
 
-    let totGastoAds = 0, huboDatosAds = false;
+    let totGastoAds = 0, huboDatosAds = false, totImp = 0, totClics = 0, totLeadsMeta = 0;
     const gastoPorDia = new Array(dias).fill(0);
     filasAds.forEach(f => {
       if(f.fecha.getFullYear() !== anio || f.fecha.getMonth() !== mes) return;
       huboDatosAds = true;
-      totGastoAds += f.gasto;
+      totGastoAds += f.gasto; totImp += f.impresiones || 0; totClics += f.clics || 0; totLeadsMeta += f.leadsMeta || 0;
       gastoPorDia[f.fecha.getDate() - 1] += f.gasto;
     });
 
@@ -5729,7 +5754,7 @@
     document.getElementById('adsTabRoasAds').textContent = huboDatosAds ? roas(totVentasAds, totGastoAds) : '–';
     document.getElementById('adsTabRoasGeneral').textContent = huboDatosAds ? roas(totVentas, totGastoAds) : '–';
     document.getElementById('statusAdsTab').textContent = estadoAds;
-    adsTabDatos = { huboDatosAds, totGastoAds, totVentas, totCierres, totVentasAds, totCierresAds, gastoPorDia, dias, diasAMostrar, anio, mes };
+    adsTabDatos = { totImp, totClics, totLeadsMeta, huboDatosAds, totGastoAds, totVentas, totCierres, totVentasAds, totCierresAds, gastoPorDia, dias, diasAMostrar, anio, mes };
     renderAdsTab();
   }
 
@@ -5754,6 +5779,16 @@
     // Margen = ventas del mes menos lo gastado en ads (no descuenta otros
     // costos operativos, solo el gasto publicitario).
     document.getElementById('adsTabMargen').textContent = d.huboDatosAds ? dinero(d.totVentas - d.totGastoAds) : '–';
+    // Funnel de anuncios con los datos de Meta cargados a mano en la pestaña Ads (impresiones, clics y leads).
+    const dec = (n) => '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const ok = d.huboDatosAds;
+    document.getElementById('adsTabCpm').textContent = ok && d.totImp > 0 ? dec(d.totGastoAds / d.totImp * 1000) : '–';
+    document.getElementById('adsTabCtr').textContent = ok && d.totImp > 0 && d.totClics > 0 ? (d.totClics / d.totImp * 100).toLocaleString('es-AR', { maximumFractionDigits: 2 }) + '%' : '–';
+    document.getElementById('adsTabCpc').textContent = ok && d.totClics > 0 ? dec(d.totGastoAds / d.totClics) : '–';
+    document.getElementById('adsTabCplMeta').textContent = ok && d.totLeadsMeta > 0 ? dec(d.totGastoAds / d.totLeadsMeta) : '–';
+    document.getElementById('adsTabClicLead').textContent = ok && d.totClics > 0 && d.totLeadsMeta > 0 ? (d.totLeadsMeta / d.totClics * 100).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '%' : '–';
+    const agendas = parseInt(String((document.getElementById('ghlAgendadas') || {}).textContent || '').replace(/\D/g, ''), 10) || 0;
+    document.getElementById('adsTabCostoAgenda').textContent = ok && agendas > 0 ? dinero(d.totGastoAds / agendas) : '–';
   }
 
   // ===== Gráficos con filtros (chips): Setters, Closers y Leads por día.
