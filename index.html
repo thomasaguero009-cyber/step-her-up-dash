@@ -1313,6 +1313,8 @@
           <button type="button" class="chart-chip active" data-valor="vsl">VSL</button>
           <button type="button" class="chart-chip" data-valor="webinar">Webinar · Marca personal</button>
           <button type="button" class="chart-chip" data-valor="webinar2">Webinar · Instagram</button>
+          <button type="button" class="chart-chip" data-valor="formulario">Formulario</button>
+          <button type="button" class="chart-chip" data-valor="pdf">PDF</button>
           <button type="button" class="chart-chip" data-valor="otro">Otro…</button>
         </div>
         <input type="text" id="utmBaseLink" class="modal-input" placeholder="https://… (el link al que quieres mandar)" autocomplete="off" style="display:none;">
@@ -1974,7 +1976,17 @@
             <div class="utm-vacio" id="utmVacio" hidden></div>
           </div>
         </div>
-        <div class="chart-status" id="statusUtm" style="margin-bottom:44px;">Cargando desde GHL…</div>
+        <div class="chart-status" id="statusUtm" style="margin-bottom:18px;">Cargando desde GHL…</div>
+        <div class="section-label" style="margin-top:8px;">Clics a PDF (según el mes activo)</div>
+        <div class="chart-panel" style="margin-bottom:44px;">
+          <div class="utm-wrap">
+            <table class="utm-table">
+              <thead><tr><th>PDF</th><th>Origen</th><th>Campaña</th><th>Contenido</th><th>Clics</th></tr></thead>
+              <tbody id="pdfClicsBody"></tbody>
+            </table>
+            <div class="utm-vacio" id="pdfClicsVacio">Todavía no hay clics a PDF este mes. Cuando alguien abra un link de PDF hecho con el generador del Admin, aparece acá.</div>
+          </div>
+        </div>
       </div>
 
       <!-- Webinar: inscripciones de la clase del 21 de octubre. Sale del pipeline "STEP HER UP - WEBINAR" de GHL
@@ -2317,6 +2329,22 @@
   // se cambia DESPUÉS, desde adentro del dashboard (ver más abajo). =====
   const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  // Clics a PDF: salen del Worker (/pdf-clics), que cuenta cada apertura de un link hecho con el generador (opción PDF).
+  async function cargarPdfClics(){
+    const cuerpo = document.getElementById('pdfClicsBody'), vacio = document.getElementById('pdfClicsVacio');
+    if(!cuerpo) return;
+    try{
+      const partes = String(mesElegido).split(' '), mes0 = MESES_ES.indexOf(partes[0]);
+      const m = partes[1] + '-' + String(mes0 + 1).padStart(2, '0');
+      const r = await fetch(WORKER_URL + '/pdf-clics?mes=' + m).then(x => x.json());
+      const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+      const filas = (r && r.filas) || [];
+      cuerpo.innerHTML = filas.map(f => '<tr><td>' + esc(f.archivo) + '</td><td>' + esc(f.source + (f.medium !== '-' ? ' · ' + f.medium : '')) + '</td><td>' + esc(f.campaign) + '</td><td>' + esc(f.content) + '</td><td>' + f.clics + '</td></tr>').join('');
+      vacio.hidden = filas.length > 0;
+      if(!filas.length) vacio.style.display = 'block'; else vacio.style.display = 'none';
+    }catch(e){ vacio.hidden = false; vacio.style.display = 'block'; vacio.textContent = 'No se pudo leer los clics a PDF.'; }
+  }
+
   function nombreMes(fecha){
     return MESES_ES[fecha.getMonth()] + ' ' + fecha.getFullYear();
   }
@@ -2364,6 +2392,7 @@
       cargarYPintarDatosMes();
       cargarYPintarGHL();
       cargarYPintarLeads();
+      cargarPdfClics();
       cargarYPintarFunnelPorDia();
     });
   }
@@ -3542,18 +3571,22 @@
   const UTM_LINK_VSL = 'https://shu.stepherup.com/vsl/';
   const UTM_LINK_WEBINAR = 'https://shu.stepherup.com/masterclass/';   // landing A: "El sistema para crecer tu marca personal…"
   const UTM_LINK_WEBINAR2 = 'https://shu.stepherup.com/clase/';        // landing B: "El sistema de contenido + anuncios…"
-  const utmLinkDestino = d => d === 'vsl' ? UTM_LINK_VSL : d === 'webinar' ? UTM_LINK_WEBINAR : d === 'webinar2' ? UTM_LINK_WEBINAR2 : '';
+  const UTM_LINK_FORMULARIO = 'https://shu.stepherup.com/formulario/';   // quiz de calificación (después sigue al calendario)
+  const UTM_LINK_PDF = 'https://shu.stepherup.com/pdf/';                // pasarela: cuenta el clic y abre el PDF
+  const utmLinkDestino = d => d === 'vsl' ? UTM_LINK_VSL : d === 'webinar' ? UTM_LINK_WEBINAR : d === 'webinar2' ? UTM_LINK_WEBINAR2 : d === 'formulario' ? UTM_LINK_FORMULARIO : '';
   const utmSel = { destino: 'vsl', source: 'instagram', medium: 'bio' };
   function utmMarcar(contenedor, valor){
     document.querySelectorAll('#' + contenedor + ' .chart-chip').forEach(b => b.classList.toggle('active', b.dataset.valor === valor));
   }
   function utmRefrescarOtros(){
-    utmBaseLink.style.display = utmSel.destino === 'otro' ? 'block' : 'none';
+    utmBaseLink.style.display = (utmSel.destino === 'otro' || utmSel.destino === 'pdf') ? 'block' : 'none';
+    utmBaseLink.placeholder = utmSel.destino === 'pdf' ? 'https://… (el link del PDF: Drive o un archivo .pdf)' : 'https://… (el link al que quieres mandar)';
     utmSourceOtro.style.display = utmSel.source === 'otro' ? 'block' : 'none';
     utmMediumOtro.style.display = utmSel.medium === 'otro' ? 'block' : 'none';
     document.getElementById('utmMetaBox').style.display = utmSel.medium === 'paid' ? 'flex' : 'none';
     // La URL para Meta sigue al destino elegido (VSL o webinar).
     document.getElementById('utmMetaUrl').textContent = utmLinkDestino(utmSel.destino)
+      || (utmSel.destino === 'pdf' && utmBaseLink.value.trim() ? UTM_LINK_PDF + '?u=' + encodeURIComponent(utmBaseLink.value.trim()) : '')
       || (utmSel.destino === 'otro' && utmBaseLink.value.trim() ? utmBaseLink.value.trim() : UTM_LINK_VSL);
     utmRefrescarLink();
   }
@@ -4118,9 +4151,11 @@
     const contenido = utmContent.value.trim();
     let base = utmLinkDestino(utmSel.destino) || utmBaseLink.value.trim();
     let falta = null;
-    if(!base){ falta = 'Pega el link de destino.'; base = 'https://…'; }
+    if(!base){ falta = utmSel.destino === 'pdf' ? 'Pega el link del PDF.' : 'Pega el link de destino.'; base = 'https://…'; }
     else {
       try{ new URL(base); } catch(e){ falta = 'El link no es válido: tiene que empezar con https://'; }
+      // PDF: el link pasa por la pasarela que cuenta el clic y después abre el archivo.
+      if(!falta && utmSel.destino === 'pdf') base = UTM_LINK_PDF + '?u=' + encodeURIComponent(base);
     }
     if(!falta && !campania) falta = 'Completa la campaña.';
     const origen = utmSel.source === 'otro' ? (utmSourceOtro.value.trim() || 'otro') : utmSel.source;
@@ -4785,6 +4820,7 @@
         cargarYPintarDatosMes();
         cargarYPintarGHL();
         cargarYPintarLeads();
+        cargarPdfClics();
         cargarYPintarFunnelPorDia();
       });
     });
