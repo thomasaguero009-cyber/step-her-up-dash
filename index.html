@@ -1135,6 +1135,8 @@
 
   #adsCampanasVacio[hidden], .ranking-table[hidden]{ display:none !important; }
   .oculto-v2{ display:none !important; }
+  .chart-legend span{ display:inline-flex; align-items:center; }
+  .chart-legend span i{ flex:none; }
   .leads2-titulo{ display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justify-content:space-between; margin:6px 0 16px; }
   .leads2-sel{ position:relative; }
   .leads2-panel{ position:absolute; right:0; top:calc(100% + 8px); z-index:50; width:min(340px, 90vw); background:var(--card, #1d0b10); border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:0 18px 40px rgba(0,0,0,.45); backdrop-filter:blur(10px); }
@@ -7144,8 +7146,8 @@
       <div class="chart-panel"><div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartRent"></svg><div class="chart-tooltip" id="tooltipRent"></div></div><div class="chart-status" id="statusRent">Cargando…</div></div>
       <div class="chart-legend" style="display:flex; gap:18px; flex-wrap:wrap; margin-top:10px; font-size:12px; color:var(--text-dim);"><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#5fd39a;margin-right:6px;"></i>Facturación</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#fb7185;margin-right:6px;"></i>Inversión</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffd166;margin-right:6px;"></i>Profit</span></div>
       <div class="vz-grid" style="margin-top:28px;">
-        <div><p class="vz-titulo">Cash por fuente</p><div id="tortaAds"></div></div>
-        <div><p class="vz-titulo">Top 5 anuncios</p><div id="top5Ads"></div></div>
+        <div class="chart-panel" style="padding:18px 20px;"><p class="vz-titulo" style="margin-top:0;">Cash por fuente</p><div id="tortaAds"></div></div>
+        <div class="chart-panel" style="padding:18px 20px;"><p class="vz-titulo" style="margin-top:0;">Top 5 anuncios</p><div id="top5Ads"></div></div>
       </div>
       <div class="chart-status" id="notaAdsEmbudo" style="margin-top:14px;">Pendiente: tendencia diaria del embudo solo de anuncios (leads, agendas, calificadas, shows y ventas por día) y cash por anuncio. Necesitan que el Worker separe los datos de GHL por fuente y que los anuncios del 2 de noviembre lleven el parámetro UTM.</div>`;
     if(grid){
@@ -7188,8 +7190,8 @@
       <div class="section-label" style="margin-top:28px;">Facturación orgánica por día</div>
       <div class="chart-panel"><div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartOrg"></svg><div class="chart-tooltip" id="tooltipOrg"></div></div><div class="chart-status" id="statusOrg">Cargando…</div></div>
       <div class="vz-grid" style="margin-top:28px;">
-        <div><p class="vz-titulo">Cash por fuente</p><div id="tortaOrg"></div></div>
-        <div><p class="vz-titulo">Ventas orgánicas del mes</p><div id="listaOrg"></div></div>
+        <div class="chart-panel" style="padding:18px 20px;"><p class="vz-titulo" style="margin-top:0;">Cash por fuente</p><div id="tortaOrg"></div></div>
+        <div class="chart-panel" style="padding:18px 20px;"><p class="vz-titulo" style="margin-top:0;">Ventas orgánicas del mes</p><div id="listaOrg"></div></div>
       </div>
       <div class="chart-status" style="margin-top:14px; margin-bottom:44px;">Pendiente: leads, agendas y shows orgánicos por día (necesitan que el Worker separe por fuente) y alcance, seguidores y contenido (hoja "Orgánico" del Tracker).</div>`;
     panel.appendChild(box);
