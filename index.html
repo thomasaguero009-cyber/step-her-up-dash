@@ -65,6 +65,9 @@
   .tab-panel.active > *:nth-child(5), .kpi-grid > *:nth-child(5), .breakdown-grid > *:nth-child(5){ animation-delay:.28s; }
   .tab-panel.active > *:nth-child(6), .kpi-grid > *:nth-child(6), .breakdown-grid > *:nth-child(6){ animation-delay:.35s; }
   .tab-panel.active > *:nth-child(n+7), .kpi-grid > *:nth-child(n+7), .breakdown-grid > *:nth-child(n+7){ animation-delay:.42s; }
+  /* Lo que se dibuja cuando llegan los datos (tablas, tarjetas, gráficos) entra con el mismo movimiento suave que el resto. */
+  .revelar{ animation:subir .6s cubic-bezier(.2,.7,.2,1) both; }
+  @media (prefers-reduced-motion:reduce){ .revelar{ animation:none; } }
   @media (prefers-reduced-motion:reduce){ .screen.active, .tab-panel.active > *, .kpi-grid > *, .breakdown-grid > *{ animation:none; } }
 
   /* ===== Estrella fugaz, celebración de ventas, meta del mes y buscador ===== */
@@ -6412,6 +6415,8 @@
 
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 20000);
+    // El cash real (pestaña Ventas del Tracker) se pide desde ya, en paralelo, y se muestra directo: así el número no pasa por el de GHL antes de llegar al final.
+    const cashRealP = cashRealDelMes(anio, mes);
     try {
       const res = await fetch(`${WORKER_URL}/leads-summary?start=${start}&end=${end}`, { signal: ctrl.signal });
       const data = await res.json();
@@ -6447,19 +6452,17 @@
       // (cierre, conversión) siguen usando solo los cierres de llamadas.
       const cashTotal = (data.totales.ventas || 0) + (data.totales.ventasWebinar || 0);
       const cierresTotal = (data.totales.cierres || 0) + (data.totales.cierresWebinar || 0);
-      fijarValorNumero('ghlVentas', '$' + Math.round(cashTotal).toLocaleString('es-AR'));
+      const cashReal = await cashRealP;
+      if(pedido !== ghlPedidoActual) return;
+      const cashMostrar = cashReal != null ? cashReal : cashTotal; // si el Tracker no responde, queda el de GHL
+      fijarValorNumero('ghlVentas', '$' + Math.round(cashMostrar).toLocaleString('es-AR'));
       // AOV = cash collected ÷ cierres (llamadas + webinar).
-      fijarValorNumero('ghlAov', cierresTotal > 0 ? '$' + Math.round(cashTotal / cierresTotal).toLocaleString('es-AR') : '–');
+      fijarValorNumero('ghlAov', cierresTotal > 0 ? '$' + Math.round(cashMostrar / cierresTotal).toLocaleString('es-AR') : '–');
       // El cash collected real sale de la pestaña "Ventas" del Tracker (cada cobro, cuotas y ventas pasadas incluidas):
       // las oportunidades de GHL guardan el monto de la venta, no lo que entró. Si el Tracker no responde, queda el de GHL.
       cargarDesglose(!silencioso);
-      cashRealDelMes(anio, mes).then(real => {
-        if(real == null || pedido !== ghlPedidoActual) return;
-        fijarValorNumero('ghlVentas', '$' + Math.round(real).toLocaleString('es-AR'));
-        fijarValorNumero('ghlAov', cierresTotal > 0 ? '$' + Math.round(real / cierresTotal).toLocaleString('es-AR') : '–'); // el ticket promedio usa el mismo cash real
-        const el = document.getElementById('ghlVentas');
-        if(el) el.title = 'Suma de la pestaña Ventas del Tracker (incluye cuotas y cobros de ventas anteriores). GHL marcaba $' + Math.round(cashTotal).toLocaleString('es-AR') + '.';
-      });
+      { const el = document.getElementById('ghlVentas');
+        if(el && cashReal != null) el.title = 'Suma de la pestaña Ventas del Tracker (incluye cuotas y cobros de ventas anteriores). GHL marcaba $' + Math.round(cashTotal).toLocaleString('es-AR') + '.'; }
 
       // Las 4 tasas se calculan con estos MISMOS totales de GHL (no el
       // Sheet manual) para que coincidan con las 5 tarjetas de arriba —
@@ -6509,8 +6512,7 @@
         </div>` : '';
         grid.innerHTML = tarjetas + extra;
       };
-      pintarFuentes(null);
-      cashRealDelMes(anio, mes).then(real => { if(real != null && pedido === ghlPedidoActual) pintarFuentes(real); });
+      pintarFuentes(cashReal);
 
       const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
       statusEl.textContent = 'Datos en vivo desde GHL — ' + mesElegido + ' · actualizado ' + hora;
@@ -7440,6 +7442,25 @@
       : 'Faltan ' + dinero(meta - v) + ' y quedan ' + resta + ' días del mes. A este ritmo cerrarían alrededor de ' + dinero(ritmo) + '.';
   }
   setInterval(function () { vigilar(); anillo(); }, 2500);
+
+  // 6b) entrada suave: la primera vez que un bloque recibe contenido (cuando llegan los datos) aparece con movimiento, igual que al abrir la pestaña.
+  (function () {
+    var vistos = new WeakSet();
+    var obs = new MutationObserver(function (muts) {
+      muts.forEach(function (m) {
+        var t = m.target;
+        if (!m.addedNodes.length || vistos.has(t) || (t.closest && t.closest('svg'))) return;
+        var i = 0;
+        m.addedNodes.forEach(function (n) {
+          if (n.nodeType !== 1 || n.tagName.toLowerCase() === 'svg' || n.closest('svg')) return;
+          n.style.animationDelay = Math.min(i++ * 0.06, 0.4) + 's';
+          n.classList.add('revelar');
+        });
+        if (i) vistos.add(t);
+      });
+    });
+    document.querySelectorAll('.tab-panel').forEach(function (p) { obs.observe(p, { childList: true, subtree: true }); });
+  })();
 
   // 7) buscador con Cmd o Ctrl + K
   var pal = $('paleta'), inp = $('plIn'), lista = $('plList'), items = [], sel = 0;
