@@ -1135,6 +1135,20 @@
 
   #adsCampanasVacio[hidden], .ranking-table[hidden]{ display:none !important; }
   .oculto-v2{ display:none !important; }
+  .leads2-titulo{ display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justify-content:space-between; margin:6px 0 16px; }
+  .leads2-sel{ position:relative; }
+  .leads2-panel{ position:absolute; right:0; top:calc(100% + 8px); z-index:50; width:min(340px, 90vw); background:var(--card, #1d0b10); border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:0 18px 40px rgba(0,0,0,.45); backdrop-filter:blur(10px); }
+  .leads2-panel[hidden]{ display:none !important; }
+  .leads2-presets{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .leads2-custom{ display:flex; flex-wrap:wrap; gap:10px; align-items:end; font-size:12px; color:var(--text-dim); }
+  .leads2-custom label{ display:flex; flex-direction:column; gap:4px; }
+  .leads2-custom input{ background:transparent; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:6px 8px; font:inherit; color-scheme:dark; }
+  details.mas-metricas{ margin:18px 0; }
+  details.mas-metricas > summary{ cursor:pointer; color:var(--text-dim); font-size:13px; letter-spacing:.04em; padding:8px 0; }
+  .top5-fila{ display:grid; grid-template-columns:22px 1fr auto; gap:10px; align-items:center; padding:9px 0; border-top:1px solid var(--border); font-size:13px; }
+  .top5-fila:first-child{ border-top:none; }
+  .top5-barra{ grid-column:2 / 4; height:5px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .top5-barra i{ display:block; height:100%; background:#5fd39a; border-radius:99px; }
   .leads2-barra{ display:flex; flex-wrap:wrap; gap:12px 18px; align-items:center; margin:6px 0 16px; }
   .leads2-nav{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
   .leads2-rango{ font-weight:600; min-width:150px; text-align:center; }
@@ -5817,7 +5831,14 @@
     document.getElementById('adsTabRoasAds').textContent = huboDatosAds ? roas(ventasAdsRoas, totGastoAds) : '–';
     document.getElementById('adsTabRoasGeneral').textContent = huboDatosAds ? roas(ventasRoas, totGastoAds) : '–';
     document.getElementById('statusAdsTab').textContent = estadoAds;
-    adsTabDatos = { totResultados, porNivel: { campana: porCampana, conjunto: porConjunto, anuncio: porAnuncio }, porCampana, totImp, totClics, totLeadsMeta, huboDatosAds, totGastoAds, totVentas: ventasRoas, totCierres, totVentasAds: ventasAdsRoas, totCierresAds, gastoPorDia, dias, diasAMostrar, anio, mes };
+    const cashPorDia = new Array(dias).fill(0), cashFuente = { ads: 0, org: 0, otro: 0 };
+    (ventasTab || []).forEach(v => {
+      const f = parseFechaSheet(v.fecha);
+      if(f && f.getFullYear() === anio && f.getMonth() === mes) cashPorDia[f.getDate() - 1] += v.cash || 0;
+      cashFuente[claseFuente(v.source)] += v.cash || 0;
+    });
+    ventasMesActualV2 = ventasTab || [];
+    adsTabDatos = { cashPorDia, cashFuente, totResultados, porNivel: { campana: porCampana, conjunto: porConjunto, anuncio: porAnuncio }, porCampana, totImp, totClics, totLeadsMeta, huboDatosAds, totGastoAds, totVentas: ventasRoas, totCierres, totVentasAds: ventasAdsRoas, totCierresAds, gastoPorDia, dias, diasAMostrar, anio, mes };
     renderAdsTab();
   }
 
@@ -5879,6 +5900,7 @@
       }).join('');
       if(vacioEl) vacioEl.hidden = hayAlgo;
     }
+    try { renderAdsV2(d); renderOrganicoV2(d); } catch(e){ console.warn('Ads/Orgánico v2', e); }
   }
 
   // ===== Gráficos con filtros (chips): Setters, Closers y Leads por día.
@@ -6933,28 +6955,32 @@
     }
   }
 
-  // ===== Leads v2: tendencia del embudo con calendario (semana o mes) y comparación con el periodo anterior. Lo anterior de Leads queda oculto en el código. =====
+  // ===== Leads v2: tendencia del embudo del mes elegido arriba; el botón "Seleccionar fecha" cambia el rango y compara con el periodo anterior. Lo anterior de Leads queda oculto en el código. =====
   const MCORTO2 = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   const MLARGO2 = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  let leadsVista = 'semana', leadsAncla = null;
-  const leadsExtra = {}; // 'AAAA-MM' -> { dias } de meses que no son el activo (para comparar)
+  let leadsRango = null; // null = mes activo completo; si no { ini, fin }
+  const leadsExtra = {}; // 'AAAA-MM' -> datos de leads de meses que no son el activo (para comparar)
   const isoDe2 = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  const sumarDias2 = (d, n) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); return x; };
+  const sumarDias2 = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const hoy0 = () => { const h = new Date(); return new Date(h.getFullYear(), h.getMonth(), h.getDate()); };
   const panelLeads = document.querySelector('[data-tab-panel="leads"]');
   if(panelLeads){
     [...panelLeads.children].forEach(c => c.classList.add('oculto-v2'));
     const v2 = document.createElement('div');
     v2.id = 'leadsV2';
     v2.innerHTML = `
-      <div class="section-label">Leads · tendencia del embudo</div>
-      <div class="leads2-barra">
-        <div class="chart-chips" id="leadsVista"></div>
-        <div class="leads2-nav">
-          <button type="button" class="chart-chip" id="leadsPrevBtn" aria-label="Anterior">←</button>
-          <span class="leads2-rango" id="leadsRango">–</span>
-          <button type="button" class="chart-chip" id="leadsNextBtn" aria-label="Siguiente">→</button>
-          <button type="button" class="chart-chip" id="leadsHoyBtn">Hoy</button>
-          <input type="date" class="leads2-fecha" id="leadsFecha" aria-label="Elegir día">
+      <div class="leads2-titulo">
+        <div class="section-label" style="margin:0;">Leads · tendencia del embudo</div>
+        <div class="leads2-sel">
+          <button type="button" class="chart-chip" id="leadsSelBtn">📅 <span id="leadsSelTxt">Seleccionar fecha</span> ▾</button>
+          <div class="leads2-panel" id="leadsPanel" hidden>
+            <div class="leads2-presets" id="leadsPresets"></div>
+            <div class="leads2-custom">
+              <label>Desde <input type="date" id="leadsDesde"></label>
+              <label>Hasta <input type="date" id="leadsHasta"></label>
+              <button type="button" class="chart-chip" id="leadsAplicar">Aplicar</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="leads2-cards" id="leadsCards"></div>
@@ -6968,11 +6994,28 @@
       <div class="chart-legend" style="display:flex; gap:18px; flex-wrap:wrap; margin:10px 0 44px; font-size:12px; color:var(--text-dim);" id="leadsLeyenda"></div>`;
     panelLeads.appendChild(v2);
     document.getElementById('leadsLeyenda').innerHTML = SERIES_FUNNEL.map(m => `<span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${m.color};margin-right:6px;"></i>${m.texto}</span>`).join('');
-    const mover = (dir) => { const a = leadsAncla || new Date(); leadsAncla = sumarDias2(a, (leadsVista === 'semana' ? 7 : 1) * dir); renderLeadsV2(); };
-    document.getElementById('leadsPrevBtn').addEventListener('click', () => mover(-1));
-    document.getElementById('leadsNextBtn').addEventListener('click', () => mover(1));
-    document.getElementById('leadsHoyBtn').addEventListener('click', () => { leadsAncla = null; renderLeadsV2(); });
-    document.getElementById('leadsFecha').addEventListener('change', (e) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(e.target.value); if(m){ leadsAncla = new Date(+m[1], +m[2] - 1, +m[3]); renderLeadsV2(); } });
+    const panelSel = document.getElementById('leadsPanel');
+    const cerrar = () => { panelSel.hidden = true; };
+    const aplicar = (k) => {
+      const h = hoy0(), lunes = sumarDias2(h, -((h.getDay() + 6) % 7));
+      if(k === 'hoy') leadsRango = { ini: h, fin: h };
+      else if(k === 'ayer') leadsRango = { ini: sumarDias2(h, -1), fin: sumarDias2(h, -1) };
+      else if(k === 'semana') leadsRango = { ini: lunes, fin: sumarDias2(lunes, 6) };
+      else if(k === 'semanapasada') leadsRango = { ini: sumarDias2(lunes, -7), fin: sumarDias2(lunes, -1) };
+      else leadsRango = null;
+      cerrar(); renderLeadsV2();
+    };
+    document.getElementById('leadsPresets').innerHTML = [['hoy', 'Hoy'], ['ayer', 'Ayer'], ['semana', 'Esta semana'], ['semanapasada', 'Semana pasada'], ['mes', 'Mes completo']].map(([k, t]) => `<button type="button" class="chart-chip" data-preset="${k}">${t}</button>`).join('');
+    document.querySelectorAll('#leadsPresets [data-preset]').forEach(b => b.addEventListener('click', () => aplicar(b.dataset.preset)));
+    document.getElementById('leadsSelBtn').addEventListener('click', (e) => { e.stopPropagation(); panelSel.hidden = !panelSel.hidden; });
+    document.addEventListener('click', (e) => { if(!panelSel.hidden && !e.target.closest('.leads2-sel')) cerrar(); });
+    document.getElementById('leadsAplicar').addEventListener('click', () => {
+      const f = (id) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(document.getElementById(id).value); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+      let a = f('leadsDesde'), b = f('leadsHasta');
+      if(!a && !b) return;
+      a = a || b; b = b || a; if(b < a) [a, b] = [b, a];
+      leadsRango = { ini: a, fin: b }; cerrar(); renderLeadsV2();
+    });
   }
   // Datos por día de cualquier fecha cargada: GHL (6 meses) y, para el mes activo, las mismas series que el resto del dashboard.
   function diasLeadsV2(){
@@ -7001,25 +7044,30 @@
   }
   function renderLeadsV2(){
     if(!document.getElementById('leadsV2') || !funnelPorDiaDatos) return;
-    const act = mesElegidoAYyyyMm(), hoy = new Date();
-    // El mes ya lo elige el selector de arriba: acá solo se ve un día o una semana de ese mes.
-    const ancla = leadsAncla || ((hoy.getFullYear() === act.anio && hoy.getMonth() === act.mes) ? hoy : new Date(act.anio, act.mes + 1, 0));
-    const lunes = sumarDias2(ancla, -((ancla.getDay() + 6) % 7));
-    let ini, fin, pIni, pFin;
-    if(leadsVista === 'dia'){ ini = fin = new Date(ancla.getFullYear(), ancla.getMonth(), ancla.getDate()); pIni = pFin = sumarDias2(ini, -1); }
-    else { ini = lunes; fin = sumarDias2(lunes, 6); pIni = sumarDias2(lunes, -7); pFin = sumarDias2(lunes, -1); }
-    [ini, fin, pIni, pFin].forEach(d => { if(!(d.getFullYear() === act.anio && d.getMonth() === act.mes)) pedirLeadsMes(d.getFullYear(), d.getMonth()); });
+    const act = mesElegidoAYyyyMm(), hoy = hoy0();
+    let ini, fin, esMes = false;
+    if(leadsRango){ ini = leadsRango.ini; fin = leadsRango.fin; }
+    else { ini = new Date(act.anio, act.mes, 1); fin = new Date(act.anio, act.mes + 1, 0); esMes = true; }
+    const finGraf = fin > hoy ? hoy : fin; // no se dibujan días que todavía no llegaron
+    if(finGraf < ini){ document.getElementById('leadsCards').innerHTML = ''; document.getElementById('statusLeads2').textContent = 'Ese rango todavía no llegó.'; return; }
+    const dias = Math.round((finGraf - ini) / 86400000) + 1;
+    let pIni, pFin;
+    if(esMes){ pIni = new Date(act.anio, act.mes - 1, 1); pFin = new Date(act.anio, act.mes, 0); }
+    else { pFin = sumarDias2(ini, -1); pIni = sumarDias2(pFin, -(dias - 1)); }
+    for(let d = new Date(pIni.getFullYear(), pIni.getMonth(), 1); d <= finGraf; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)){
+      if(!(d.getFullYear() === act.anio && d.getMonth() === act.mes)) pedirLeadsMes(d.getFullYear(), d.getMonth());
+    }
     const mapa = diasLeadsV2();
     const corto = (d) => `${d.getDate()} ${MCORTO2[d.getMonth()]}`;
     const rango = (a, b) => isoDe2(a) === isoDe2(b) ? corto(a) : (a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${MCORTO2[a.getMonth()]}` : `${corto(a)} – ${corto(b)}`);
-    pintarChips('leadsVista', [{ valor: 'dia', texto: 'Día' }, { valor: 'semana', texto: 'Semana' }], leadsVista, v => { leadsVista = v; renderLeadsV2(); });
-    document.getElementById('leadsRango').textContent = leadsVista === 'dia' ? `${DIAS_SEMANA[ini.getDay()]} ${corto(ini)}` : rango(ini, fin) + ' ' + ini.getFullYear();
-    const inp = document.getElementById('leadsFecha'); if(inp.value !== isoDe2(ancla)) inp.value = isoDe2(ancla);
+    const etiquetaSel = esMes ? `${MLARGO2[act.mes]} ${act.anio}` : rango(ini, fin) + ' ' + fin.getFullYear();
+    document.getElementById('leadsSelTxt').textContent = etiquetaSel;
+    document.getElementById('leadsDesde').value = isoDe2(ini); document.getElementById('leadsHasta').value = isoDe2(fin);
     const listar = (a, b) => { const out = []; for(let d = new Date(a); d <= b; d = sumarDias2(d, 1)) out.push(new Date(d)); return out; };
-    const diasSel = listar(ini, fin), diasPrev = listar(pIni, pFin), diasGraf = listar(lunes, sumarDias2(lunes, 6));
+    const diasSel = listar(ini, finGraf), diasPrev = listar(pIni, pFin);
     const valor = (d) => mapa.get(isoDe2(d)) || { leads: 0, llamadas: 0, agendadas: 0, shows: 0, cierres: 0 };
     const suma = (arr, k) => arr.reduce((t, d) => t + (valor(d)[k] || 0), 0);
-    const prevTxt = rango(pIni, pFin);
+    const prevTxt = esMes ? MLARGO2[pIni.getMonth()] : rango(pIni, pFin);
     document.getElementById('leadsCards').innerHTML = SERIES_FUNNEL.map(m => {
       const cur = suma(diasSel, m.key), prev = suma(diasPrev, m.key);
       let tri;
@@ -7030,14 +7078,144 @@
       }
       return `<div class="kpi-card"><div class="kpi-label" style="color:${m.color}">${m.texto}</div><div class="kpi-value">${cur.toLocaleString('es-AR')}</div><div class="leads2-tri">${tri}</div></div>`;
     }).join('');
-    const series = {}; SERIES_FUNNEL.forEach(m => { series[m.key] = diasGraf.map(d => valor(d)[m.key]); });
-    const marca = leadsVista === 'dia' ? diasGraf.findIndex(d => isoDe2(d) === isoDe2(ini)) : -1;
-    drawFunnelChart('chartLeads2', 'tooltipLeads2', series, lunes.getFullYear(), lunes.getMonth(), {
-      dia: (i) => `${DIAS_SEMANA[diasGraf[i].getDay()]} ${corto(diasGraf[i])}`,
-      eje: (i) => DIAS_SEMANA[diasGraf[i].getDay()].slice(0, 3) + ' ' + diasGraf[i].getDate(),
-      marca,
+    const series = {}; SERIES_FUNNEL.forEach(m => { series[m.key] = diasSel.map(d => valor(d)[m.key]); });
+    const paso = Math.max(1, Math.ceil(diasSel.length / 8));
+    drawFunnelChart('chartLeads2', 'tooltipLeads2', series, ini.getFullYear(), ini.getMonth(), {
+      dia: (i) => `${DIAS_SEMANA[diasSel[i].getDay()]} ${corto(diasSel[i])}`,
+      eje: (i) => (i % paso === 0 || i === diasSel.length - 1) ? (diasSel.length <= 8 ? DIAS_SEMANA[diasSel[i].getDay()].slice(0, 3) + ' ' + diasSel[i].getDate() : String(diasSel[i].getDate())) : '',
     });
-    document.getElementById('statusLeads2').textContent = 'Datos en vivo desde GHL · ' + (leadsVista === 'dia' ? 'el día elegido, marcado con la línea punteada, comparado con ' : 'la semana elegida comparada con ') + prevTxt;
+    document.getElementById('statusLeads2').textContent = 'Datos en vivo desde GHL · ' + etiquetaSel + ' comparado con ' + prevTxt;
+  }
+
+  // ===== Gráficos v2 (Ads y Orgánico) =====
+  let ventasMesActualV2 = [];
+  const claseFuente = (src) => { const t = String(src || ''); return /ads/i.test(t) ? 'ads' : /org[aá]nic/i.test(t) ? 'org' : 'otro'; };
+  function dibujarLineas(svgId, tipId, defs, datos, n, op){
+    const svg = document.getElementById(svgId), tip = document.getElementById(tipId);
+    if(!svg) return;
+    svg.innerHTML = '';
+    const NS = 'http://www.w3.org/2000/svg', W = 1000, H = 280, padL = 52, padB = 24, padT = 10;
+    const mk = (t, a) => { const e = document.createElementNS(NS, t); Object.entries(a).forEach(([k, v]) => e.setAttribute(k, v)); return e; };
+    const todos = defs.flatMap(d => datos[d.key].slice(0, n));
+    if(!n || todos.every(v => v === 0)){
+      svg.appendChild(mk('line', { x1: padL, x2: W - 10, y1: H - padB, y2: H - padB, stroke: 'rgba(255,255,255,0.14)', 'stroke-width': 1.5, 'stroke-dasharray': '5,5' }));
+      const m = mk('text', { x: W / 2, y: (H - padB) / 2, fill: 'rgba(247,236,233,0.55)', 'font-size': 15, 'text-anchor': 'middle' }); m.textContent = op.vacio || 'Sin datos todavía'; svg.appendChild(m);
+      return;
+    }
+    let mx = Math.max(...todos, 1), mn = Math.min(...todos, 0);
+    const rng = (mx - mn) || 1;
+    const xAt = (i) => padL + (W - padL - 20) * (n <= 1 ? 0.5 : i / (n - 1));
+    const yAt = (v) => padT + (H - padT - padB) * (1 - (v - mn) / rng);
+    for(let g = 0; g <= 5; g++){
+      const val = mn + rng * g / 5, y = yAt(val);
+      svg.appendChild(mk('line', { x1: padL, x2: W - 10, y1: y, y2: y, stroke: 'rgba(255,255,255,0.1)', 'stroke-width': 1 }));
+      const l = mk('text', { x: 4, y: y + 4, fill: 'rgba(247,236,233,0.45)', 'font-size': 11 }); l.textContent = (op.fmtEje || ((v) => Math.round(v).toLocaleString('es-AR')))(val); svg.appendChild(l);
+    }
+    if(mn < 0){ svg.appendChild(mk('line', { x1: padL, x2: W - 10, y1: yAt(0), y2: yAt(0), stroke: 'rgba(255,255,255,0.3)', 'stroke-width': 1.2 })); }
+    defs.forEach(d => {
+      const pts = datos[d.key].slice(0, n).map((v, i) => [xAt(i), yAt(v)]);
+      svg.appendChild(mk('path', { d: smoothPath(pts), fill: 'none', stroke: d.color, 'stroke-width': 2.2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+      pts.forEach(([x, y]) => svg.appendChild(mk('circle', { cx: x, cy: y, r: 2.6, fill: '#170609', stroke: d.color, 'stroke-width': 1.4 })));
+    });
+    for(let i = 0; i < n; i++){
+      if(op.eje){ const t = mk('text', { x: xAt(i), y: H - 6, 'text-anchor': 'middle', fill: 'rgba(247,236,233,0.5)', 'font-size': 11 }); t.textContent = op.eje(i); svg.appendChild(t); }
+      const x = xAt(i), colW = n > 1 ? (W - padL - 20) / (n - 1) : W;
+      const hit = mk('rect', { x: x - colW / 2, y: 0, width: colW, height: H, fill: 'transparent' }); hit.style.cursor = 'pointer';
+      const show = () => { tip.innerHTML = op.tt(i); const w = svg.parentElement.clientWidth, r = w / W; let left = x * r + 14; if(left + 190 > w) left = x * r - 204; tip.style.left = left + 'px'; tip.classList.add('show'); };
+      hit.addEventListener('mouseenter', show); hit.addEventListener('mousemove', show); hit.addEventListener('mouseleave', () => tip.classList.remove('show'));
+      svg.appendChild(hit);
+    }
+  }
+  const tortaCash = (cf) => {
+    const items = [{ nombre: 'Anuncios', valor: cf.ads, color: '#5b8def' }, { nombre: 'Orgánico', valor: cf.org, color: '#5fd39a' }, { nombre: 'Sin atribuir', valor: cf.otro, color: '#8d7b86' }].map(x => ({ ...x, texto: usdEq(x.valor) }));
+    const tot = cf.ads + cf.org + cf.otro;
+    return `<div class="vz-donut">${donutEq(items, usdEq(tot), 'cash del mes')}<div class="vz-leyenda">${items.map(x => `<div><i style="background:${x.color}"></i>${x.nombre}<b>${x.texto} · ${tot > 0 ? Math.round(x.valor / tot * 100) : 0}%</b></div>`).join('')}</div></div>`;
+  };
+  // --- Ads v2
+  (function(){
+    const panel = document.querySelector('[data-tab-panel="ads"]');
+    if(!panel) return;
+    const viejo = document.getElementById('chartAds'); if(viejo && viejo.closest('.chart-panel')) viejo.closest('.chart-panel').classList.add('oculto-v2');
+    const grid = panel.querySelector('.kpi-grid');
+    const esenciales = ['Gasto del mes', 'Resultados (según Meta)', 'CPR (costo por resultado)', 'ROAS de ads', 'ROAS general', 'CTR (clics / impresiones)'];
+    const box = document.createElement('div'); box.id = 'adsV2';
+    box.innerHTML = `
+      <div class="section-label" style="margin-top:28px;">Análisis diario de rentabilidad</div>
+      <div class="chart-panel"><div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartRent"></svg><div class="chart-tooltip" id="tooltipRent"></div></div><div class="chart-status" id="statusRent">Cargando…</div></div>
+      <div class="chart-legend" style="display:flex; gap:18px; flex-wrap:wrap; margin-top:10px; font-size:12px; color:var(--text-dim);"><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#5fd39a;margin-right:6px;"></i>Facturación</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#fb7185;margin-right:6px;"></i>Inversión</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffd166;margin-right:6px;"></i>Profit</span></div>
+      <div class="vz-grid" style="margin-top:28px;">
+        <div><p class="vz-titulo">Cash por fuente</p><div id="tortaAds"></div></div>
+        <div><p class="vz-titulo">Top 5 anuncios</p><div id="top5Ads"></div></div>
+      </div>
+      <div class="chart-status" id="notaAdsEmbudo" style="margin-top:14px;">Pendiente: tendencia diaria del embudo solo de anuncios (leads, agendas, calificadas, shows y ventas por día) y cash por anuncio. Necesitan que el Worker separe los datos de GHL por fuente y que los anuncios del 2 de noviembre lleven el parámetro UTM.</div>`;
+    if(grid){
+      grid.after(box);
+      const det = document.createElement('details'); det.className = 'mas-metricas';
+      det.innerHTML = '<summary>Más métricas</summary><div class="kpi-grid" id="adsMasGrid"></div>';
+      box.after(det);
+      const mas = det.querySelector('#adsMasGrid');
+      [...grid.querySelectorAll('.kpi-card')].forEach(c => { const l = (c.querySelector('.kpi-label') || {}).textContent || ''; if(!esenciales.includes(l.trim())) mas.appendChild(c); });
+    } else panel.appendChild(box);
+  })();
+  function renderAdsV2(d){
+    if(!d || !document.getElementById('adsV2')) return;
+    const n = d.diasAMostrar || d.dias || 0, dias = d.dias || n;
+    const fact = d.cashPorDia || new Array(dias).fill(0), inv = d.gastoPorDia || new Array(dias).fill(0);
+    const datos = { fact, inv, profit: fact.map((v, i) => v - (inv[i] || 0)) };
+    const roas = (f, i) => i > 0 ? (f / i).toFixed(2) + 'x' : '–', roi = (f, i) => i > 0 ? Math.round((f - i) / i * 100) + '%' : '–';
+    dibujarLineas('chartRent', 'tooltipRent', [{ key: 'fact', color: '#5fd39a' }, { key: 'inv', color: '#fb7185' }, { key: 'profit', color: '#ffd166' }], datos, n, {
+      vacio: 'Cargá el gasto en la hoja Ads y las ventas en Ventas para ver la rentabilidad',
+      fmtEje: (v) => '$' + Math.round(v).toLocaleString('es-AR'),
+      eje: (i) => (i % 5 === 0 || i === n - 1) ? String(i + 1) : '',
+      tt: (i) => `<div class="tt-day">Día ${i + 1}</div><div class="tt-val" style="color:#5fd39a">Facturación: ${usdEq(fact[i])}</div><div class="tt-val" style="color:#fb7185">Inversión: ${usdEq(inv[i])}</div><div class="tt-val" style="color:#ffd166">Profit: ${usdEq(datos.profit[i])}</div><div class="tt-val">ROI: ${roi(fact[i], inv[i])} · ROAS: ${roas(fact[i], inv[i])}</div>`,
+    });
+    const tF = fact.slice(0, n).reduce((a, b) => a + b, 0), tI = inv.slice(0, n).reduce((a, b) => a + b, 0);
+    document.getElementById('statusRent').textContent = `Mes: facturación ${usdEq(tF)} · inversión ${usdEq(tI)} · profit ${usdEq(tF - tI)} · ROI ${roi(tF, tI)} · ROAS ${roas(tF, tI)}`;
+    document.getElementById('tortaAds').innerHTML = tortaCash(d.cashFuente || { ads: 0, org: 0, otro: 0 });
+    const anuncios = [...((d.porNivel || {}).anuncio || new Map()).entries()].map(([nombre, c]) => ({ nombre, c, r: c.res > 0 ? c.res : c.leads })).filter(x => x.r > 0).sort((a, b) => (a.c.gasto / a.r) - (b.c.gasto / b.r)).slice(0, 5);
+    const maxR = Math.max(1, ...anuncios.map(x => x.r));
+    document.getElementById('top5Ads').innerHTML = anuncios.length ? anuncios.map((x, i) => `<div class="top5-fila"><b>${i + 1}</b><span>${escapeHtml(x.nombre)}</span><span style="color:var(--text-dim)">${x.r} resultados · CPR $${(x.c.gasto / x.r).toFixed(2).replace('.', ',')} · gasto ${usdEq(x.c.gasto)}</span><div class="top5-barra"><i style="width:${Math.round(x.r / maxR * 100)}%"></i></div></div>`).join('') + '<div class="chart-status" style="margin-top:8px;">Ordenado por costo por resultado. Desde noviembre se ordena por cash cobrado.</div>' : '<div class="chart-status">Cargá anuncios en la hoja Ads para ver el ranking.</div>';
+  }
+  // --- Orgánico v2
+  (function(){
+    const panel = document.querySelector('[data-tab-panel="organico"]');
+    if(!panel) return;
+    [...panel.children].forEach(c => c.classList.add('oculto-v2'));
+    const box = document.createElement('div'); box.id = 'orgV2';
+    box.innerHTML = `
+      <div class="section-label">Orgánico</div>
+      <div class="kpi-grid" id="orgCards"></div>
+      <div class="section-label" style="margin-top:28px;">Facturación orgánica por día</div>
+      <div class="chart-panel"><div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartOrg"></svg><div class="chart-tooltip" id="tooltipOrg"></div></div><div class="chart-status" id="statusOrg">Cargando…</div></div>
+      <div class="vz-grid" style="margin-top:28px;">
+        <div><p class="vz-titulo">Cash por fuente</p><div id="tortaOrg"></div></div>
+        <div><p class="vz-titulo">Ventas orgánicas del mes</p><div id="listaOrg"></div></div>
+      </div>
+      <div class="chart-status" style="margin-top:14px; margin-bottom:44px;">Pendiente: leads, agendas y shows orgánicos por día (necesitan que el Worker separe por fuente) y alcance, seguidores y contenido (hoja "Orgánico" del Tracker).</div>`;
+    panel.appendChild(box);
+  })();
+  function renderOrganicoV2(d){
+    if(!d || !document.getElementById('orgV2')) return;
+    const ventas = ventasMesActualV2 || [], n = d.diasAMostrar || d.dias || 0, dias = d.dias || n;
+    const porDia = new Array(dias).fill(0); let org = 0, ads = 0, otro = 0, cobrosOrg = 0;
+    const filasOrg = [];
+    ventas.forEach(v => {
+      const k = claseFuente(v.source), f = parseFechaSheet(v.fecha), cash = v.cash || 0;
+      if(k === 'org'){ org += cash; cobrosOrg++; filasOrg.push(v); if(f && f.getFullYear() === d.anio && f.getMonth() === d.mes) porDia[f.getDate() - 1] += cash; }
+      else if(k === 'ads') ads += cash; else otro += cash;
+    });
+    const tot = org + ads + otro;
+    const tarjeta = (t, v, sub) => `<div class="kpi-card"><div class="kpi-label">${t}</div><div class="kpi-value">${v}</div>${sub ? `<div class="leads2-tri">${sub}</div>` : ''}</div>`;
+    document.getElementById('orgCards').innerHTML = tarjeta('Cash orgánico', usdEq(org), tot > 0 ? Math.round(org / tot * 100) + '% del cash del mes' : '') + tarjeta('Cobros orgánicos', String(cobrosOrg)) + tarjeta('Cash de anuncios', usdEq(ads), tot > 0 ? Math.round(ads / tot * 100) + '% del cash del mes' : '') + tarjeta('Sin atribuir', usdEq(otro), tot > 0 ? Math.round(otro / tot * 100) + '% del cash del mes · pendiente de clasificar' : '');
+    dibujarLineas('chartOrg', 'tooltipOrg', [{ key: 'v', color: '#5fd39a' }], { v: porDia }, n, {
+      vacio: 'Todavía no hay ventas con fuente orgánica este mes',
+      fmtEje: (v) => '$' + Math.round(v).toLocaleString('es-AR'),
+      eje: (i) => (i % 5 === 0 || i === n - 1) ? String(i + 1) : '',
+      tt: (i) => `<div class="tt-day">Día ${i + 1}</div><div class="tt-val" style="color:#5fd39a">Facturación orgánica: ${usdEq(porDia[i])}</div>`,
+    });
+    document.getElementById('statusOrg').textContent = 'Cash con fuente orgánica de la pestaña Ventas del Tracker · ' + mesElegido;
+    document.getElementById('tortaOrg').innerHTML = tortaCash({ ads, org, otro });
+    document.getElementById('listaOrg').innerHTML = filasOrg.length ? filasOrg.sort((a, b) => b.cash - a.cash).slice(0, 8).map(v => `<div class="top5-fila" style="grid-template-columns:1fr auto;"><span>${escapeHtml(v.clienta || '')} <span style="color:var(--text-dim)">· ${escapeHtml(v.producto || '')}</span></span><b>${usdEq(v.cash)}</b></div>`).join('') : '<div class="chart-status">Sin ventas orgánicas todavía.</div>';
   }
 
   // ===== Actualización del Dashboard: botón "Actualizar" + automática cada
