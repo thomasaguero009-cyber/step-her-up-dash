@@ -1518,6 +1518,7 @@
         <button type="button" class="quick-nav-btn" data-tab="ghl">GHL en vivo</button>
         <button type="button" class="quick-nav-btn" data-tab="leads">Leads</button>
         <button type="button" class="quick-nav-btn" data-tab="ads">Ads</button>
+        <button type="button" class="quick-nav-btn" data-tab="organico">Orgánico</button>
         <button type="button" class="quick-nav-btn" data-tab="ventas">Ventas del mes</button>
         <button type="button" class="quick-nav-btn" data-tab="llamadas">Llamadas</button>
         <button type="button" class="quick-nav-btn" data-tab="matematica">Matemática del éxito</button>
@@ -1822,6 +1823,11 @@
         </div>
         <div id="adsNiveles"></div>
         <div class="chart-status" id="adsCampanasVacio" style="margin-bottom:44px;">Cargá filas en la pestaña "Ads" del Tracker (con Campaña, Conjunto de anuncios y Anuncio) para ver el gasto de cada uno.</div>
+      </div>
+
+      <div class="tab-panel" data-tab-panel="organico">
+        <div class="section-label" id="organico">Orgánico</div>
+        <div class="chart-status" style="margin-bottom:44px; line-height:1.6;">Acá van a ir las métricas del contenido orgánico (Instagram, DMs, referidas): leads, agendadas, cierres y cash orgánico, y qué contenido trajo más leads. Se va a alimentar de una hoja "Orgánico" del Tracker. Por ahora está vacío a propósito.</div>
       </div>
 
       <div class="tab-panel" data-tab-panel="ventas">
@@ -2995,7 +3001,7 @@
   // ===== Menú por secciones (Resumen / Marketing / Ventas) y orden de cada pestaña: día → semana → mes =====
   const GRUPOS_DASH = [
     ['Resumen', ['general', 'ghl']],
-    ['Marketing', ['leads', 'ads', 'utm', 'webinar', 'email']],
+    ['Marketing', ['leads', 'ads', 'organico', 'utm', 'webinar', 'email']],
     ['Ventas', ['llamadas', 'setters', 'closers', 'ventas', 'matematica']],
   ];
   function iniciarGruposDash(){
