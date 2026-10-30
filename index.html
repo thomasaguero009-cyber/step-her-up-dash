@@ -1816,9 +1816,10 @@
             <div class="kpi-value" id="adsTabCpr">–</div>
           </div>
         </div>
-        <div class="section-label" style="margin-top:28px;">Gasto por campaña</div>
+        <div class="section-label" style="margin-top:28px;" id="adsNivelTitulo">Gasto por campaña</div>
+        <div class="chart-chips" id="adsNivel" style="margin-bottom:12px;"></div>
         <div class="ranking-table" style="overflow-x:auto;"><table class="tabla-campanas" id="adsCampanasTabla"><thead></thead><tbody></tbody></table></div>
-        <div class="chart-status" id="adsCampanasVacio" style="margin-bottom:44px;">Cargá filas en la pestaña "Ads" del Tracker (con la columna Campaña) para ver cada campaña.</div>
+        <div class="chart-status" id="adsCampanasVacio" style="margin-bottom:44px;">Cargá filas en la pestaña "Ads" del Tracker (con Campaña, Conjunto de anuncios y Anuncio) para ver el gasto de cada uno.</div>
       </div>
 
       <div class="tab-panel" data-tab-panel="ventas">
@@ -5540,14 +5541,14 @@
       const texto = await fetchTextConTimeout(SHEET_ADS_CSV_URL, 8000);
       const filas = parseCSVSheet(texto);
       const header = (filas[0] || []).map(normalizarEncabezado);
-      const idx = { fecha: header.indexOf('fecha'), gasto: header.indexOf('gasto'), imp: header.indexOf('impresiones'), clics: header.indexOf('clics'), leads: header.indexOf('leads'), res: header.indexOf('resultados'), camp: Math.max(header.indexOf('campaña'), header.indexOf('campana')) };
+      const idx = { fecha: header.indexOf('fecha'), gasto: header.indexOf('gasto'), imp: header.indexOf('impresiones'), clics: header.indexOf('clics'), leads: header.indexOf('leads'), res: header.indexOf('resultados'), camp: Math.max(header.indexOf('campaña'), header.indexOf('campana')), conj: header.indexOf('conjunto de anuncios'), anun: header.indexOf('anuncio') };
       const datos = [];
       for(let i=1;i<filas.length;i++){
         const r = filas[i];
         const fecha = parseFechaSheet(r[idx.fecha]);
         if(!fecha) continue;
         const col = (k) => idx[k] >= 0 ? (parseNumSheet(r[idx[k]]) || 0) : 0;
-        datos.push({ fecha, gasto: parseNumSheet(r[idx.gasto]), impresiones: col('imp'), clics: col('clics'), leadsMeta: col('leads'), resultados: col('res'), campana: idx.camp >= 0 ? String(r[idx.camp] || '').trim() : '' });
+        datos.push({ fecha, gasto: parseNumSheet(r[idx.gasto]), impresiones: col('imp'), clics: col('clics'), leadsMeta: col('leads'), resultados: col('res'), campana: idx.camp >= 0 ? String(r[idx.camp] || '').trim() : '', conjunto: idx.conj >= 0 ? String(r[idx.conj] || '').trim() : '', anuncio: idx.anun >= 0 ? String(r[idx.anun] || '').trim() : '' });
       }
       filasAdsCache = datos;
     } catch(e){
@@ -5668,14 +5669,16 @@
     });
 
     let totGastoAds = 0, huboDatosAds = false, totImp = 0, totClics = 0, totLeadsMeta = 0, totResultados = 0;
-    const porCampana = new Map();
+    const porCampana = new Map(), porConjunto = new Map(), porAnuncio = new Map();
     const gastoPorDia = new Array(dias).fill(0);
     filasAds.forEach(f => {
       if(f.fecha.getFullYear() !== anio || f.fecha.getMonth() !== mes) return;
       huboDatosAds = true;
       totGastoAds += f.gasto; totImp += f.impresiones || 0; totClics += f.clics || 0; totLeadsMeta += f.leadsMeta || 0; totResultados += f.resultados || 0;
-      { const k = f.campana || 'Sin nombre'; const c = porCampana.get(k) || { gasto: 0, imp: 0, clics: 0, leads: 0, res: 0 };
-        c.gasto += f.gasto || 0; c.imp += f.impresiones || 0; c.clics += f.clics || 0; c.leads += f.leadsMeta || 0; c.res += f.resultados || 0; porCampana.set(k, c); }
+      [[porCampana, f.campana], [porConjunto, f.conjunto], [porAnuncio, f.anuncio]].forEach(([mapa, nombre]) => {
+        const k = nombre || 'Sin nombre'; const c = mapa.get(k) || { gasto: 0, imp: 0, clics: 0, leads: 0, res: 0 };
+        c.gasto += f.gasto || 0; c.imp += f.impresiones || 0; c.clics += f.clics || 0; c.leads += f.leadsMeta || 0; c.res += f.resultados || 0; mapa.set(k, c);
+      });
       gastoPorDia[f.fecha.getDate() - 1] += f.gasto;
     });
 
@@ -5777,11 +5780,12 @@
     document.getElementById('adsTabRoasAds').textContent = huboDatosAds ? roas(totVentasAds, totGastoAds) : '–';
     document.getElementById('adsTabRoasGeneral').textContent = huboDatosAds ? roas(totVentas, totGastoAds) : '–';
     document.getElementById('statusAdsTab').textContent = estadoAds;
-    adsTabDatos = { totResultados, porCampana, totImp, totClics, totLeadsMeta, huboDatosAds, totGastoAds, totVentas, totCierres, totVentasAds, totCierresAds, gastoPorDia, dias, diasAMostrar, anio, mes };
+    adsTabDatos = { totResultados, porNivel: { campana: porCampana, conjunto: porConjunto, anuncio: porAnuncio }, porCampana, totImp, totClics, totLeadsMeta, huboDatosAds, totGastoAds, totVentas, totCierres, totVentasAds, totCierresAds, gastoPorDia, dias, diasAMostrar, anio, mes };
     renderAdsTab();
   }
 
-  let adsTabDatos = null;
+  let adsTabDatos = null, adsNivel = 'campana';
+  const ADS_NIVELES = [{ valor: 'campana', texto: 'Campaña' }, { valor: 'conjunto', texto: 'Conjunto de anuncios' }, { valor: 'anuncio', texto: 'Anuncio' }];
   function renderAdsTab(){
     const d = adsTabDatos;
     if(!d) return;
@@ -5817,13 +5821,16 @@
     document.getElementById('adsTabResultados').textContent = ok && resTot > 0 ? resTot.toLocaleString('es-AR') : '–';
     document.getElementById('adsTabCpr').textContent = ok && resTot > 0 ? dec(d.totGastoAds / resTot) : '–';
     // Tabla por campaña: gasto, impresiones, clics, CTR, resultados y CPR de cada una.
-    const camps = [...(d.porCampana || new Map()).entries()].sort((a, b) => b[1].gasto - a[1].gasto);
+    pintarChips('adsNivel', ADS_NIVELES, adsNivel, v => { adsNivel = v; renderAdsTab(); });
+    const nivelTxt = (ADS_NIVELES.find(x => x.valor === adsNivel) || ADS_NIVELES[0]).texto;
+    const tit = document.getElementById('adsNivelTitulo'); if(tit) tit.textContent = 'Gasto por ' + nivelTxt.toLowerCase();
+    const camps = [...(((d.porNivel || {})[adsNivel]) || new Map()).entries()].sort((a, b) => b[1].gasto - a[1].gasto);
     const thead = document.querySelector('#adsCampanasTabla thead'), tbody = document.querySelector('#adsCampanasTabla tbody');
     const vacioEl = document.getElementById('adsCampanasVacio');
     if(thead && tbody){
       const pct = (a, b) => b > 0 ? (a / b * 100).toLocaleString('es-AR', { maximumFractionDigits: 2 }) + '%' : '–';
       const fila = (nombre, c) => { const r = c.res > 0 ? c.res : c.leads; return '<td>' + escapeHtml(nombre) + '</td><td>' + dec(c.gasto) + '</td><td>' + (d.totGastoAds > 0 ? Math.round(c.gasto / d.totGastoAds * 100) + '%' : '–') + '</td><td>' + (c.imp ? c.imp.toLocaleString('es-AR') : '–') + '</td><td>' + (c.clics ? c.clics.toLocaleString('es-AR') : '–') + '</td><td>' + pct(c.clics, c.imp) + '</td><td>' + (r ? r.toLocaleString('es-AR') : '–') + '</td><td>' + (r > 0 ? dec(c.gasto / r) : '–') + '</td>'; };
-      thead.innerHTML = '<tr><th>Campaña</th><th>Gasto</th><th>% del gasto</th><th>Impresiones</th><th>Clics</th><th>CTR</th><th>Resultados</th><th>CPR</th></tr>';
+      thead.innerHTML = '<tr><th>' + nivelTxt + '</th><th>Gasto</th><th>% del gasto</th><th>Impresiones</th><th>Clics</th><th>CTR</th><th>Resultados</th><th>CPR</th></tr>';
       tbody.innerHTML = camps.map(([n, c]) => '<tr>' + fila(n, c) + '</tr>').join('')
         + (camps.length > 1 ? '<tr style="font-weight:700;">' + fila('Total', camps.reduce((a, [, c]) => ({ gasto: a.gasto + c.gasto, imp: a.imp + c.imp, clics: a.clics + c.clics, leads: a.leads + c.leads, res: a.res + c.res }), { gasto: 0, imp: 0, clics: 0, leads: 0, res: 0 })) + '</tr>' : '');
       if(vacioEl) vacioEl.hidden = camps.length > 0;
