@@ -1134,6 +1134,15 @@
   .rmt-btn.active{ background:rgba(240,168,190,0.14); border-color:var(--blush-2); color:var(--cream); }
 
   #adsCampanasVacio[hidden], .ranking-table[hidden]{ display:none !important; }
+  .oculto-v2{ display:none !important; }
+  .leads2-barra{ display:flex; flex-wrap:wrap; gap:12px 18px; align-items:center; margin:6px 0 16px; }
+  .leads2-nav{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .leads2-rango{ font-weight:600; min-width:150px; text-align:center; }
+  .leads2-fecha{ background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:99px; padding:7px 12px; font:inherit; color-scheme:dark; }
+  .leads2-cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+  .leads2-tri{ margin-top:6px; font-size:12px; color:var(--text-dim); line-height:1.35; }
+  .leads2-tri b{ font-weight:600; }
+  .leads2-tri .sube{ color:#7fe0a8; } .leads2-tri .baja{ color:#ff9b9b; }
   .tabla-campanas{ width:100%; border-collapse:collapse; font-size:13px; }
   .tabla-campanas th{ text-align:right; padding:12px 14px; color:var(--text-dim); font-weight:600; font-size:11px; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
   .tabla-campanas td{ text-align:right; padding:12px 14px; border-top:1px solid var(--border); white-space:nowrap; font-variant-numeric:tabular-nums; }
@@ -6813,9 +6822,10 @@
     renderFacturacion();
     const s = seriesFunnel(funnelFiltro);
     drawFunnelChart('chartFunnel', 'tooltipFunnel', s, ctxMes.anio, ctxMes.mes);
+    try { renderLeadsV2(); } catch(e){ console.warn('Leads v2', e); }
   }
 
-  function drawFunnelChart(svgId, tooltipId, series, anio, mes){
+  function drawFunnelChart(svgId, tooltipId, series, anio, mes, extra = {}){
     const svg = document.getElementById(svgId);
     const tooltip = document.getElementById(tooltipId);
     svg.innerHTML = '';
@@ -6892,11 +6902,20 @@
       hit.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
       svg.appendChild(hit);
     }
+    if(extra.eje){
+      for(let i = 0; i < n; i++){
+        const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('x', xAt(i)); t.setAttribute('y', H - 6); t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('fill', 'rgba(247,236,233,0.5)'); t.setAttribute('font-size', '11');
+        t.textContent = extra.eje(i);
+        svg.appendChild(t);
+      }
+    }
 
     function showTooltip(i, x){
       const diaSemana = DIAS_SEMANA[new Date(anio, mes, i + 1).getDay()];
       tooltip.innerHTML = `
-        <div class="tt-day">Día ${i + 1} · ${diaSemana}</div>
+        <div class="tt-day">${extra.dia ? extra.dia(i) : 'Día ' + (i + 1) + ' · ' + diaSemana}</div>
         ${SERIES_FUNNEL.map(m => `<div class="tt-val" style="color:${m.color}">${m.texto}: ${series[m.key][i].toLocaleString('es-AR')}</div>`).join('')}
       `;
       const wrapWidth = svg.parentElement.clientWidth;
@@ -6906,6 +6925,112 @@
       tooltip.style.left = left + 'px';
       tooltip.classList.add('show');
     }
+  }
+
+  // ===== Leads v2: tendencia del embudo con calendario (semana o mes) y comparación con el periodo anterior. Lo anterior de Leads queda oculto en el código. =====
+  const MCORTO2 = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  const MLARGO2 = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  let leadsVista = 'semana', leadsAncla = null;
+  const leadsExtra = {}; // 'AAAA-MM' -> { dias } de meses que no son el activo (para comparar)
+  const isoDe2 = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const sumarDias2 = (d, n) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); return x; };
+  const panelLeads = document.querySelector('[data-tab-panel="leads"]');
+  if(panelLeads){
+    [...panelLeads.children].forEach(c => c.classList.add('oculto-v2'));
+    const v2 = document.createElement('div');
+    v2.id = 'leadsV2';
+    v2.innerHTML = `
+      <div class="section-label">Leads · tendencia del embudo</div>
+      <div class="leads2-barra">
+        <div class="chart-chips" id="leadsVista"></div>
+        <div class="leads2-nav">
+          <button type="button" class="chart-chip" id="leadsPrevBtn" aria-label="Anterior">←</button>
+          <span class="leads2-rango" id="leadsRango">–</span>
+          <button type="button" class="chart-chip" id="leadsNextBtn" aria-label="Siguiente">→</button>
+          <button type="button" class="chart-chip" id="leadsHoyBtn">Hoy</button>
+          <input type="date" class="leads2-fecha" id="leadsFecha" aria-label="Elegir día">
+        </div>
+      </div>
+      <div class="leads2-cards" id="leadsCards"></div>
+      <div class="chart-panel">
+        <div class="chart-wrap">
+          <svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartLeads2"></svg>
+          <div class="chart-tooltip" id="tooltipLeads2"></div>
+        </div>
+        <div class="chart-status" id="statusLeads2">Conectando con GHL…</div>
+      </div>
+      <div class="chart-legend" style="display:flex; gap:18px; flex-wrap:wrap; margin:10px 0 44px; font-size:12px; color:var(--text-dim);" id="leadsLeyenda"></div>`;
+    panelLeads.appendChild(v2);
+    document.getElementById('leadsLeyenda').innerHTML = SERIES_FUNNEL.map(m => `<span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${m.color};margin-right:6px;"></i>${m.texto}</span>`).join('');
+    const mover = (dir) => { const a = leadsAncla || new Date(); leadsAncla = leadsVista === 'semana' ? sumarDias2(a, 7 * dir) : new Date(a.getFullYear(), a.getMonth() + dir, Math.min(a.getDate(), 28)); renderLeadsV2(); };
+    document.getElementById('leadsPrevBtn').addEventListener('click', () => mover(-1));
+    document.getElementById('leadsNextBtn').addEventListener('click', () => mover(1));
+    document.getElementById('leadsHoyBtn').addEventListener('click', () => { leadsAncla = null; renderLeadsV2(); });
+    document.getElementById('leadsFecha').addEventListener('change', (e) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(e.target.value); if(m){ leadsAncla = new Date(+m[1], +m[2] - 1, +m[3]); renderLeadsV2(); } });
+  }
+  // Datos por día de cualquier fecha cargada: GHL (6 meses) y, para el mes activo, las mismas series que el resto del dashboard.
+  function diasLeadsV2(){
+    const mapa = new Map();
+    const vacio = () => ({ leads: 0, llamadas: 0, agendadas: 0, shows: 0, cierres: 0 });
+    if(funnelPorDiaDatos){
+      for(const [f, fila] of Object.entries(funnelPorDiaDatos.dias)){ const o = vacio(); o.llamadas = fila.llamadas || 0; o.agendadas = fila.agendadas || 0; o.shows = fila.shows || 0; o.cierres = fila.cierres || 0; mapa.set(f, o); }
+    }
+    Object.values(leadsExtra).forEach(ex => { if(ex && ex.dias) for(const [f, v] of Object.entries(ex.dias)){ const o = mapa.get(f) || vacio(); o.leads = v.total || 0; mapa.set(f, o); } });
+    const sf = seriesFunnel('Todas'), { anio, mes } = mesElegidoAYyyyMm();
+    for(let d = 0; d < sf.llamadas.length; d++){
+      mapa.set(`${anio}-${String(mes + 1).padStart(2, '0')}-${String(d + 1).padStart(2, '0')}`, { leads: sf.leads[d], llamadas: sf.llamadas[d], agendadas: sf.agendadas[d], shows: sf.shows[d], cierres: sf.cierres[d] });
+    }
+    return mapa;
+  }
+  async function pedirLeadsMes(y, m){
+    const k = y + '-' + String(m + 1).padStart(2, '0'), act = mesElegidoAYyyyMm();
+    if(leadsExtra[k] !== undefined || (y === act.anio && m === act.mes)) return;
+    leadsExtra[k] = null;
+    try {
+      const res = await fetch(`${WORKER_URL}/leads-por-dia?start=${new Date(y, m, 1).getTime()}&end=${new Date(y, m + 1, 1).getTime()}`);
+      const data = await res.json();
+      leadsExtra[k] = data && data.ok ? data : null;
+    } catch(e){ leadsExtra[k] = null; }
+    renderLeadsV2();
+  }
+  function renderLeadsV2(){
+    if(!document.getElementById('leadsV2') || !funnelPorDiaDatos) return;
+    const act = mesElegidoAYyyyMm(), hoy = new Date();
+    const ancla = leadsAncla || ((hoy.getFullYear() === act.anio && hoy.getMonth() === act.mes) ? hoy : new Date(act.anio, act.mes + 1, 0));
+    // periodo elegido y periodo anterior
+    let ini, fin, pIni, pFin;
+    if(leadsVista === 'semana'){ ini = sumarDias2(ancla, -((ancla.getDay() + 6) % 7)); fin = sumarDias2(ini, 6); pIni = sumarDias2(ini, -7); pFin = sumarDias2(ini, -1); }
+    else { ini = new Date(ancla.getFullYear(), ancla.getMonth(), 1); fin = new Date(ancla.getFullYear(), ancla.getMonth() + 1, 0); pIni = new Date(ancla.getFullYear(), ancla.getMonth() - 1, 1); pFin = new Date(ancla.getFullYear(), ancla.getMonth(), 0); }
+    [ini, fin, pIni, pFin].forEach(d => { if(!(d.getFullYear() === act.anio && d.getMonth() === act.mes)) pedirLeadsMes(d.getFullYear(), d.getMonth()); });
+    const mapa = diasLeadsV2();
+    const rango = (a, b) => a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${MCORTO2[a.getMonth()]}` : `${a.getDate()} ${MCORTO2[a.getMonth()]} – ${b.getDate()} ${MCORTO2[b.getMonth()]}`;
+    const etiqueta = (a, b) => leadsVista === 'mes' ? `${MLARGO2[a.getMonth()]} ${a.getFullYear()}` : rango(a, b);
+    pintarChips('leadsVista', [{ valor: 'semana', texto: 'Semana' }, { valor: 'mes', texto: 'Mes' }], leadsVista, v => { leadsVista = v; renderLeadsV2(); });
+    document.getElementById('leadsRango').textContent = etiqueta(ini, fin) + (leadsVista === 'semana' ? ' ' + ini.getFullYear() : '');
+    const inp = document.getElementById('leadsFecha'); if(inp.value !== isoDe2(ancla)) inp.value = isoDe2(ancla);
+    const listar = (a, b) => { const out = []; for(let d = new Date(a); d <= b; d = sumarDias2(d, 1)) out.push(new Date(d)); return out; };
+    const diasSel = listar(ini, fin), diasPrev = listar(pIni, pFin);
+    const valor = (d) => mapa.get(isoDe2(d)) || { leads: 0, llamadas: 0, agendadas: 0, shows: 0, cierres: 0 };
+    const suma = (arr, k) => arr.reduce((t, d) => t + (valor(d)[k] || 0), 0);
+    // tarjetas con triangulito discreto
+    const prevTxt = leadsVista === 'mes' ? MLARGO2[pIni.getMonth()] : rango(pIni, pFin);
+    document.getElementById('leadsCards').innerHTML = SERIES_FUNNEL.map(m => {
+      const cur = suma(diasSel, m.key), prev = suma(diasPrev, m.key);
+      let tri;
+      if(cur === prev) tri = `<span>= igual que ${prevTxt}</span>`;
+      else {
+        const sube = cur > prev, pct = prev > 0 ? Math.round(Math.abs(cur / prev - 1) * 100) + '%' : 'nuevo';
+        tri = `<span class="${sube ? 'sube' : 'baja'}"><b>${sube ? '▲' : '▼'} ${pct}</b></span> vs ${prevTxt}`;
+      }
+      return `<div class="kpi-card"><div class="kpi-label" style="color:${m.color}">${m.texto}</div><div class="kpi-value">${cur.toLocaleString('es-AR')}</div><div class="leads2-tri">${tri}</div></div>`;
+    }).join('');
+    // gráfico con los días del periodo
+    const series = {}; SERIES_FUNNEL.forEach(m => { series[m.key] = diasSel.map(d => valor(d)[m.key]); });
+    drawFunnelChart('chartLeads2', 'tooltipLeads2', series, ini.getFullYear(), ini.getMonth(), {
+      dia: (i) => `${DIAS_SEMANA[diasSel[i].getDay()]} ${diasSel[i].getDate()} ${MCORTO2[diasSel[i].getMonth()]}`,
+      eje: leadsVista === 'semana' ? (i) => DIAS_SEMANA[diasSel[i].getDay()].slice(0, 3) + ' ' + diasSel[i].getDate() : (i) => (i % 5 === 0 || i === diasSel.length - 1) ? String(diasSel[i].getDate()) : '',
+    });
+    document.getElementById('statusLeads2').textContent = 'Datos en vivo desde GHL · comparado con ' + prevTxt + (leadsVista === 'mes' ? '' : ' ' + pIni.getFullYear());
   }
 
   // ===== Actualización del Dashboard: botón "Actualizar" + automática cada
