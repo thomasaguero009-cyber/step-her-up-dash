@@ -976,6 +976,10 @@
   .sem-nav button:hover{ border-color:var(--blush-2); }
   .sem-nav .sem-label{ font-family:"Playfair Display",Georgia,serif; font-size:22px; font-weight:600; }
   [data-oculto]{ display:none !important; }
+  /* Llamadas, Setters y Closers: solo la tendencia por día y los gráficos de abajo; las tablas de "hoy y 7 días", la semana y los KPI quedan guardados en el código. */
+  [data-tab-panel="llamadas"] > :not(#llamadas):not(#llamadasTendencia){ display:none !important; }
+  [data-tab-panel="setters"] > .sem-dia, [data-tab-panel="setters"] > .sem-bloque, [data-tab-panel="setters"] > .sem-mes,
+  [data-tab-panel="closers"] > .sem-dia, [data-tab-panel="closers"] > .sem-bloque, [data-tab-panel="closers"] > .sem-mes{ display:none !important; }
   @media (min-width:900px){ .kpi-grid[data-cols]{ grid-template-columns:repeat(var(--kpi-cols),1fr); } }
   .ayuda-fab{ position:fixed; right:20px; bottom:20px; z-index:9000; display:flex; align-items:center; gap:10px; background:linear-gradient(135deg,#f8cad8 0%,#ec93b0 100%); color:#2a0c14; border:1px solid rgba(255,255,255,.35); border-radius:999px; padding:12px 20px 12px 14px; font:inherit; font-weight:700; font-size:14.5px; cursor:pointer; box-shadow:0 10px 30px rgba(236,147,176,.28), 0 8px 24px rgba(0,0,0,.45); transition:transform .18s ease, box-shadow .18s ease; animation:ayudaLatido 3.2s ease-in-out infinite; }
   .en-demo .ayuda-fab, .en-demo .ayuda-panel{ display:none !important; }
@@ -1928,10 +1932,16 @@
             <div class="kpi-value">–</div>
           </div>
         </div>
-        <div class="chart-panel">
+        <div class="chart-panel" id="llamadasTendencia">
+          <div class="chart-legend"><span><i style="background:#8fb8f0"></i>Llamadas por día</span></div>
           <div class="chart-wrap">
             <svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartLlamadas"></svg>
             <div class="chart-tooltip" id="tooltipLlamadas"></div>
+          </div>
+          <div class="chart-legend" style="margin-top:22px;"><span><i style="background:#5fd39a"></i>Shows por día</span></div>
+          <div class="chart-wrap">
+            <svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartShowsDia"></svg>
+            <div class="chart-tooltip" id="tooltipShowsDia"></div>
           </div>
           <div class="chart-status" id="statusLlamadas">Sin datos todavía — se va a conectar a un Google Sheet</div>
         </div>
@@ -2113,6 +2123,7 @@
         <div class="chart-panel">
           <div class="chart-chips" id="closersMetrica"></div>
           <div class="chart-chips" id="closersFiltro"></div>
+          <div class="chart-legend" id="closersLeyenda"></div>
           <div class="chart-wrap">
             <svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartClosers"></svg>
             <div class="chart-tooltip" id="tooltipClosers"></div>
@@ -5803,6 +5814,7 @@
     datosClosers = seriesClosers;
     renderGraficoSetters();
     renderGraficoClosers();
+    pintarShowsDia();
     renderBreakdownClosers(seriesClosers);
     document.getElementById('statusClosers').textContent = huboDatosClosers
       ? 'Datos en vivo — ' + mesElegido
@@ -5943,11 +5955,11 @@
   // anteriores siguen en el Sheet y en los totales del mes; solo se ocultan como persona.
   const SETTERS_INACTIVOS = ['paola'];
   const esSetterInactivo = n => SETTERS_INACTIVOS.includes(String(n || '').trim().toLowerCase());
-  const COLORES_SETTER = { Paula: '#f0a8be', Mia: '#f0c674', Belen: '#8fb8f0' };
+  const COLORES_SETTER = { Paula: '#f0a8be', Mia: '#f0c674', Belen: '#8fb8f0', Gianie: '#5fd39a' };
   const COLORES_EXTRA = ['#5fd39a', '#d9b4ff', '#ffb08a'];
   const colorDeSetter = (nombre, i) => COLORES_SETTER[nombre] || COLORES_EXTRA[i % COLORES_EXTRA.length];
   const nombresSetters = () => [...new Set([...SETTERS_FIJOS, ...datosSetters.keys()])].filter(n => !esSetterInactivo(n));
-  let datosSetters = new Map(), setterMetrica = 'ventas', setterFiltro = 'Comparar', setterMetricaElegida = false;
+  let datosSetters = new Map(), setterMetrica = 'llamadas', setterFiltro = 'Comparar', setterMetricaElegida = true;
   // Si nadie eligió una métrica a mano y la de entrada no tiene datos este mes (por ejemplo, todavía
   // no hay cash cargado), se muestra la primera que sí tenga, en vez de un gráfico vacío.
   function metricaConDatos(mapa, metricas, actual){
@@ -5976,7 +5988,16 @@
     equipo.pendiente = false;
     if(ultimoMapaSetters) renderBreakdownSetters(ultimoMapaSetters);
     if(ultimoMapaClosers) renderBreakdownClosers(ultimoMapaClosers);
-    try { renderGraficoClosers(); renderGraficoSetters(); } catch(e){}
+    try { renderGraficoClosers(); renderGraficoSetters(); pintarShowsDia(); } catch(e){}
+  }
+  // Shows por día del mes activo: de la pestaña Shows del Tracker o, si tiene menos, de lo que cargan las setters (igual que la tarjeta de Shows).
+  function pintarShowsDia(){
+    if(!ctxMes.dias) return;
+    const trk = sumarSeries(datosSetters, 'Todos', 'shows', ctxMes.dias);
+    const sh = new Array(ctxMes.dias).fill(0);
+    (equipo.shows || []).forEach(x => { const f = parseFechaSheet(x.fecha); if(f && f.getFullYear() === ctxMes.anio && f.getMonth() === ctxMes.mes) sh[f.getDate() - 1]++; });
+    const suma = a => a.reduce((t, v) => t + v, 0);
+    drawChart('chartShowsDia', 'tooltipShowsDia', (suma(sh) > suma(trk) ? sh : trk).slice(0, ctxMes.diasAMostrar), '#5fd39a', ctxMes.anio, ctxMes.mes, { conteo: true, vacio: 'Todavía no hay shows cargados este mes' });
   }
   const mismaPersona = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
   // Cash por día del mes activo salido de la pestaña Ventas del Tracker (la misma fuente que el resto del dashboard). campo = 'closer' | 'setter'; nombre 'Todos' = todo lo que tenga a alguien en ese rol.
@@ -6046,14 +6067,14 @@
       const esCash = setterMetrica === 'ventas';
       const series = nombres.map((n, i) => {
         const base = (esCash && equipo.ventas.length) ? serieCashEq('setter', n) : (datosSetters.has(n) ? datosSetters.get(n)[setterMetrica] : new Array(ctxMes.dias).fill(0));
-        return { nombre: n, color: colorDeSetter(n, i), valores: (esCash ? acumular(base) : base).slice(0, ctxMes.diasAMostrar) };
+        return { nombre: n, color: colorDeSetter(n, i), valores: base.slice(0, ctxMes.diasAMostrar) };
       });
-      leyenda.innerHTML = series.map(x => `<span><i style="background:${x.color}"></i>${escapeHtml(x.nombre)}</span>`).join('') + (esCash ? '<span style="opacity:.7">· cash acumulado del mes</span>' : '');
+      leyenda.innerHTML = series.map(x => `<span><i style="background:${x.color}"></i>${escapeHtml(x.nombre)}</span>`).join('') + (esCash ? '<span style="opacity:.7">· cash cobrado cada día</span>' : '');
       drawMultiChart('chartSetters', 'tooltipSetters', series, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
     } else {
       leyenda.innerHTML = '';
       let serie = (setterMetrica === 'ventas' && equipo.ventas.length) ? serieCashEq('setter', setterFiltro) : sumarSeries(datosSetters, setterFiltro, setterMetrica, ctxMes.dias);
-      if(setterMetrica === 'ventas'){ serie = acumular(serie); leyenda.innerHTML = '<span style="opacity:.7">Cash acumulado del mes</span>'; }
+      if(setterMetrica === 'ventas') leyenda.innerHTML = '<span style="opacity:.7">Cash cobrado cada día</span>';
       serie = serie.slice(0, ctxMes.diasAMostrar);
       drawChart('chartSetters', 'tooltipSetters', serie, m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
     }
@@ -6067,17 +6088,26 @@
     { valor: 'noShows', texto: 'No shows', color: '#ff9b9b' },
     { valor: 'cierres', texto: 'Cierres', color: '#f0c674' },
   ];
-  let datosClosers = new Map(), closerMetrica = 'cash', closerFiltro = 'Todos', closerMetricaElegida = false;
+  let datosClosers = new Map(), closerMetrica = 'cash', closerFiltro = 'Comparar', closerMetricaElegida = false;
   function renderGraficoClosers(){
     if(!closerMetricaElegida) closerMetrica = metricaConDatos(datosClosers, METRICAS_CLOSER, 'cash');
     const m = METRICAS_CLOSER.find(x => x.valor === closerMetrica);
-    if(closerFiltro !== 'Todos' && !datosClosers.has(closerFiltro)) closerFiltro = 'Todos';
+    const nombres = [...datosClosers.keys()];
+    if(closerFiltro !== 'Comparar' && closerFiltro !== 'Todos' && !datosClosers.has(closerFiltro)) closerFiltro = 'Comparar';
     pintarChips('closersMetrica', METRICAS_CLOSER.map(x => ({ valor: x.valor, texto: x.texto })), closerMetrica, v => { closerMetrica = v; closerMetricaElegida = true; renderGraficoClosers(); });
-    pintarChips('closersFiltro', ['Todos', ...datosClosers.keys()].map(n => ({ valor: n, texto: n === 'Todos' ? 'Todos los closers' : n })), closerFiltro, v => { closerFiltro = v; renderGraficoClosers(); });
-    let serie = (closerMetrica === 'cash' && equipo.ventas.length) ? serieCashEq('closer', closerFiltro) : sumarSeries(datosClosers, closerFiltro, closerMetrica, ctxMes.dias);
-    if(closerMetrica === 'cash') serie = acumular(serie);
-    serie = serie.slice(0, ctxMes.diasAMostrar);
-    drawChart('chartClosers', 'tooltipClosers', serie, m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio: 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' cargado este mes' });
+    pintarChips('closersFiltro', [{ valor: 'Comparar', texto: 'Comparar closers' }, { valor: 'Todos', texto: 'Equipo' }, ...nombres.map(n => ({ valor: n, texto: n }))], closerFiltro, v => { closerFiltro = v; renderGraficoClosers(); });
+    const leyenda = document.getElementById('closersLeyenda');
+    const esCash = closerMetrica === 'cash';
+    const vacio = 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' cargado este mes';
+    const base = n => ((esCash && equipo.ventas.length) ? serieCashEq('closer', n) : sumarSeries(datosClosers, n, closerMetrica, ctxMes.dias)).slice(0, ctxMes.diasAMostrar);
+    if(closerFiltro === 'Comparar'){
+      const series = nombres.map((n, i) => ({ nombre: n, color: colorDeSetter(n, i), valores: base(n) }));
+      leyenda.innerHTML = series.map(x => `<span><i style="background:${x.color}"></i>${escapeHtml(x.nombre)}</span>`).join('') + (esCash ? '<span style="opacity:.7">· cash cobrado cada día</span>' : '');
+      drawMultiChart('chartClosers', 'tooltipClosers', series, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
+    } else {
+      leyenda.innerHTML = esCash ? '<span style="opacity:.7">Cash cobrado cada día</span>' : '';
+      drawChart('chartClosers', 'tooltipClosers', base(closerFiltro), m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
+    }
   }
   function renderBreakdownClosers(mapa){
     ultimoMapaClosers = mapa;
