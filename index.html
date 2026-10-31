@@ -7147,7 +7147,7 @@
       <div class="chart-panel"><div class="chart-legend" style="display:flex; gap:18px; flex-wrap:wrap; margin:0 0 10px 6px; font-size:12px; color:var(--text-dim);"><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#5fd39a;margin-right:6px;"></i>Facturación</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#fb7185;margin-right:6px;"></i>Inversión</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffd166;margin-right:6px;"></i>Profit</span></div><div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartRent"></svg><div class="chart-tooltip" id="tooltipRent"></div></div><div class="chart-status" id="statusRent">Cargando…</div></div>
       <div class="vz-grid" style="margin-top:28px;">
         <div class="chart-panel" style="padding:18px 20px;"><p class="vz-titulo" style="margin-top:0;">Cash por fuente</p><div id="tortaAds"></div></div>
-        <div class="chart-panel" style="padding:18px 20px;"><p class="vz-titulo" style="margin-top:0;">Top 5 anuncios</p><div id="top5Ads"></div></div>
+        <div class="chart-panel" style="padding:18px 20px;"><p class="vz-titulo" style="margin-top:0;" id="top5Titulo">Top 5 anuncios</p><div id="top5Ads"></div></div>
       </div>
       <div class="chart-status" id="notaAdsEmbudo" style="margin-top:14px;">Pendiente: tendencia diaria del embudo solo de anuncios (leads, agendas, calificadas, shows y ventas por día) y cash por anuncio. Necesitan que el Worker separe los datos de GHL por fuente y que los anuncios del 2 de noviembre lleven el parámetro UTM.</div>`;
     if(grid){
@@ -7174,9 +7174,13 @@
     const tF = fact.slice(0, n).reduce((a, b) => a + b, 0), tI = inv.slice(0, n).reduce((a, b) => a + b, 0);
     document.getElementById('statusRent').textContent = `Mes: facturación ${usdEq(tF)} · inversión ${usdEq(tI)} · profit ${usdEq(tF - tI)} · ROI ${roi(tF, tI)} · ROAS ${roas(tF, tI)}`;
     document.getElementById('tortaAds').innerHTML = tortaCash(d.cashFuente || { ads: 0, org: 0, otro: 0 });
-    const anuncios = [...((d.porNivel || {}).anuncio || new Map()).entries()].map(([nombre, c]) => ({ nombre, c, r: c.res > 0 ? c.res : c.leads })).filter(x => x.r > 0).sort((a, b) => (a.c.gasto / a.r) - (b.c.gasto / b.r)).slice(0, 5);
+    const armar = (nivel) => [...((d.porNivel || {})[nivel] || new Map()).entries()].map(([nombre, c]) => ({ nombre, c, r: c.res > 0 ? c.res : c.leads })).filter(x => x.r > 0).sort((a, b) => (a.c.gasto / a.r) - (b.c.gasto / b.r)).slice(0, 5);
+    let anuncios = armar('anuncio'), nivelTop = 'anuncios';
+    // Si la hoja todavía no tiene el detalle por anuncio (todo dice "Sin detalle"), se muestran las campañas.
+    if(!anuncios.length || anuncios.every(x => /^sin (detalle|nombre)/i.test(x.nombre))){ anuncios = armar('campana'); nivelTop = 'campañas'; }
+    const tt = document.getElementById('top5Titulo'); if(tt) tt.textContent = 'Top 5 ' + nivelTop;
     const maxR = Math.max(1, ...anuncios.map(x => x.r));
-    document.getElementById('top5Ads').innerHTML = anuncios.length ? anuncios.map((x, i) => `<div class="top5-fila"><b>${i + 1}</b><span>${escapeHtml(x.nombre)}</span><span style="color:var(--text-dim)">${x.r} resultados · CPR $${(x.c.gasto / x.r).toFixed(2).replace('.', ',')} · gasto ${usdEq(x.c.gasto)}</span><div class="top5-barra"><i style="width:${Math.round(x.r / maxR * 100)}%"></i></div></div>`).join('') + '<div class="chart-status" style="margin-top:8px;">Ordenado por costo por resultado. Desde noviembre se ordena por cash cobrado.</div>' : '<div class="chart-status">Cargá anuncios en la hoja Ads para ver el ranking.</div>';
+    document.getElementById('top5Ads').innerHTML = anuncios.length ? anuncios.map((x, i) => `<div class="top5-fila"><b>${i + 1}</b><span>${escapeHtml(x.nombre)}</span><span style="color:var(--text-dim)">${x.r} resultados · CPR $${(x.c.gasto / x.r).toFixed(2).replace('.', ',')} · gasto ${usdEq(x.c.gasto)}</span><div class="top5-barra"><i style="width:${Math.round(x.r / maxR * 100)}%"></i></div></div>`).join('') + '<div class="chart-status" style="margin-top:8px;">Ordenado por costo por resultado.' + (nivelTop === 'campañas' ? ' Falta el detalle por anuncio: exportá la pestaña Anuncios de Meta (por día).' : ' Desde noviembre se ordena por cash cobrado.') + '</div>' : '<div class="chart-status">Cargá anuncios en la hoja Ads para ver el ranking.</div>';
   }
   // --- Orgánico v2
   (function(){
