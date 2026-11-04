@@ -889,8 +889,17 @@
   .en-sin summary{ cursor:pointer; font-weight:600; color:var(--cream); }
   .en-sin ul{ margin:10px 0 0; padding-left:18px; columns:2; }
   .en-vacio{ padding:30px; text-align:center; color:var(--text-dim); font-size:14px; animation:enEntra .4s ease both; }
+  /* Mientras llegan las alumnas: rueda que gira junto al texto, tarjetas y filas con brillo que pasa */
+  @keyframes enGira{ to{ transform:rotate(360deg); } }
+  @keyframes enBrillo{ from{ background-position:200% 0; } to{ background-position:-200% 0; } }
+  .en-giro{ display:inline-block; width:15px; height:15px; margin-right:10px; vertical-align:-3px; border-radius:50%; border:2px solid rgba(255,255,255,0.18); border-top-color:var(--blush); animation:enGira .8s linear infinite; }
+  .en-esq-kpi, .en-esq-fila{ background:linear-gradient(90deg,rgba(255,255,255,0.03) 25%,rgba(255,255,255,0.09) 50%,rgba(255,255,255,0.03) 75%); background-size:200% 100%; animation:enBrillo 1.6s linear infinite; animation-delay:calc(var(--i,0) * 110ms); }
+  .en-esq-kpi{ height:96px; border-radius:14px; border:1px solid var(--border); }
+  .en-esq{ border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .en-esq-fila{ height:58px; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .en-esq-fila:last-child{ border-bottom:0; }
   @media(max-width:820px){ .en-fichain{ position:sticky; left:0; box-sizing:border-box; width:calc(100vw - 64px); } .en-dato > span{ flex-basis:104px; } .en-kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); } .en-bloques{ grid-template-columns:minmax(0,1fr); gap:18px; } .en-ord{ margin-left:0; } .en-sin ul{ columns:1; } }
-  @media (prefers-reduced-motion:reduce){ .en-tabla tbody.anim tr.en-fila, .en-vacio{ animation:none; } .en-fx, .en-tab{ transition:none; } }
+  @media (prefers-reduced-motion:reduce){ .en-tabla tbody.anim tr.en-fila, .en-vacio, .en-esq-kpi, .en-esq-fila{ animation:none; } .en-fx, .en-tab{ transition:none; } }
   /* ===== Recursos ===== */
   #recursosScreen .wrap{ padding-bottom:60px; }
   .rec-intro{ margin:6px 0 26px; color:var(--text-dim); font-size:15px; }
@@ -2974,20 +2983,26 @@
   }
   async function cargarEntrega(){
     const intro = document.getElementById('entIntro');
-    if(!ENTREGA) intro.textContent = 'Cargando las alumnas…';
+    const quitarEsqueleto = () => { if(!ENTREGA){ document.getElementById('entKpis').innerHTML = ''; document.getElementById('entTabla').innerHTML = ''; } };
+    if(!ENTREGA){
+      intro.innerHTML = '<span class="en-giro"></span>Cargando las alumnas…';
+      document.getElementById('entKpis').innerHTML = Array.from({ length: 5 }, (_, i) => `<div class="en-esq-kpi" style="--i:${i}"></div>`).join('');
+      document.getElementById('entTabla').innerHTML = `<div class="en-esq">${Array.from({ length: 8 }, (_, i) => `<div class="en-esq-fila" style="--i:${i}"></div>`).join('')}</div>`;
+    }
     try {
       const ctrl = new AbortController(), corte = setTimeout(() => ctrl.abort(), 70000);
-      const t0 = Date.now(), reloj = setInterval(() => { if(!ENTREGA) intro.textContent = `Cargando las alumnas… ${Math.round((Date.now() - t0) / 1000)} s`; }, 1000);
+      const t0 = Date.now(), reloj = setInterval(() => { if(!ENTREGA) intro.innerHTML = `<span class="en-giro"></span>Cargando las alumnas… ${Math.round((Date.now() - t0) / 1000)} s`; }, 1000);
       let res;
       try { res = await fetch(`${WORKER_URL}/entrega`, { headers: { 'X-Site-Key': claveDePlataforma() }, signal: ctrl.signal }); }
       finally { clearTimeout(corte); clearInterval(reloj); }
       if(res.status === 401){ volverAlCandado(); return; }
       const d = await res.json();
-      if(!res.ok || !d.ok){ intro.textContent = `No pude traer los datos (${res.status}${d.error ? ': ' + d.error : ''}${d.fase ? ' en ' + d.fase : ''}). Probá de nuevo en un minuto.`; return; }
+      if(!res.ok || !d.ok){ quitarEsqueleto(); intro.textContent = `No pude traer los datos (${res.status}${d.error ? ': ' + d.error : ''}${d.fase ? ' en ' + d.fase : ''}). Probá de nuevo en un minuto.`; return; }
       const primera = !ENTREGA;
       ENTREGA = d;
       renderEntrega(primera);
     } catch(err){
+      quitarEsqueleto();
       intro.textContent = err && err.name === 'AbortError' ? 'El servidor tardó demasiado en responder. Probá de nuevo en un minuto.' : `No pude traer los datos de la entrega (${err && err.name ? err.name + ': ' : ''}${err && err.message ? err.message : 'sin detalle'}). Probá de nuevo.`;
       console.error('Fulfillment', err);
     }
