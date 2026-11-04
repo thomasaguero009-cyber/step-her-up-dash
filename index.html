@@ -2976,15 +2976,19 @@
     const intro = document.getElementById('entIntro');
     if(!ENTREGA) intro.textContent = 'Cargando las alumnas…';
     try {
-      const res = await fetch(`${WORKER_URL}/entrega`, { headers: { 'X-Site-Key': claveDePlataforma() } });
+      const ctrl = new AbortController(), corte = setTimeout(() => ctrl.abort(), 70000);
+      const t0 = Date.now(), reloj = setInterval(() => { if(!ENTREGA) intro.textContent = `Cargando las alumnas… ${Math.round((Date.now() - t0) / 1000)} s`; }, 1000);
+      let res;
+      try { res = await fetch(`${WORKER_URL}/entrega`, { headers: { 'X-Site-Key': claveDePlataforma() }, signal: ctrl.signal }); }
+      finally { clearTimeout(corte); clearInterval(reloj); }
       if(res.status === 401){ volverAlCandado(); return; }
       const d = await res.json();
-      if(!res.ok || !d.ok) throw new Error('entrega');
+      if(!res.ok || !d.ok){ intro.textContent = `No pude traer los datos (${res.status}${d.error ? ': ' + d.error : ''}${d.fase ? ' en ' + d.fase : ''}). Probá de nuevo en un minuto.`; return; }
       const primera = !ENTREGA;
       ENTREGA = d;
       renderEntrega(primera);
     } catch(err){
-      intro.textContent = 'No pude traer los datos de la entrega. Probá de nuevo en un minuto.';
+      intro.textContent = err && err.name === 'AbortError' ? 'El servidor tardó demasiado en responder. Probá de nuevo en un minuto.' : 'No pude traer los datos de la entrega. Revisá tu conexión y probá de nuevo.';
     }
   }
   (function(){
