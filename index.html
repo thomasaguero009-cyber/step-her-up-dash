@@ -819,6 +819,78 @@
   /* ===== Métricas: formulario donde cada setter/closer carga sus
      números del día — a diferencia de Herramientas, esto se sube al
      Sheet y sí se comparte/refleja en el dashboard. ===== */
+  /* ===== Entrega de alumnas: mismo look oscuro del dashboard (vino, rosa, crema) ===== */
+  #entregaScreen .wrap{ max-width:1180px; padding-top:26px; padding-bottom:64px; }
+  .en-sub{ margin:-6px 0 20px; font-size:14px; color:var(--text-dim); }
+  .en-tabs{ display:flex; gap:8px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; margin-bottom:20px; padding:2px 0; }
+  .en-tabs::-webkit-scrollbar{ display:none; }
+  .en-tab{ background:transparent; border:1px solid var(--border); color:var(--text-dim); border-radius:999px; padding:8px 15px; font:600 13px Inter,sans-serif; cursor:pointer; white-space:nowrap; transition:background .3s ease, border-color .3s ease, color .3s ease, transform .2s ease; }
+  .en-tab:hover{ background:rgba(255,255,255,0.08); color:var(--cream); }
+  .en-tab:active{ transform:scale(.97); }
+  .en-tab.on{ background:rgba(240,168,190,0.16); border-color:var(--blush-2); color:var(--cream); }
+  .en-tab b{ font-weight:600; margin-left:6px; color:var(--blush); font-variant-numeric:tabular-nums; }
+  .en-tab b.rojo{ color:#ff8a8a; }
+  .en-kpis{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; margin-bottom:20px; }
+  .en-kpi{ background:var(--card); border:1px solid var(--border); border-top:3px solid var(--c,#9a8f92); border-radius:14px; padding:13px 16px; }
+  .en-kpi span{ display:block; font-size:12.5px; color:var(--text-dim); }
+  .en-kpi b{ display:block; font-size:28px; font-weight:700; letter-spacing:-0.02em; margin-top:2px; font-variant-numeric:tabular-nums; color:var(--cream); }
+  .en-tools{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .en-in{ padding:10px 14px; border:1px solid var(--border); border-radius:999px; background:rgba(255,255,255,0.06); font:400 14px Inter,sans-serif; color:var(--cream); transition:border-color .25s ease, background .25s ease; }
+  .en-in::placeholder{ color:rgba(247,236,233,0.45); }
+  .en-in:focus{ outline:none; border-color:var(--blush-2); background:rgba(255,255,255,0.09); }
+  select.en-in option{ background:#2a0a14; color:var(--cream); }
+  #entBuscar{ flex:1 1 260px; max-width:420px; }
+  .en-ord{ margin-left:auto; font-size:13.5px; color:var(--text-dim); display:flex; align-items:center; gap:8px; }
+  .en-tablewrap{ background:var(--card); border:1px solid var(--border); border-radius:16px; overflow-x:auto; }
+  .en-tabla{ width:100%; min-width:900px; border-collapse:collapse; font-size:14px; }
+  .en-tabla th{ text-align:left; padding:12px 14px; font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--blush); border-bottom:1px solid var(--border); cursor:pointer; white-space:nowrap; user-select:none; transition:color .2s ease; }
+  .en-tabla th:hover{ color:var(--cream); }
+  .en-tabla td{ padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.06); vertical-align:middle; color:var(--cream); }
+  .en-tabla tr.en-fila{ cursor:pointer; }
+  .en-tabla tr.en-fila td{ transition:background .25s ease; }
+  .en-tabla tr.en-fila:hover td, .en-tabla tr.en-fila.sel td{ background:rgba(255,255,255,0.05); }
+  .en-tabla tr:last-child td{ border-bottom:0; }
+  @keyframes enEntra{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+  .en-tabla tbody.anim tr.en-fila{ animation:enEntra .45s cubic-bezier(.22,.7,.2,1) both; animation-delay:calc(var(--i,0) * 24ms); }
+  .en-al{ display:flex; align-items:center; gap:11px; }
+  .en-ini{ width:34px; height:34px; border-radius:50%; background:var(--blush); color:var(--wine-2); font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; flex:none; }
+  .en-nom{ font-weight:600; }
+  .en-et{ display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:0.06em; padding:2px 7px; border-radius:4px; margin-left:7px; vertical-align:1px; }
+  .en-et.high{ background:var(--wine-3); color:#fff; border:1px solid rgba(240,168,190,0.45); }
+  .en-et.low{ background:rgba(240,168,190,0.18); color:var(--blush); }
+  .en-et.nc{ background:rgba(255,138,138,0.16); color:#ff8a8a; }
+  .en-mut{ color:var(--text-dim); }
+  .en-dots{ display:inline-flex; gap:4px; vertical-align:middle; margin-right:7px; }
+  .en-dots i{ width:11px; height:11px; border-radius:50%; border:1.5px solid var(--blush); display:block; }
+  .en-dots i.on{ background:var(--blush); }
+  .en-estado{ display:inline-block; font-size:12px; font-weight:600; padding:3px 11px; border-radius:999px; white-space:nowrap; border:1px solid transparent; }
+  .en-estado.al_dia{ background:rgba(95,211,154,0.13); color:#5fd39a; border-color:rgba(95,211,154,0.35); }
+  .en-estado.falta_agendar{ background:rgba(127,178,240,0.14); color:#8fbcf5; border-color:rgba(127,178,240,0.38); }
+  .en-estado.por_vencer{ background:rgba(233,196,106,0.14); color:#e9c46a; border-color:rgba(233,196,106,0.4); }
+  .en-estado.vencida{ background:rgba(255,138,138,0.14); color:#ff8a8a; border-color:rgba(255,138,138,0.4); }
+  .en-estado.terminada{ background:rgba(255,255,255,0.07); color:var(--text-dim); border-color:var(--border); }
+  tr.en-ficha td{ padding:0; background:rgba(0,0,0,0.2); }
+  .en-fx{ display:grid; grid-template-rows:0fr; opacity:0; transition:grid-template-rows .45s cubic-bezier(.22,.7,.2,1), opacity .35s ease; }
+  .en-fx.open{ grid-template-rows:1fr; opacity:1; }
+  .en-fxin{ overflow:hidden; min-height:0; }
+  .en-fichain{ border-left:3px solid var(--blush-2); padding:16px 20px 20px; }
+  .en-alerta{ background:rgba(255,138,138,0.12); border:1px solid rgba(255,138,138,0.35); color:#ffb4b4; border-radius:10px; padding:10px 14px; font-size:13.5px; margin-bottom:14px; }
+  .en-nota{ font-size:13px; color:var(--text-dim); margin:0 0 12px; }
+  .en-bloques{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:26px; }
+  .en-bloques h4{ margin:0 0 8px; font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--blush); font-family:inherit; }
+  .en-dato{ display:flex; gap:12px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.08); font-size:13.5px; }
+  .en-dato:last-of-type{ border-bottom:0; }
+  .en-dato > span{ flex:0 0 150px; color:var(--text-dim); }
+  .en-dato > div{ min-width:0; }
+  .en-dato small{ color:rgba(247,236,233,0.5); font-size:11.5px; margin-left:4px; white-space:nowrap; }
+  .en-crm{ display:inline-block; margin-top:12px; font-size:13.5px; font-weight:600; color:var(--blush); text-decoration:none; transition:color .2s ease; }
+  .en-crm:hover{ color:var(--cream); }
+  .en-sin{ margin:0; padding:14px 18px; border-top:1px solid var(--border); font-size:13.5px; color:var(--text-dim); }
+  .en-sin summary{ cursor:pointer; font-weight:600; color:var(--cream); }
+  .en-sin ul{ margin:10px 0 0; padding-left:18px; columns:2; }
+  .en-vacio{ padding:30px; text-align:center; color:var(--text-dim); font-size:14px; animation:enEntra .4s ease both; }
+  @media(max-width:820px){ .en-fichain{ position:sticky; left:0; box-sizing:border-box; width:calc(100vw - 64px); } .en-dato > span{ flex-basis:104px; } .en-kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); } .en-bloques{ grid-template-columns:minmax(0,1fr); gap:18px; } .en-ord{ margin-left:0; } .en-sin ul{ columns:1; } }
+  @media (prefers-reduced-motion:reduce){ .en-tabla tbody.anim tr.en-fila, .en-vacio{ animation:none; } .en-fx, .en-tab{ transition:none; } }
   /* ===== Recursos ===== */
   #recursosScreen .wrap{ padding-bottom:60px; }
   .rec-intro{ margin:6px 0 26px; color:var(--text-dim); font-size:15px; }
@@ -1312,6 +1384,12 @@
           <span class="entry-option-text">
             <span class="entry-option-title">Recursos</span>
             <span class="entry-option-sub">Presentaciones y materiales</span>
+          </span>
+        </button>
+        <button type="button" class="entry-option" id="goEntregaBtn">
+          <span class="entry-option-text">
+            <span class="entry-option-title">Entrega</span>
+            <span class="entry-option-sub">Cada alumna y en qué paso va</span>
           </span>
         </button>
       </div>
@@ -2377,6 +2455,30 @@
     <iframe class="rec-frame" id="recFrame" title="Recurso" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"></iframe>
   </div>
 
+  <!-- ===================== Entrega de alumnas: cada alumna con su estado (solo lectura).
+       Los datos los arma el Worker (/entrega) cruzando GHL con la hoja de ventas y la de Johanna. ===================== -->
+  <section class="screen" id="entregaScreen">
+    <div class="wrap">
+      <header class="dash-header">
+        <div class="section-label" style="margin:0;">Entrega de alumnas</div>
+        <div class="dash-header-right">
+          <div class="section-switcher" id="sectionSwitcherEntrega">
+            <button type="button" class="ghost-link-btn" id="sectionSwitcherBtnEntrega">Secciones ▾</button>
+            <div class="month-list" id="sectionSwitcherListEntrega"></div>
+          </div>
+        </div>
+      </header>
+      <p class="en-sub" id="entIntro">Cargando…</p>
+      <div class="en-tabs" id="entTabs"></div>
+      <div class="en-kpis" id="entKpis"></div>
+      <div class="en-tools">
+        <input type="search" id="entBuscar" class="en-in" placeholder="Buscar por nombre, correo o teléfono" autocomplete="off">
+        <label class="en-ord">Ordenar por <select id="entOrden" class="en-in"></select></label>
+      </div>
+      <div class="en-tablewrap" id="entTabla"></div>
+    </div>
+  </section>
+
   <!-- ===================== Estrategias de alumnas (solo Admin) — hoy
        con datos de EJEMPLO; todavía no está conectada a las respuestas
        reales del formulario ni a la IA. ===================== -->
@@ -2407,9 +2509,10 @@
   const metricasScreen = document.getElementById('metricasScreen');
   const recursosScreen = document.getElementById('recursosScreen');
   const estrategiasScreen = document.getElementById('estrategiasScreen');
+  const entregaScreen = document.getElementById('entregaScreen');
 
   function showScreen(el){
-    [loadingScreen, onboardingScreen, transitionScreen, dashboardScreen, rankingScreen, toolsScreen, metricasScreen, recursosScreen, estrategiasScreen].forEach(s => s.classList.remove('active'));
+    [loadingScreen, onboardingScreen, transitionScreen, dashboardScreen, rankingScreen, toolsScreen, metricasScreen, recursosScreen, entregaScreen, estrategiasScreen].forEach(s => s.classList.remove('active'));
     el.classList.add('active');
   }
 
@@ -2706,6 +2809,196 @@
   }
   document.getElementById('goRecursosBtn').addEventListener('click', entrarARecursos);
 
+  // ===== Entrega de alumnas (datos del Worker /entrega: GHL + hoja de ventas + hoja de Johanna; solo lectura) =====
+  let ENTREGA = null, entTab = 'todas', entTexto = '', entAbierta = null;
+  const ENT_ORDENES = { 'vence:asc': 'Vence primero', 'vence:desc': 'Vence último', 'nombre:asc': 'Nombre A-Z', 'compra:desc': 'Compra más reciente', 'avance:asc': 'Menos avance' };
+  let entOrden = { col: 'vence', dir: 'asc' };
+  try { const g = JSON.parse(localStorage.getItem('shu_ent_orden') || 'null'); if(g && g.col && (g.dir === 'asc' || g.dir === 'desc')) entOrden = g; } catch(e){}
+  const ENT_TABS = [
+    ['todas', 'Todas (activas)', a => a.estado !== 'terminada'],
+    ['high', 'High ticket', a => a.tipo === 'high' && a.estado !== 'terminada'],
+    ['low', 'Low ticket', a => a.tipo === 'low' && a.estado !== 'terminada'],
+    ['psicologa', 'Psicóloga (sesiones pendientes)', a => !!a.psicologa && !/^(done|vencido)/i.test(a.psicologa.etapa) && a.sesiones && a.sesiones.hechas < a.sesiones.total],
+    ['vencer', 'Por vencer y vencidas', a => a.estado === 'por_vencer' || a.estado === 'vencida'],
+    ['agendar', 'Falta agendar', a => a.estado === 'falta_agendar'],
+    ['terminadas', 'Terminadas (Done y Vencido)', a => a.estado === 'terminada'],
+    ['revisar', 'Revisar', a => a.revisar.length > 0],
+  ];
+  const ENT_ESTADOS = { al_dia: 'Al día', falta_agendar: 'Falta agendar', por_vencer: 'Por vencer', vencida: 'Vencida', terminada: 'Terminada' };
+  const ENT_PRIORIDAD = { vencida: 0, por_vencer: 1, falta_agendar: 2, al_dia: 3, terminada: 4 };
+  const entIniciales = n => String(n).trim().split(/\s+/).slice(0, 2).map(p => p[0] || '').join('').toUpperCase();
+  const entEtapa = a => (a.high || a.low || a.psicologa || {}).etapa || '—';
+  const entFmt = iso => { if(!iso) return '—'; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+  const entProg = a => { const x = (a.llamadas ? a.llamadas.hechas : 0) + (a.sesiones ? a.sesiones.hechas : 0), t = (a.llamadas ? a.llamadas.total : 0) + (a.sesiones ? a.sesiones.total : 0); return t ? x / t : 0; };
+  const entClave = (a, col) => {
+    switch(col){
+      case 'nombre': return a.nombre.toLowerCase();
+      case 'etapa': return entProg(a);
+      case 'llamadas': return a.llamadas ? a.llamadas.hechas / a.llamadas.total : -1;
+      case 'proximo': return (a.proximoPaso || '').toLowerCase();
+      case 'vence': return a.vence || null;
+      case 'estado': return ENT_PRIORIDAD[a.estado];
+      case 'compra': return a.fechaCompra || (a.high || a.low || {}).inicio || null;
+      case 'avance': return entProg(a);
+    }
+    return 0;
+  };
+  function entOrdenar(filas){
+    const f = entOrden.dir === 'asc' ? 1 : -1;
+    return filas.slice().sort((x, y) => {
+      const kx = entClave(x, entOrden.col), ky = entClave(y, entOrden.col);
+      if(kx === null && ky === null) return x.nombre.localeCompare(y.nombre, 'es');
+      if(kx === null) return 1; if(ky === null) return -1;   // sin dato, siempre al final
+      const c = typeof kx === 'string' ? kx.localeCompare(ky, 'es') : kx - ky;
+      return c ? c * f : x.nombre.localeCompare(y.nombre, 'es');
+    });
+  }
+  const entBusca = (a, q) => !q || [a.nombre, a.email, a.telefono].some(v => String(v || '').toLowerCase().includes(q)) || String(a.telefono || '').replace(/\D/g, '').includes(q.replace(/\D/g, '') || '§');
+  const entDots = (h, t) => `<span class="en-dots">${Array.from({ length: t }, (_, i) => `<i class="${i < h ? 'on' : ''}"></i>`).join('')}</span>${h}/${t}`;
+  function entDato(etq, valor, fuente){ return `<div class="en-dato"><span>${etq}</span><div>${valor}${fuente ? `<small>· ${fuente}</small>` : ''}</div></div>`; }
+  function entFicha(a){
+    const e = escapeHtml;
+    const etapas = [a.high && `High: ${e(a.high.etapa)}`, a.low && `Low: ${e(a.low.etapa)}`, a.psicologa && `Psicóloga: ${e(a.psicologa.etapa)}`].filter(Boolean).join(' · ') || '—';
+    const avance = [
+      entDato('Etapa', etapas, 'GHL'),
+      a.contrato ? entDato('Contrato', a.contrato, 'GHL') : '',
+      a.llamadas ? entDato('Llamadas 1:1', `${a.llamadas.hechas} de ${a.llamadas.total} <small>(según la columna)</small>`, 'GHL') : '',
+      entDato('Estrategia entregada', a.estrategiaEntregada ? 'Sí' : 'No', 'GHL'),
+      a.sesiones ? entDato('Psicóloga', `${a.sesiones.hechas} de ${a.sesiones.total} sesiones`, 'GHL') : '',
+      a.johanna ? entDato('Según Johanna', `${a.johanna.sesiones} sesión(es)${a.johanna.fechas && a.johanna.fechas.length ? ' · ' + a.johanna.fechas.map(entFmt).join(', ') : ''}`, 'Johanna') : '',
+      entDato('Próximo paso', e(a.proximoPaso || '—'), 'GHL'),
+    ].join('');
+    const compras = a.compras && a.compras.length ? a.compras.map(c => `${e(c.producto || '—')}${c.fecha ? ' · ' + entFmt(c.fecha) : ''}`).join('<br>') : 'Sin dato en la hoja de ventas';
+    const dv = a.dias == null ? '' : a.dias < 0 ? `hace ${-a.dias} días` : a.dias === 0 ? 'hoy' : `en ${a.dias} días`;
+    const compra = [
+      entDato(a.compras && a.compras.length > 1 ? 'Productos' : 'Producto', compras, 'ventas'),
+      entDato('Fecha de compra', entFmt(a.fechaCompra), 'ventas'),
+      entDato('Pago', e(a.pago || '—'), 'ventas'),
+      entDato('Vence', a.vence ? `${entFmt(a.vence)} <small>(${dv})</small>` : 'Sin fecha', 'GHL'),
+      entDato('Skool', 'Sin dato (falta conectar Skool)', ''),
+      entDato('Quién la atiende', `${a.closer ? e(a.closer) : 'Sin dato'} <small>· Paula (seguimiento)</small>`, 'ventas'),
+    ].join('');
+    const otros = a.revisar.filter(m => m !== 'No cuadra');
+    return `<div class="en-fichain">
+      ${a.noCuadra.length ? `<div class="en-alerta"><b>No cuadra:</b> ${a.noCuadra.map(e).join(' · ')}</div>` : ''}
+      ${otros.length ? `<p class="en-nota">Para revisar: ${otros.map(e).join(' · ')}</p>` : ''}
+      <div class="en-bloques"><div><h4>Avance</h4>${avance}</div><div><h4>Compra y acceso</h4>${compra}</div></div>
+      <a class="en-crm" target="_blank" rel="noopener" href="https://app.fortunacrm.ai/v2/location/6cXs7Gwtzk0m50TZkWPg/contacts/detail/${encodeURIComponent(a.contactId)}">Abrir en el CRM →</a>
+    </div>`;
+  }
+  const entCols = () => [['nombre', 'Alumna'], ['etapa', entTab === 'psicologa' ? 'Etapa psicóloga' : 'Etapa'], ['llamadas', entTab === 'psicologa' ? 'Sesiones' : 'Llamadas 1:1'], ['proximo', 'Próximo paso'], ['vence', 'Vence'], ['estado', 'Estado']];
+  function entFilaFicha(a, abierta){
+    return `<tr class="en-ficha"><td colspan="6"><div class="en-fx${abierta ? ' open' : ''}"><div class="en-fxin">${entFicha(a)}</div></div></td></tr>`;
+  }
+  function renderEntregaTabla(anim){
+    const def = ENT_TABS.find(t => t[0] === entTab), q = entTexto.trim().toLowerCase();
+    const filas = entOrdenar(ENTREGA.alumnas.filter(def[2]).filter(a => entBusca(a, q)));
+    if(entAbierta && !filas.some(a => a.contactId === entAbierta)) entAbierta = null;
+    const e = escapeHtml, psi = entTab === 'psicologa';
+    const flecha = c => entOrden.col === c ? (entOrden.dir === 'asc' ? ' ↑' : ' ↓') : '';
+    const cuerpo = filas.map((a, idx) => {
+      const tipo = a.tipo === 'high' ? '<span class="en-et high">HIGH</span>' : a.tipo === 'low' ? '<span class="en-et low">LOW</span>' : '';
+      const nc = a.noCuadra.length ? '<span class="en-et nc">NO CUADRA</span>' : '';
+      const etapa = psi ? (a.psicologa ? a.psicologa.etapa : '—') : entEtapa(a);
+      const ll = psi ? a.sesiones : a.llamadas;
+      const abierta = entAbierta === a.contactId;
+      return `<tr class="en-fila${abierta ? ' sel' : ''}" data-id="${e(a.contactId)}" style="--i:${Math.min(idx, 14)}">
+        <td><div class="en-al"><span class="en-ini">${e(entIniciales(a.nombre))}</span><div><span class="en-nom">${e(a.nombre)}</span>${tipo}${nc}</div></div></td>
+        <td>${e(etapa)}</td>
+        <td>${ll ? entDots(ll.hechas, ll.total) : '<span class="en-mut">—</span>'}</td>
+        <td>${a.proximoPaso ? e(a.proximoPaso) : '<span class="en-mut">—</span>'}</td>
+        <td>${a.vence ? entFmt(a.vence) : '<span class="en-mut">Sin fecha</span>'}</td>
+        <td><span class="en-estado ${a.estado}">${ENT_ESTADOS[a.estado]}</span></td></tr>` + (abierta ? entFilaFicha(a, true) : '');
+    }).join('');
+    const box = document.getElementById('entTabla');
+    box.innerHTML = filas.length
+      ? `<table class="en-tabla"><thead><tr>${entCols().map(([c, t]) => `<th data-c="${c}">${t}${flecha(c)}</th>`).join('')}</tr></thead><tbody${anim ? ' class="anim"' : ''}>${cuerpo}</tbody></table>`
+      : '<div class="en-vacio">No hay alumnas en esta vista.</div>';
+    if(entTab === 'revisar' && ENTREGA.sinTarjeta && ENTREGA.sinTarjeta.length){
+      box.insertAdjacentHTML('beforeend', `<details class="en-sin"><summary>${ENTREGA.sinTarjeta.length} compras de la hoja de ventas que no pude unir a ninguna alumna (nombre incompleto o distinto)</summary><ul>${ENTREGA.sinTarjeta.map(c => `<li>${e(c.nombre)} · ${e(c.producto || '—')} · ${entFmt(c.fecha)}${c.correo ? ' · ' + e(c.correo) : ''}</li>`).join('')}</ul></details>`);
+    }
+    box.querySelectorAll('th').forEach(th => th.addEventListener('click', () => entOrdenarPor(th.dataset.c)));
+    box.querySelectorAll('tr.en-fila').forEach(tr => tr.addEventListener('click', () => entAlternarFicha(tr)));
+  }
+  // La ficha se abre y se cierra con animación, sin volver a dibujar la tabla.
+  function entAlternarFicha(tr){
+    const id = tr.dataset.id, body = tr.parentNode, previa = body.querySelector('tr.en-ficha');
+    if(previa){
+      previa.previousElementSibling.classList.remove('sel');
+      previa.querySelector('.en-fx').classList.remove('open');
+      setTimeout(() => previa.remove(), 450);
+    }
+    if(entAbierta === id){ entAbierta = null; return; }
+    entAbierta = id; tr.classList.add('sel');
+    tr.insertAdjacentHTML('afterend', entFilaFicha(ENTREGA.alumnas.find(x => x.contactId === id), false));
+    const nueva = tr.nextElementSibling;
+    void nueva.offsetHeight;   // fija el estado cerrado antes de abrir, para que la transición se vea
+    nueva.querySelector('.en-fx').classList.add('open');
+    setTimeout(() => { const r = nueva.getBoundingClientRect(); if(r.bottom > innerHeight - 20) window.scrollBy({ top: Math.min(r.bottom - innerHeight + 40, r.top - 90), behavior: 'smooth' }); }, 220);
+  }
+  function entGuardarOrden(){
+    try { localStorage.setItem('shu_ent_orden', JSON.stringify(entOrden)); } catch(e){}
+    const sel = document.getElementById('entOrden'), k = `${entOrden.col}:${entOrden.dir}`;
+    sel.value = ENT_ORDENES[k] ? k : 'otro';
+  }
+  function entOrdenarPor(col){
+    entOrden = entOrden.col === col ? { col, dir: entOrden.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'asc' };
+    entGuardarOrden(); renderEntregaTabla(true);
+  }
+  let entKpiPrevio = {};
+  function renderEntregaKpis(){
+    const def = ENT_TABS.find(t => t[0] === entTab), v = ENTREGA.alumnas.filter(def[2]);
+    const n = k => v.filter(a => a.estado === k).length;
+    const k = [['En esta vista', v.length, '#c98aa0'], ['Al día', n('al_dia'), '#5fd39a'], ['Falta agendar', n('falta_agendar'), '#7fb2f0'], ['Por vencer', n('por_vencer'), '#e9c46a'], ['Vencidas', n('vencida'), '#ff8a8a']];
+    const box = document.getElementById('entKpis');
+    if(box.children.length !== k.length) box.innerHTML = k.map(([t, x, c]) => `<div class="en-kpi" style="--c:${c}"><span>${t}</span><b>0</b></div>`).join('');
+    [...box.children].forEach((el, i) => {
+      const b = el.querySelector('b'), desde = entKpiPrevio[i] || 0, hasta = k[i][1], t0 = performance.now();
+      entKpiPrevio[i] = hasta;
+      if(desde === hasta){ b.textContent = hasta; return; }
+      (function paso(t){ const p = Math.min(1, (t - t0) / 380); b.textContent = Math.round(desde + (hasta - desde) * (1 - Math.pow(1 - p, 3))); if(p < 1) requestAnimationFrame(paso); })(t0);
+    });
+  }
+  function entCambiarTab(k){
+    entTab = k; entAbierta = null;
+    document.querySelectorAll('#entTabs .en-tab').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+    renderEntregaKpis(); renderEntregaTabla(true);
+  }
+  function renderEntrega(primera){
+    document.getElementById('entTabs').innerHTML = ENT_TABS.map(([k, l, f]) => `<button type="button" class="en-tab${k === entTab ? ' on' : ''}" data-k="${k}">${l}<b${k === 'revisar' ? ' class="rojo"' : ''}>${ENTREGA.alumnas.filter(f).length}</b></button>`).join('');
+    document.querySelectorAll('#entTabs .en-tab').forEach(b => b.addEventListener('click', () => entCambiarTab(b.dataset.k)));
+    renderEntregaKpis(); renderEntregaTabla(primera);
+    const min = Math.max(0, Math.round((Date.now() - new Date(ENTREGA.generado)) / 60000));
+    const hojas = ENTREGA.cruceGenerado ? `hojas leídas el ${new Date(ENTREGA.cruceGenerado).toLocaleDateString('es-PR', { day: 'numeric', month: 'short' })}` : 'hojas todavía sin cargar';
+    document.getElementById('entIntro').textContent = `GHL + hoja de ventas + hoja de Johanna · actualizado hace ${min} min · ${hojas} · solo se mira, no cambia nada`;
+  }
+  async function cargarEntrega(){
+    const intro = document.getElementById('entIntro');
+    if(!ENTREGA) intro.textContent = 'Cargando las alumnas…';
+    try {
+      const res = await fetch(`${WORKER_URL}/entrega`, { headers: { 'X-Site-Key': claveDePlataforma() } });
+      if(res.status === 401){ volverAlCandado(); return; }
+      const d = await res.json();
+      if(!res.ok || !d.ok) throw new Error('entrega');
+      const primera = !ENTREGA;
+      ENTREGA = d;
+      renderEntrega(primera);
+    } catch(err){
+      intro.textContent = 'No pude traer los datos de la entrega. Probá de nuevo en un minuto.';
+    }
+  }
+  (function(){
+    const sel = document.getElementById('entOrden');
+    sel.innerHTML = Object.entries(ENT_ORDENES).map(([k, t]) => `<option value="${k}">${t}</option>`).join('') + '<option value="otro">Según la columna</option>';
+    sel.addEventListener('change', () => { if(sel.value === 'otro') return; const [col, dir] = sel.value.split(':'); entOrden = { col, dir }; entGuardarOrden(); if(ENTREGA) renderEntregaTabla(true); });
+    document.getElementById('entBuscar').addEventListener('input', ev => { entTexto = ev.target.value; if(ENTREGA) renderEntregaTabla(false); });
+    entGuardarOrden();
+  })();
+  function entrarAEntrega(){
+    cambiarDeSeccion(entregaScreen, 'Entrega', cargarEntrega);
+  }
+  document.getElementById('goEntregaBtn').addEventListener('click', entrarAEntrega);
+
   function entrarAMetricas(){
     cambiarDeSeccion(metricasScreen, 'Métricas', () => {
       prepararPantallaMetricas();
@@ -2725,6 +3018,7 @@
     { id: 'herramientas', label: 'Herramientas', activa: () => toolsScreen.classList.contains('active'), ir: entrarAHerramientas },
     { id: 'metricas', label: 'Métricas', activa: () => metricasScreen.classList.contains('active'), ir: entrarAMetricas },
     { id: 'recursos', label: 'Recursos', activa: () => recursosScreen.classList.contains('active'), ir: entrarARecursos },
+    { id: 'entrega', label: 'Entrega', activa: () => entregaScreen.classList.contains('active'), ir: entrarAEntrega },
   ];
 
   function cerrarSwitchersSecciones(){
@@ -2764,6 +3058,7 @@
   inicializarSwitcherSecciones('sectionSwitcherTools', 'sectionSwitcherBtnTools', 'sectionSwitcherListTools');
   inicializarSwitcherSecciones('sectionSwitcherMetricas', 'sectionSwitcherBtnMetricas', 'sectionSwitcherListMetricas');
   inicializarSwitcherSecciones('sectionSwitcherRecursos', 'sectionSwitcherBtnRecursos', 'sectionSwitcherListRecursos');
+  inicializarSwitcherSecciones('sectionSwitcherEntrega', 'sectionSwitcherBtnEntrega', 'sectionSwitcherListEntrega');
 
   // ===== Herramientas: contadores tipo "tally counter" — cada setter/
   // closer los usa para llevar cuentas propias (ej. llamadas hechas en
@@ -3127,6 +3422,7 @@
     ['goHerramientasBtn', 'Herramientas', 'Contadores y utilidades'],
     ['goMetricasBtn', 'Métricas', 'Cargar los números del día: llamadas, agendadas, no atienden'],
     ['goRecursosBtn', 'Recursos', 'Presentaciones y materiales'],
+    ['goEntregaBtn', 'Entrega', 'Cada alumna y en qué paso va: entrega, psicóloga, vencimientos'],
   ];
   const AYUDA_TABS = {
     general: 'Resumen del mes: llamadas, agendadas, shows, cierres, cash y meta del mes',
