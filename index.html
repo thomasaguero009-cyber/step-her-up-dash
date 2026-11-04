@@ -866,6 +866,7 @@
   .en-estado{ display:inline-block; font-size:12px; font-weight:600; padding:3px 11px; border-radius:999px; white-space:nowrap; border:1px solid transparent; }
   .en-estado.al_dia{ background:rgba(95,211,154,0.13); color:#5fd39a; border-color:rgba(95,211,154,0.35); }
   .en-estado.falta_agendar{ background:rgba(127,178,240,0.14); color:#8fbcf5; border-color:rgba(127,178,240,0.38); }
+  .en-mot{ display:block; margin-top:4px; font-size:11px; line-height:1.3; color:var(--text-dim); }
   .en-estado.por_vencer{ background:rgba(233,196,106,0.14); color:#e9c46a; border-color:rgba(233,196,106,0.4); }
   .en-estado.vencida{ background:rgba(255,138,138,0.14); color:#ff8a8a; border-color:rgba(255,138,138,0.4); }
   .en-estado.terminada{ background:rgba(255,255,255,0.07); color:var(--text-dim); border-color:var(--border); }
@@ -2871,8 +2872,9 @@
     const avance = [
       entDato('Etapa', etapas, 'GHL'),
       a.contrato ? entDato('Contrato', a.contrato, 'GHL') : '',
-      a.llamadas ? entDato('Llamadas 1:1', `${a.llamadas.hechas} de ${a.llamadas.total} <small>(según la columna)</small>`, 'GHL') : '',
-      entDato('Estrategia entregada', a.estrategiaEntregada ? 'Sí' : 'No', 'GHL'),
+      a.llamadas ? entDato('Llamadas 1:1', `${a.llamadas.hechas} de ${a.llamadas.total} <small>(columna y calendario)</small>`, 'GHL') : '',
+      a.auditoria ? entDato('Auditoría de Instagram',`${a.auditoria.hecha ? 'Hecha' : 'Agendada'} el ${new Date(a.auditoria.fecha).toLocaleDateString('es-PR', { day: 'numeric', month: 'short' })}`, 'GHL') : '',
+      a.webinar ? '' : entDato('Estrategia entregada', a.estrategiaEntregada ? 'Sí' : 'No', 'GHL'),
       a.sesiones ? entDato('Psicóloga', `${a.sesiones.hechas} de ${a.sesiones.total} sesiones`, 'GHL') : '',
       a.johanna ? entDato('Según Johanna', `${a.johanna.sesiones} sesión(es)${a.johanna.fechas && a.johanna.fechas.length ? ' · ' + a.johanna.fechas.map(entFmt).join(', ') : ''}`, 'Johanna') : '',
       entDato('Próximo paso', e(a.proximoPaso || '—'), 'GHL'),
@@ -2914,10 +2916,10 @@
       return `<tr class="en-fila${abierta ? ' sel' : ''}" data-id="${e(a.contactId)}" style="--i:${Math.min(idx, 14)}">
         <td><div class="en-al"><span class="en-ini">${e(entIniciales(a.nombre))}</span><div><span class="en-nom">${e(a.nombre)}</span>${tipo}${nc}</div></div></td>
         <td>${e(etapa)}</td>
-        <td>${ll ? entDots(ll.hechas, ll.total) : '<span class="en-mut">—</span>'}</td>
+        <td>${ll ? entDots(ll.hechas, ll.total) : (!psi && a.auditoria ? `<span class="en-mut">${a.auditoria.hecha ? '✓ Auditoría' : 'Auditoría agendada'}</span>` : '<span class="en-mut">—</span>')}</td>
         <td>${a.proximoPaso ? e(a.proximoPaso) : '<span class="en-mut">—</span>'}</td>
         <td>${a.vence ? entFmt(a.vence) : '<span class="en-mut">Sin fecha</span>'}</td>
-        <td><span class="en-estado ${a.estado}">${ENT_ESTADOS[a.estado]}</span></td></tr>` + (abierta ? entFilaFicha(a, true) : '');
+        <td><span class="en-estado ${a.estado}">${ENT_ESTADOS[a.estado]}</span>${a.estado === 'falta_agendar' && a.porAgendar && a.porAgendar.length ? `<small class="en-mot">${a.porAgendar.join(' + ')}</small>` : ''}</td></tr>` + (abierta ? entFilaFicha(a, true) : '');
     }).join('');
     const box = document.getElementById('entTabla');
     box.innerHTML = filas.length
