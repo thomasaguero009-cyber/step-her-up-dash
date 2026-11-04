@@ -2960,7 +2960,7 @@
     const n = k => v.filter(a => a.estado === k).length;
     const k = [['En esta vista', v.length, '#c98aa0'], ['Al día', n('al_dia'), '#5fd39a'], ['Falta agendar', n('falta_agendar'), '#7fb2f0'], ['Por vencer', n('por_vencer'), '#e9c46a'], ['Vencidas', n('vencida'), '#ff8a8a']];
     const box = document.getElementById('entKpis');
-    if(box.children.length !== k.length) box.innerHTML = k.map(([t, x, c]) => `<div class="en-kpi" style="--c:${c}"><span>${t}</span><b>0</b></div>`).join('');
+    if(box.children.length !== k.length || !box.querySelector('b')) box.innerHTML = k.map(([t, x, c]) => `<div class="en-kpi" style="--c:${c}"><span>${t}</span><b>0</b></div>`).join('');
     [...box.children].forEach((el, i) => {
       const b = el.querySelector('b'), desde = entKpiPrevio[i] || 0, hasta = k[i][1], t0 = performance.now();
       entKpiPrevio[i] = hasta;
