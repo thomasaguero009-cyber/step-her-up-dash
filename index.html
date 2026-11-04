@@ -1388,7 +1388,7 @@
         </button>
         <button type="button" class="entry-option" id="goEntregaBtn">
           <span class="entry-option-text">
-            <span class="entry-option-title">Entrega</span>
+            <span class="entry-option-title">Fulfillment</span>
             <span class="entry-option-sub">Cada alumna y en qué paso va</span>
           </span>
         </button>
@@ -2460,7 +2460,7 @@
   <section class="screen" id="entregaScreen">
     <div class="wrap">
       <header class="dash-header">
-        <div class="section-label" style="margin:0;">Entrega de alumnas</div>
+        <div class="section-label" style="margin:0;">Fulfillment</div>
         <div class="dash-header-right">
           <div class="section-switcher" id="sectionSwitcherEntrega">
             <button type="button" class="ghost-link-btn" id="sectionSwitcherBtnEntrega">Secciones ▾</button>
@@ -2995,7 +2995,7 @@
     entGuardarOrden();
   })();
   function entrarAEntrega(){
-    cambiarDeSeccion(entregaScreen, 'Entrega', cargarEntrega);
+    cambiarDeSeccion(entregaScreen, 'Fulfillment', cargarEntrega);
   }
   document.getElementById('goEntregaBtn').addEventListener('click', entrarAEntrega);
 
@@ -3018,7 +3018,7 @@
     { id: 'herramientas', label: 'Herramientas', activa: () => toolsScreen.classList.contains('active'), ir: entrarAHerramientas },
     { id: 'metricas', label: 'Métricas', activa: () => metricasScreen.classList.contains('active'), ir: entrarAMetricas },
     { id: 'recursos', label: 'Recursos', activa: () => recursosScreen.classList.contains('active'), ir: entrarARecursos },
-    { id: 'entrega', label: 'Entrega', activa: () => entregaScreen.classList.contains('active'), ir: entrarAEntrega },
+    { id: 'entrega', label: 'Fulfillment', activa: () => entregaScreen.classList.contains('active'), ir: entrarAEntrega },
   ];
 
   function cerrarSwitchersSecciones(){
@@ -3422,7 +3422,7 @@
     ['goHerramientasBtn', 'Herramientas', 'Contadores y utilidades'],
     ['goMetricasBtn', 'Métricas', 'Cargar los números del día: llamadas, agendadas, no atienden'],
     ['goRecursosBtn', 'Recursos', 'Presentaciones y materiales'],
-    ['goEntregaBtn', 'Entrega', 'Cada alumna y en qué paso va: entrega, psicóloga, vencimientos'],
+    ['goEntregaBtn', 'Fulfillment', 'Cada alumna y en qué paso va: entrega, psicóloga, vencimientos'],
   ];
   const AYUDA_TABS = {
     general: 'Resumen del mes: llamadas, agendadas, shows, cierres, cash y meta del mes',
