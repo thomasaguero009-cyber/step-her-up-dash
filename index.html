@@ -2897,7 +2897,7 @@
     const e = escapeHtml, psi = entTab === 'psicologa';
     const flecha = c => entOrden.col === c ? (entOrden.dir === 'asc' ? ' ↑' : ' ↓') : '';
     const cuerpo = filas.map((a, idx) => {
-      const tipo = a.tipo === 'high' ? '<span class="en-et high">HIGH</span>' : a.tipo === 'low' ? '<span class="en-et low">LOW</span>' : '';
+      const tipo = a.tipo === 'high' ? '<span class="en-et high">HIGH</span>' : a.webinar ? '<span class="en-et low">OFERTA WEBINAR</span>' : a.tipo === 'low' ? '<span class="en-et low">LOW</span>' : '';
       const nc = a.noCuadra.length ? '<span class="en-et nc">NO CUADRA</span>' : '';
       const etapa = psi ? (a.psicologa ? a.psicologa.etapa : '—') : entEtapa(a);
       const ll = psi ? a.sesiones : a.llamadas;
@@ -2988,7 +2988,8 @@
       ENTREGA = d;
       renderEntrega(primera);
     } catch(err){
-      intro.textContent = err && err.name === 'AbortError' ? 'El servidor tardó demasiado en responder. Probá de nuevo en un minuto.' : 'No pude traer los datos de la entrega. Revisá tu conexión y probá de nuevo.';
+      intro.textContent = err && err.name === 'AbortError' ? 'El servidor tardó demasiado en responder. Probá de nuevo en un minuto.' : `No pude traer los datos de la entrega (${err && err.name ? err.name + ': ' : ''}${err && err.message ? err.message : 'sin detalle'}). Probá de nuevo.`;
+      console.error('Fulfillment', err);
     }
   }
   (function(){
