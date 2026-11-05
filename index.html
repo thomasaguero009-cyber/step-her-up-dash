@@ -6588,8 +6588,8 @@
       <div class="chart-legend" id="${tipo}ProgLeyenda"></div>
       <div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartProg${tipo}"></svg><div class="chart-tooltip" id="tooltipProg${tipo}"></div></div>
       <div class="section-label" style="margin:26px 0 4px;font-size:13px;">Mes a mes</div>
-      <div class="pg-nota">Cada vela es un mes (cuentan solo los días con actividad). La caja va del valor del primer día al del último día: verde si terminó más alto que arrancó, rojo si más bajo. La línea fina va del peor al mejor día.</div>
-      <div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="velas${tipo}"></svg><div class="chart-tooltip" id="tooltipVelas${tipo}" style="width:230px;"></div></div>`;
+      <div class="pg-nota">Una barra por mes (los 6 meses que terminan en el elegido): el total de la métrica de arriba. El mes elegido va resaltado.</div>
+      <div class="fact-bars" id="barras${tipo}"></div>`;
     const campo = m.valor === 'ventas' && !esSetter ? 'cash' : m.valor;
     const acum = a => { let t = 0; return a.map(v => (t += v)); };
     const cortar = a => { const r = (a || []).slice(0, diasMostrar); while(r.length < diasMostrar) r.push(0); return st.modo === 'acum' ? acum(r) : r; };
@@ -6602,51 +6602,31 @@
     }
     requestAnimationFrame(() => cont.querySelectorAll('.pg-pista i').forEach(i => { i.style.width = i.dataset.pct + '%'; }));
     setTimeout(() => cont.querySelectorAll('.pg-pista i').forEach(i => { i.style.width = i.dataset.pct + '%'; }), 60);
-    progPintarVelas(tipo, n, m, campo, anio, mes, token).catch(e => console.error('Velas', e));
+    progPintarBarras(tipo, n, m, campo, anio, mes, token).catch(e => console.error('Barras', e));
   }
-  // Gráfico de velas: una vela por mes (los 6 meses que terminan en el elegido) de la métrica elegida.
-  async function progPintarVelas(tipo, n, m, campo, anio, mes, token){
-    const st = progEstado[tipo], svg = document.getElementById('velas' + tipo), tip = document.getElementById('tooltipVelas' + tipo);
-    if(!svg) return;
+  // Barras mes a mes: una barra por mes (los 6 meses que terminan en el elegido) con el total de la métrica elegida; mismo estilo que las barras de facturación.
+  async function progPintarBarras(tipo, n, m, campo, anio, mes, token){
+    const st = progEstado[tipo], cont = document.getElementById('barras' + tipo);
+    if(!cont) return;
     const hoy = new Date(), lista = Array.from({ length: 6 }, (_, i) => { const d = new Date(anio, mes - 5 + i, 1); return { anio: d.getFullYear(), mes: d.getMonth() }; });
     const datos = await Promise.all(lista.map(x => progSeriesPersona(tipo, n, x.anio, x.mes)));
     if(token !== st.token) return;
-    const fmt = v => (m.prefijo || '') + Math.round(v).toLocaleString('es-AR');
-    const velas = lista.map((x, i) => {
+    const esCash = !!m.prefijo;
+    const dinero = v => '$' + Math.round(v).toLocaleString('es-AR');
+    const corto = v => esCash ? (v >= 10000 ? '$' + (v / 1000).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + 'k' : dinero(v)) : Math.round(v).toLocaleString('es-AR');
+    const meses = lista.map((x, i) => {
       const dias = new Date(x.anio, x.mes + 1, 0).getDate(), hasta = (x.anio === hoy.getFullYear() && x.mes === hoy.getMonth()) ? hoy.getDate() : dias;
-      const serie = (datos[i][campo] || []).slice(0, hasta), act = serie.map((v, d) => ({ v, d: d + 1 })).filter(o => o.v > 0);
-      if(!act.length) return { ...x, vacio: true };
-      return { ...x, primero: act[0], ultimo: act[act.length - 1], mejor: act.reduce((a, b) => b.v > a.v ? b : a), peor: act.reduce((a, b) => b.v < a.v ? b : a), total: serie.reduce((a, b) => a + b, 0), activos: act.length };
+      const serie = (datos[i][campo] || []).slice(0, hasta), cierres = (datos[i].cierres || []).slice(0, hasta).reduce((a, b) => a + b, 0);
+      return { ...x, total: serie.reduce((a, b) => a + b, 0), activos: serie.filter(v => v > 0).length, cierres };
     });
-    const W = 1000, H = 280, padL = 48, padB = 30, padT = 14, NS = 'http://www.w3.org/2000/svg';
-    const el = (tag, attrs, txt) => { const e = document.createElementNS(NS, tag); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); if(txt != null) e.textContent = txt; svg.appendChild(e); return e; };
-    svg.innerHTML = '';
-    const maxReal = Math.max(0, ...velas.filter(v => !v.vacio).map(v => v.mejor.v));
-    if(!maxReal){ el('line', { x1: padL, x2: W - 10, y1: H - padB, y2: H - padB, stroke: 'rgba(255,255,255,0.14)', 'stroke-width': 1.5, 'stroke-dasharray': '5,5' }); el('text', { x: W / 2, y: (H - padB) / 2, fill: 'rgba(247,236,233,0.55)', 'font-size': 15, 'text-anchor': 'middle' }, 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' de ' + n + ' en estos meses'); return; }
-    const maxVal = Math.max(5, Math.ceil(maxReal * 1.08 / 5) * 5), yAt = v => padT + (H - padT - padB) * (1 - v / maxVal);
-    for(let g = 0; g <= 5; g++){ const y = padT + (H - padT - padB) * (1 - g / 5); el('line', { x1: padL, x2: W - 10, y1: y, y2: y, stroke: 'rgba(255,255,255,0.1)', 'stroke-width': 1 }); el('text', { x: 4, y: y + 4, fill: 'rgba(247,236,233,0.45)', 'font-size': 11 }, fmt(maxVal * g / 5)); }
-    const slot = (W - padL - 10) / velas.length, ancho = Math.min(70, slot * 0.4);
-    velas.forEach((v, i) => {
-      const cx = padL + slot * (i + 0.5);
-      el('text', { x: cx, y: H - 8, fill: 'rgba(247,236,233,0.6)', 'font-size': 12, 'text-anchor': 'middle' }, MESES_ES[v.mes].slice(0, 3) + ' ' + String(v.anio).slice(2));
-      if(v.vacio){ el('text', { x: cx, y: H - padB - 8, fill: 'rgba(247,236,233,0.35)', 'font-size': 12, 'text-anchor': 'middle' }, 'sin datos'); }
-      else {
-        const sube = v.ultimo.v >= v.primero.v, col = sube ? '#5fd39a' : '#ff8a8a', top = yAt(Math.max(v.primero.v, v.ultimo.v)), bot = yAt(Math.min(v.primero.v, v.ultimo.v));
-        el('line', { x1: cx, x2: cx, y1: yAt(v.mejor.v), y2: yAt(v.peor.v), stroke: col, 'stroke-width': 2 });
-        el('rect', { x: cx - ancho / 2, y: top, width: ancho, height: Math.max(3, bot - top), rx: 3, fill: col, opacity: 0.85 });
-      }
-      const hit = el('rect', { x: cx - slot / 2, y: 0, width: slot, height: H, fill: 'transparent' });
-      hit.style.cursor = 'pointer';
-      const mostrar = () => {
-        tip.innerHTML = v.vacio ? `<div class="tt-day">${MESES_ES[v.mes]} ${v.anio}</div><div class="tt-val">Sin datos</div>`
-          : `<div class="tt-day">${MESES_ES[v.mes]} ${v.anio}</div><div class="tt-val">${fmt(v.total)} en el mes</div>
-             <div style="font-size:12px;line-height:1.5;opacity:.85;margin-top:4px;">Primer día (${v.primero.d}): ${fmt(v.primero.v)}<br>Último día (${v.ultimo.d}): ${fmt(v.ultimo.v)}<br>Mejor día (${v.mejor.d}): ${fmt(v.mejor.v)}<br>Peor día (${v.peor.d}): ${fmt(v.peor.v)}<br>Días con actividad: ${v.activos}</div>`;
-        const ancho2 = svg.parentElement.clientWidth, px = ancho2 / W;
-        let left = cx * px + 14; if(left + 240 > ancho2) left = cx * px - 244;
-        tip.style.left = Math.max(0, left) + 'px'; tip.classList.add('show');
-      };
-      hit.addEventListener('mouseenter', mostrar); hit.addEventListener('mousemove', mostrar); hit.addEventListener('mouseleave', () => tip.classList.remove('show'));
-    });
+    const max = Math.max(1, ...meses.map(x => x.total));
+    cont.style.setProperty('--n', meses.length);
+    cont.innerHTML = meses.map((x, i) => {
+      const activo = i === meses.length - 1, alto = x.total / max * 100;
+      const sub = esCash ? `${x.cierres} cierre${x.cierres === 1 ? '' : 's'}` : `${x.activos} día${x.activos === 1 ? '' : 's'} con actividad`;
+      const tip = `${MESES_ES[x.mes]} ${x.anio}: ${esCash ? dinero(x.total) : Math.round(x.total).toLocaleString('es-AR')} · ${sub}`;
+      return `<div class="fact-col${activo ? ' activo' : ''}" title="${escapeHtml(tip)}"><div class="fact-val">${x.total > 0 ? corto(x.total) : (esCash ? '$0' : '0')}</div><div class="fact-barra-zona"><div class="fact-barra" style="height:${alto}%"></div></div><div class="fact-mes">${MESES_ES[x.mes].slice(0, 3)}</div><div class="fact-sub">${sub}</div></div>`;
+    }).join('');
   }
 
   // Leads por día — contactos nuevos de GHL (Worker: /leads-por-dia).
