@@ -2873,7 +2873,7 @@
       entDato('Etapa', etapas, 'GHL'),
       a.contrato ? entDato('Contrato', a.contrato, 'GHL') : '',
       a.llamadas ? entDato('Llamadas 1:1', `${a.llamadas.hechas} de ${a.llamadas.total} <small>(columna y calendario)</small>`, 'GHL') : '',
-      a.auditoria ? entDato('Auditoría de Instagram',`${a.auditoria.hecha ? 'Hecha' : 'Agendada'} el ${new Date(a.auditoria.fecha).toLocaleDateString('es-PR', { day: 'numeric', month: 'short' })}`, 'GHL') : '',
+      a.auditoria ? entDato('Auditoría de Instagram',`${a.auditoria.hecha ? 'Hecha' : 'Agendada'}${a.auditoria.fecha ? ' el ' + new Date(a.auditoria.fecha).toLocaleDateString('es-PR', { day: 'numeric', month: 'short' }) : ''}`, 'GHL') : '',
       a.acceso ? entDato('Incluye', a.acceso.whatsapp ? 'Skool, grupo de WhatsApp y reuniones grupales' : 'Solo acceso a Skool', 'Ventas') : '',
       a.webinar ? '' : entDato('Estrategia entregada', a.estrategiaEntregada ? 'Sí' : 'No', 'GHL'),
       a.sesiones ? entDato('Psicóloga', `${a.sesiones.hechas} de ${a.sesiones.total} sesiones`, 'GHL') : '',
