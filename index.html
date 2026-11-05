@@ -867,6 +867,7 @@
   .en-estado{ display:inline-block; font-size:12px; font-weight:600; padding:3px 11px; border-radius:999px; white-space:nowrap; border:1px solid transparent; }
   .en-estado.al_dia{ background:rgba(95,211,154,0.13); color:#5fd39a; border-color:rgba(95,211,154,0.35); }
   .en-estado.falta_agendar{ background:rgba(127,178,240,0.14); color:#8fbcf5; border-color:rgba(127,178,240,0.38); }
+  .en-of{ display:block; margin-top:2px; font-size:11px; line-height:1.3; color:var(--text-dim); }
   .en-mot{ display:block; margin-top:4px; font-size:11px; line-height:1.3; color:var(--text-dim); }
   .en-estado.por_vencer{ background:rgba(233,196,106,0.14); color:#e9c46a; border-color:rgba(233,196,106,0.4); }
   .en-estado.vencida{ background:rgba(255,138,138,0.14); color:#ff8a8a; border-color:rgba(255,138,138,0.4); }
@@ -2839,6 +2840,7 @@
   const ENT_ESTADOS = { al_dia: 'Al día', falta_agendar: 'Falta agendar', por_vencer: 'Por vencer', vencida: 'Vencida', terminada: 'Terminada' };
   const ENT_PRIORIDAD = { vencida: 0, por_vencer: 1, falta_agendar: 2, al_dia: 3, terminada: 4 };
   const entIniciales = n => String(n).trim().split(/\s+/).slice(0, 2).map(p => p[0] || '').join('').toUpperCase();
+  const entOferta = a => { const o = a.oferta || {}; return [o.producto || (o.pipelineViejo ? 'Oferta anterior' : ''), o.paquete, o.fecha ? new Date(o.fecha + 'T12:00:00').toLocaleDateString('es-PR', { month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · '); };
   const entEtapa = a => (a.high || a.low || a.anterior || a.psicologa || {}).etapa || '—';
   const entFmt = iso => { if(!iso) return '—'; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
   const entProg = a => { const x = (a.llamadas ? a.llamadas.hechas : 0) + (a.sesiones ? a.sesiones.hechas : 0), t = (a.llamadas ? a.llamadas.total : 0) + (a.sesiones ? a.sesiones.total : 0); return t ? x / t : 0; };
@@ -2872,6 +2874,7 @@
     const e = escapeHtml;
     const etapas = [a.high && `High: ${e(a.high.etapa)}`, a.low && `Low: ${e(a.low.etapa)}`, a.anterior && `Oferta anterior: ${e(a.anterior.etapa)}`, a.psicologa && `Psicóloga: ${e(a.psicologa.etapa)}`].filter(Boolean).join(' · ') || '—';
     const avance = [
+      entOferta(a) ? entDato('Oferta', e(entOferta(a)), 'Ventas') : '',
       entDato('Etapa', etapas, 'GHL'),
       a.contrato ? entDato('Contrato', a.contrato, 'GHL') : '',
       a.llamadas ? entDato('Llamadas 1:1', `${a.llamadas.hechas} de ${a.llamadas.total} <small>(columna y calendario)</small>`, 'GHL') : '',
@@ -2917,7 +2920,7 @@
       const ll = psi ? a.sesiones : a.llamadas;
       const abierta = entAbierta === a.contactId;
       return `<tr class="en-fila${abierta ? ' sel' : ''}" data-id="${e(a.contactId)}" style="--i:${Math.min(idx, 14)}">
-        <td><div class="en-al"><span class="en-ini">${e(entIniciales(a.nombre))}</span><div><span class="en-nom">${e(a.nombre)}</span>${tipo}${nc}</div></div></td>
+        <td><div class="en-al"><span class="en-ini">${e(entIniciales(a.nombre))}</span><div><span class="en-nom">${e(a.nombre)}</span>${tipo}${nc}${entOferta(a) ? `<small class="en-of">${e(entOferta(a))}</small>` : ''}</div></div></td>
         <td>${e(etapa)}</td>
         <td>${ll ? entDots(ll.hechas, ll.total) : (!psi && (a.low || a.webinar) && !a.high ? (a.webinar ? entDots(a.auditoria && a.auditoria.hecha ? 1 : 0, 1) : entDots(0, 0)) : '<span class="en-mut">—</span>')}</td>
         <td>${a.proximoPaso ? e(a.proximoPaso) : '<span class="en-mut">—</span>'}</td>
