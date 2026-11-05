@@ -873,6 +873,7 @@
   .pg-top small{ color:var(--text-dim); font-weight:400; }
   .pg-pista{ height:10px; border-radius:6px; background:rgba(255,255,255,0.08); overflow:hidden; }
   .pg-pista i{ display:block; height:100%; width:0; border-radius:6px; background:var(--pg,#f0a8be); transition:width .7s cubic-bezier(.22,.7,.2,1); }
+  .pg-panel{ margin-bottom:18px; }
   .pg-ctl{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin:6px 0 4px; }
   .pg-sel{ width:auto; min-width:150px; }
   .pg-cargando{ padding:16px 2px; color:var(--text-dim); font-size:13px; }
@@ -2146,7 +2147,7 @@
         </div>
         <div class="chart-panel" id="settersVisual" style="margin-bottom:18px;"></div>
         <div class="breakdown-grid" id="settersGrid"></div>
-        <div class="chart-panel" id="settersProgreso" style="margin:18px 0;"></div>
+        <div id="settersProgreso" style="margin:18px 0;"></div>
         <div class="chart-status" id="statusSetters" style="margin-bottom:44px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
       </div>
 
@@ -2232,7 +2233,7 @@
         </div>
         <div class="chart-panel" id="closersVisual" style="margin-bottom:18px;"></div>
         <div class="breakdown-grid" id="closersGrid"></div>
-        <div class="chart-panel" id="closersProgreso" style="margin:18px 0;"></div>
+        <div id="closersProgreso" style="margin:18px 0;"></div>
         <div class="chart-status" id="statusClosers" style="margin-bottom:44px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
       </div>
 
@@ -6547,20 +6548,30 @@
     const opcionesMes = mesesLista.map(x => `<option value="${x.anio}-${x.mes}"${x.anio === anio && x.mes === mes ? ' selected' : ''}>${nombreMes(x.anio, x.mes)}</option>`).join('');
     const opcionesMet = metricas.map(x => `<option value="${x.valor}"${x.valor === st.metrica ? ' selected' : ''}>${x.texto}</option>`).join('');
 
-    cont.innerHTML = `<div class="section-label" style="margin:0 0 10px;font-size:13px;">Progreso de ${esSetter ? 'cada setter' : 'cada closer'}</div>
-      <div class="chart-chips" id="${tipo}ProgPersona"></div>
-      <div class="pg-ctl">
-        <select class="en-in pg-sel" id="${tipo}ProgSelMes" aria-label="Mes">${opcionesMes}</select>
-        <select class="en-in pg-sel" id="${tipo}ProgSelMet" aria-label="Métrica">${opcionesMet}</select>
-        <div class="chart-chips" id="${tipo}ProgModo" style="margin:0"></div>
-        <button type="button" class="chart-chip${st.comparar ? ' active' : ''}" id="${tipo}ProgCmp">${st.comparar ? '✓ ' : ''}Comparar con el mes anterior</button>
+    const opcionesPersona = nombres.map(x => `<option value="${escapeHtml(x)}"${x === n ? ' selected' : ''}>${escapeHtml(x)}</option>`).join('');
+    const tituloPanel = t => `<div class="section-label" style="margin:0 0 8px;font-size:13px;">${t}</div>`;
+    cont.innerHTML = `<div class="chart-panel pg-panel">
+        ${tituloPanel('Progreso de ' + (esSetter ? 'cada setter' : 'cada closer'))}
+        <div class="pg-ctl">
+          <select class="en-in pg-sel" id="${tipo}ProgSelPer" aria-label="${esSetter ? 'Setter' : 'Closer'}">${opcionesPersona}</select>
+          <select class="en-in pg-sel" id="${tipo}ProgSelMes" aria-label="Mes">${opcionesMes}</select>
+          <select class="en-in pg-sel" id="${tipo}ProgSelMet" aria-label="Métrica">${opcionesMet}</select>
+          <button type="button" class="chart-chip${st.comparar ? ' active' : ''}" id="${tipo}ProgCmp">${st.comparar ? '✓ ' : ''}Comparar con el mes anterior</button>
+        </div>
       </div>
-      <div class="pg-cargando"><span class="en-giro"></span>Cargando…</div>`;
-    pintarChips(tipo + 'ProgPersona', nombres.map(x => ({ valor: x, texto: x })), n, v => { st.persona = v; renderProgresoPersona(tipo); });
+      <div class="chart-panel pg-panel" id="${tipo}ProgAvance">${tituloPanel('Avance del mes')}<div class="pg-cargando"><span class="en-giro"></span>Cargando…</div></div>
+      <div class="chart-panel pg-panel">${tituloPanel('Día a día')}
+        <div class="chart-legend" id="${tipo}ProgLeyenda"></div>
+        <div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartProg${tipo}"></svg><div class="chart-tooltip" id="tooltipProg${tipo}"></div></div>
+      </div>
+      <div class="chart-panel pg-panel">${tituloPanel('Mes a mes')}
+        <div class="pg-nota">Una barra por mes (los 6 meses que terminan en el elegido): el total de la métrica elegida. El mes elegido va resaltado.</div>
+        <div class="fact-bars" id="barras${tipo}"></div>
+      </div>`;
+    document.getElementById(tipo + 'ProgSelPer').addEventListener('change', ev => { st.persona = ev.target.value; renderProgresoPersona(tipo); });
     document.getElementById(tipo + 'ProgSelMes').addEventListener('change', ev => { const [a2, m2] = ev.target.value.split('-').map(Number); st.mes = { anio: a2, mes: m2 }; renderProgresoPersona(tipo); });
     document.getElementById(tipo + 'ProgSelMet').addEventListener('change', ev => { st.metrica = ev.target.value; renderProgresoPersona(tipo); });
     document.getElementById(tipo + 'ProgCmp').addEventListener('click', () => { st.comparar = !st.comparar; renderProgresoPersona(tipo); });
-    pintarChips(tipo + 'ProgModo', [{ valor: 'dia', texto: 'Por día' }, { valor: 'acum', texto: 'Acumulado' }], st.modo, v => { st.modo = v; renderProgresoPersona(tipo); });
     const [ser, serPrev] = await Promise.all([progSeriesPersona(tipo, n, anio, mes), st.comparar ? progSeriesPersona(tipo, n, pAnio, pMes) : null]);
     if(token !== st.token) return;   // el usuario ya eligió otra cosa
     const suma = (o, c) => (o[c] || []).slice(0, diasMostrar).reduce((x, y) => x + y, 0);
@@ -6584,15 +6595,9 @@
         + `<div class="pg-top"><span>Agendas · Shows · Cierres</span><b>${num(suma(ser, 'agendas'))} · ${num(suma(ser, 'shows'))} · ${num(suma(ser, 'cierres'))}${serPrev ? ` <small>· mes anterior: ${num(suma(serPrev, 'agendas'))} · ${num(suma(serPrev, 'shows'))} · ${num(suma(serPrev, 'cierres'))}</small>` : ''}</b></div>`;
       nota = METAS_CLOSER[n] ? `Meta de cash de ${escapeHtml(n)}: ${usdEq(metaCash)}.` : `Meta de cash: ${usdEq(metaCash)}, un reparto parejo de la meta del equipo (${usdEq(META_CASH_MES)}) entre ${activos} closers. Se puede fijar una meta propia para cada una.`;
     }
-    cont.querySelector('.pg-cargando').outerHTML = `${barras}<div class="pg-nota">${nota}</div>
-      <div class="chart-legend" id="${tipo}ProgLeyenda"></div>
-      <div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartProg${tipo}"></svg><div class="chart-tooltip" id="tooltipProg${tipo}"></div></div>
-      <div class="section-label" style="margin:26px 0 4px;font-size:13px;">Mes a mes</div>
-      <div class="pg-nota">Una barra por mes (los 6 meses que terminan en el elegido): el total de la métrica de arriba. El mes elegido va resaltado.</div>
-      <div class="fact-bars" id="barras${tipo}"></div>`;
+    document.getElementById(tipo + 'ProgAvance').innerHTML = `${tituloPanel('Avance del mes')}${barras}<div class="pg-nota">${nota}</div>`;
     const campo = m.valor === 'ventas' && !esSetter ? 'cash' : m.valor;
-    const acum = a => { let t = 0; return a.map(v => (t += v)); };
-    const cortar = a => { const r = (a || []).slice(0, diasMostrar); while(r.length < diasMostrar) r.push(0); return st.modo === 'acum' ? acum(r) : r; };
+    const cortar = a => { const r = (a || []).slice(0, diasMostrar); while(r.length < diasMostrar) r.push(0); return r; };
     const vacio = 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' de ' + n + ' en ' + nombreMes(anio, mes);
     if(serPrev){
       document.getElementById(tipo + 'ProgLeyenda').innerHTML = `<span><i style="background:${m.color}"></i>${nombreMes(anio, mes)}</span><span><i style="background:${colorProg}"></i>${nombreMes(pAnio, pMes)}</span>`;
