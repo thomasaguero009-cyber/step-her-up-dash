@@ -2848,6 +2848,7 @@
     ['vencer', 'Por vencer y vencidas', a => a.estado === 'por_vencer' || a.estado === 'vencida'],
     ['agendar', 'Falta agendar', a => a.estado === 'falta_agendar'],
     ['terminadas', 'Terminadas (Done y Vencido)', a => a.estado === 'terminada'],
+    ['skool', 'Falta Skool', a => !!a.skool && !a.skool.tiene && a.estado !== 'vencida' && a.estado !== 'terminada'],
     ['revisar', 'Revisar', a => a.revisar.length > 0],
   ];
   const ENT_ESTADOS = { al_dia: 'Al día', falta_agendar: 'Falta agendar', por_vencer: 'Por vencer', vencida: 'Vencida', terminada: 'Terminada' };
@@ -2905,7 +2906,7 @@
       entDato('Fecha de compra', entFmt(a.fechaCompra), 'ventas'),
       entDato('Pago', e(a.pago || '—'), 'ventas'),
       entDato('Vence', a.vence ? `${entFmt(a.vence)} <small>(${dv})</small>` : 'Sin fecha', 'GHL'),
-      entDato('Skool', 'Sin dato (falta conectar Skool)', ''),
+      entDato('Skool', a.skool ? (a.skool.tiene ? `Tiene acceso${a.skool.porNombre ? ' <small>(encontrada por nombre: revisar el correo)</small>' : ''}${a.skool.desde ? ` <small>· desde ${e(a.skool.desde)}</small>` : ''}` : 'Sin acceso') : 'Sin dato (falta cargar la lista de Skool)', a.skool ? 'Skool' : ''),
       entDato('Quién la atiende', `${a.closer ? e(a.closer) : 'Sin dato'} <small>· Paula (seguimiento)</small>`, 'ventas'),
     ].join('');
     const otros = a.revisar.filter(m => m !== 'No cuadra');
@@ -2928,7 +2929,7 @@
     const flecha = c => entOrden.col === c ? (entOrden.dir === 'asc' ? ' ↑' : ' ↓') : '';
     const cuerpo = filas.map((a, idx) => {
       const tipo = a.tipo === 'anterior' ? '<span class="en-et ant">OFERTA ANTERIOR</span>' : a.tipo === 'high' ? '<span class="en-et high">HIGH</span>' : a.webinar ? '<span class="en-et low">OFERTA WEBINAR</span>' : a.tipo === 'low' ? '<span class="en-et low">LOW</span>' : '';
-      const nc = a.noCuadra.length ? '<span class="en-et nc">NO CUADRA</span>' : '';
+      const nc = (a.noCuadra.length ? '<span class="en-et nc">NO CUADRA</span>' : '') + (a.skool && !a.skool.tiene && a.estado !== 'vencida' && a.estado !== 'terminada' ? '<span class="en-et nc">SIN SKOOL</span>' : '');
       const etapa = psi ? (a.psicologa ? a.psicologa.etapa : '—') : entEtapa(a);
       const ll = psi ? a.sesiones : a.llamadas;
       const abierta = entAbierta === a.contactId;
@@ -2995,7 +2996,7 @@
     renderEntregaKpis(); renderEntregaTabla(true);
   }
   function renderEntrega(primera){
-    document.getElementById('entTabs').innerHTML = ENT_TABS.map(([k, l, f]) => `<button type="button" class="en-tab${k === entTab ? ' on' : ''}" data-k="${k}">${l}<b${k === 'revisar' ? ' class="rojo"' : ''}>${ENTREGA.alumnas.filter(f).length}</b></button>`).join('');
+    document.getElementById('entTabs').innerHTML = ENT_TABS.filter(t => t[0] !== 'skool' || ENTREGA.alumnas.some(a => a.skool)).map(([k, l, f]) => `<button type="button" class="en-tab${k === entTab ? ' on' : ''}" data-k="${k}">${l}<b${k === 'revisar' ? ' class="rojo"' : ''}>${ENTREGA.alumnas.filter(f).length}</b></button>`).join('');
     document.querySelectorAll('#entTabs .en-tab').forEach(b => b.addEventListener('click', () => entCambiarTab(b.dataset.k)));
     renderEntregaKpis(); renderEntregaTabla(primera);
     const min = Math.max(0, Math.round((Date.now() - new Date(ENTREGA.generado)) / 60000));
