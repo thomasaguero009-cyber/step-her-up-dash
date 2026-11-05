@@ -873,6 +873,8 @@
   .pg-top small{ color:var(--text-dim); font-weight:400; }
   .pg-pista{ height:10px; border-radius:6px; background:rgba(255,255,255,0.08); overflow:hidden; }
   .pg-pista i{ display:block; height:100%; width:0; border-radius:6px; background:var(--pg,#f0a8be); transition:width .7s cubic-bezier(.22,.7,.2,1); }
+  .pg-ctl{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin:6px 0 4px; }
+  .pg-sel{ width:auto; min-width:150px; }
   .pg-cargando{ padding:16px 2px; color:var(--text-dim); font-size:13px; }
   .pg-nota{ font-size:12px; color:var(--text-dim); margin:4px 0 14px; line-height:1.4; }
   .en-of{ display:block; margin-top:2px; font-size:11px; line-height:1.3; color:var(--text-dim); }
@@ -6540,16 +6542,25 @@
     const meses = Array.from({ length: 6 }, (_, i) => { const d = new Date(ctxMes.anio, ctxMes.mes - i, 1); return { anio: d.getFullYear(), mes: d.getMonth() }; });
     const color = colorDeSetter(n, nombres.indexOf(n)), num = v => Math.round(v).toLocaleString('es-AR');
     const colorProg = '#b9a7d6';
+    const mesesLista = Array.from({ length: 12 }, (_, i) => { const d = new Date(ctxMes.anio, ctxMes.mes - i, 1); return { anio: d.getFullYear(), mes: d.getMonth() }; });
+    if(!mesesLista.some(x => x.anio === anio && x.mes === mes)) mesesLista.unshift({ anio, mes });
+    const opcionesMes = mesesLista.map(x => `<option value="${x.anio}-${x.mes}"${x.anio === anio && x.mes === mes ? ' selected' : ''}>${nombreMes(x.anio, x.mes)}</option>`).join('');
+    const opcionesMet = metricas.map(x => `<option value="${x.valor}"${x.valor === st.metrica ? ' selected' : ''}>${x.texto}</option>`).join('');
 
     cont.innerHTML = `<div class="section-label" style="margin:0 0 10px;font-size:13px;">Progreso de ${esSetter ? 'cada setter' : 'cada closer'}</div>
       <div class="chart-chips" id="${tipo}ProgPersona"></div>
-      <div class="chart-chips" id="${tipo}ProgMes"></div>
+      <div class="pg-ctl">
+        <select class="en-in pg-sel" id="${tipo}ProgSelMes" aria-label="Mes">${opcionesMes}</select>
+        <select class="en-in pg-sel" id="${tipo}ProgSelMet" aria-label="Métrica">${opcionesMet}</select>
+        <div class="chart-chips" id="${tipo}ProgModo" style="margin:0"></div>
+        <button type="button" class="chart-chip${st.comparar ? ' active' : ''}" id="${tipo}ProgCmp">${st.comparar ? '✓ ' : ''}Comparar con el mes anterior</button>
+      </div>
       <div class="pg-cargando"><span class="en-giro"></span>Cargando…</div>`;
     pintarChips(tipo + 'ProgPersona', nombres.map(x => ({ valor: x, texto: x })), n, v => { st.persona = v; renderProgresoPersona(tipo); });
-    pintarChips(tipo + 'ProgMes', [...meses.map(x => ({ valor: x.anio + '-' + x.mes, texto: nombreMes(x.anio, x.mes) })), { valor: 'cmp', texto: st.comparar ? '✓ Comparando con el mes anterior' : 'Comparar con el mes anterior' }], anio + '-' + mes, v => {
-      if(v === 'cmp'){ st.comparar = !st.comparar; } else { const [a, mm] = v.split('-').map(Number); st.mes = { anio: a, mes: mm }; }
-      renderProgresoPersona(tipo);
-    });
+    document.getElementById(tipo + 'ProgSelMes').addEventListener('change', ev => { const [a2, m2] = ev.target.value.split('-').map(Number); st.mes = { anio: a2, mes: m2 }; renderProgresoPersona(tipo); });
+    document.getElementById(tipo + 'ProgSelMet').addEventListener('change', ev => { st.metrica = ev.target.value; renderProgresoPersona(tipo); });
+    document.getElementById(tipo + 'ProgCmp').addEventListener('click', () => { st.comparar = !st.comparar; renderProgresoPersona(tipo); });
+    pintarChips(tipo + 'ProgModo', [{ valor: 'dia', texto: 'Por día' }, { valor: 'acum', texto: 'Acumulado' }], st.modo, v => { st.modo = v; renderProgresoPersona(tipo); });
     const [ser, serPrev] = await Promise.all([progSeriesPersona(tipo, n, anio, mes), st.comparar ? progSeriesPersona(tipo, n, pAnio, pMes) : null]);
     if(token !== st.token) return;   // el usuario ya eligió otra cosa
     const suma = (o, c) => (o[c] || []).slice(0, diasMostrar).reduce((x, y) => x + y, 0);
@@ -6574,12 +6585,11 @@
       nota = METAS_CLOSER[n] ? `Meta de cash de ${escapeHtml(n)}: ${usdEq(metaCash)}.` : `Meta de cash: ${usdEq(metaCash)}, un reparto parejo de la meta del equipo (${usdEq(META_CASH_MES)}) entre ${activos} closers. Se puede fijar una meta propia para cada una.`;
     }
     cont.querySelector('.pg-cargando').outerHTML = `${barras}<div class="pg-nota">${nota}</div>
-      <div class="chart-chips" id="${tipo}ProgMetrica"></div>
-      <div class="chart-chips" id="${tipo}ProgModo"></div>
       <div class="chart-legend" id="${tipo}ProgLeyenda"></div>
-      <div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartProg${tipo}"></svg><div class="chart-tooltip" id="tooltipProg${tipo}"></div></div>`;
-    pintarChips(tipo + 'ProgMetrica', metricas.map(x => ({ valor: x.valor, texto: x.texto })), st.metrica, v => { st.metrica = v; renderProgresoPersona(tipo); });
-    pintarChips(tipo + 'ProgModo', [{ valor: 'dia', texto: 'Por día' }, { valor: 'acum', texto: 'Acumulado del mes' }], st.modo, v => { st.modo = v; renderProgresoPersona(tipo); });
+      <div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartProg${tipo}"></svg><div class="chart-tooltip" id="tooltipProg${tipo}"></div></div>
+      <div class="section-label" style="margin:26px 0 4px;font-size:13px;">Mes a mes</div>
+      <div class="pg-nota">Cada vela es un mes (cuentan solo los días con actividad). La caja va del valor del primer día al del último día: verde si terminó más alto que arrancó, rojo si más bajo. La línea fina va del peor al mejor día.</div>
+      <div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="velas${tipo}"></svg><div class="chart-tooltip" id="tooltipVelas${tipo}" style="width:230px;"></div></div>`;
     const campo = m.valor === 'ventas' && !esSetter ? 'cash' : m.valor;
     const acum = a => { let t = 0; return a.map(v => (t += v)); };
     const cortar = a => { const r = (a || []).slice(0, diasMostrar); while(r.length < diasMostrar) r.push(0); return st.modo === 'acum' ? acum(r) : r; };
@@ -6592,6 +6602,51 @@
     }
     requestAnimationFrame(() => cont.querySelectorAll('.pg-pista i').forEach(i => { i.style.width = i.dataset.pct + '%'; }));
     setTimeout(() => cont.querySelectorAll('.pg-pista i').forEach(i => { i.style.width = i.dataset.pct + '%'; }), 60);
+    progPintarVelas(tipo, n, m, campo, anio, mes, token).catch(e => console.error('Velas', e));
+  }
+  // Gráfico de velas: una vela por mes (los 6 meses que terminan en el elegido) de la métrica elegida.
+  async function progPintarVelas(tipo, n, m, campo, anio, mes, token){
+    const st = progEstado[tipo], svg = document.getElementById('velas' + tipo), tip = document.getElementById('tooltipVelas' + tipo);
+    if(!svg) return;
+    const hoy = new Date(), lista = Array.from({ length: 6 }, (_, i) => { const d = new Date(anio, mes - 5 + i, 1); return { anio: d.getFullYear(), mes: d.getMonth() }; });
+    const datos = await Promise.all(lista.map(x => progSeriesPersona(tipo, n, x.anio, x.mes)));
+    if(token !== st.token) return;
+    const fmt = v => (m.prefijo || '') + Math.round(v).toLocaleString('es-AR');
+    const velas = lista.map((x, i) => {
+      const dias = new Date(x.anio, x.mes + 1, 0).getDate(), hasta = (x.anio === hoy.getFullYear() && x.mes === hoy.getMonth()) ? hoy.getDate() : dias;
+      const serie = (datos[i][campo] || []).slice(0, hasta), act = serie.map((v, d) => ({ v, d: d + 1 })).filter(o => o.v > 0);
+      if(!act.length) return { ...x, vacio: true };
+      return { ...x, primero: act[0], ultimo: act[act.length - 1], mejor: act.reduce((a, b) => b.v > a.v ? b : a), peor: act.reduce((a, b) => b.v < a.v ? b : a), total: serie.reduce((a, b) => a + b, 0), activos: act.length };
+    });
+    const W = 1000, H = 280, padL = 48, padB = 30, padT = 14, NS = 'http://www.w3.org/2000/svg';
+    const el = (tag, attrs, txt) => { const e = document.createElementNS(NS, tag); Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v)); if(txt != null) e.textContent = txt; svg.appendChild(e); return e; };
+    svg.innerHTML = '';
+    const maxReal = Math.max(0, ...velas.filter(v => !v.vacio).map(v => v.mejor.v));
+    if(!maxReal){ el('line', { x1: padL, x2: W - 10, y1: H - padB, y2: H - padB, stroke: 'rgba(255,255,255,0.14)', 'stroke-width': 1.5, 'stroke-dasharray': '5,5' }); el('text', { x: W / 2, y: (H - padB) / 2, fill: 'rgba(247,236,233,0.55)', 'font-size': 15, 'text-anchor': 'middle' }, 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' de ' + n + ' en estos meses'); return; }
+    const maxVal = Math.max(5, Math.ceil(maxReal * 1.08 / 5) * 5), yAt = v => padT + (H - padT - padB) * (1 - v / maxVal);
+    for(let g = 0; g <= 5; g++){ const y = padT + (H - padT - padB) * (1 - g / 5); el('line', { x1: padL, x2: W - 10, y1: y, y2: y, stroke: 'rgba(255,255,255,0.1)', 'stroke-width': 1 }); el('text', { x: 4, y: y + 4, fill: 'rgba(247,236,233,0.45)', 'font-size': 11 }, fmt(maxVal * g / 5)); }
+    const slot = (W - padL - 10) / velas.length, ancho = Math.min(70, slot * 0.4);
+    velas.forEach((v, i) => {
+      const cx = padL + slot * (i + 0.5);
+      el('text', { x: cx, y: H - 8, fill: 'rgba(247,236,233,0.6)', 'font-size': 12, 'text-anchor': 'middle' }, MESES_ES[v.mes].slice(0, 3) + ' ' + String(v.anio).slice(2));
+      if(v.vacio){ el('text', { x: cx, y: H - padB - 8, fill: 'rgba(247,236,233,0.35)', 'font-size': 12, 'text-anchor': 'middle' }, 'sin datos'); }
+      else {
+        const sube = v.ultimo.v >= v.primero.v, col = sube ? '#5fd39a' : '#ff8a8a', top = yAt(Math.max(v.primero.v, v.ultimo.v)), bot = yAt(Math.min(v.primero.v, v.ultimo.v));
+        el('line', { x1: cx, x2: cx, y1: yAt(v.mejor.v), y2: yAt(v.peor.v), stroke: col, 'stroke-width': 2 });
+        el('rect', { x: cx - ancho / 2, y: top, width: ancho, height: Math.max(3, bot - top), rx: 3, fill: col, opacity: 0.85 });
+      }
+      const hit = el('rect', { x: cx - slot / 2, y: 0, width: slot, height: H, fill: 'transparent' });
+      hit.style.cursor = 'pointer';
+      const mostrar = () => {
+        tip.innerHTML = v.vacio ? `<div class="tt-day">${MESES_ES[v.mes]} ${v.anio}</div><div class="tt-val">Sin datos</div>`
+          : `<div class="tt-day">${MESES_ES[v.mes]} ${v.anio}</div><div class="tt-val">${fmt(v.total)} en el mes</div>
+             <div style="font-size:12px;line-height:1.5;opacity:.85;margin-top:4px;">Primer día (${v.primero.d}): ${fmt(v.primero.v)}<br>Último día (${v.ultimo.d}): ${fmt(v.ultimo.v)}<br>Mejor día (${v.mejor.d}): ${fmt(v.mejor.v)}<br>Peor día (${v.peor.d}): ${fmt(v.peor.v)}<br>Días con actividad: ${v.activos}</div>`;
+        const ancho2 = svg.parentElement.clientWidth, px = ancho2 / W;
+        let left = cx * px + 14; if(left + 240 > ancho2) left = cx * px - 244;
+        tip.style.left = Math.max(0, left) + 'px'; tip.classList.add('show');
+      };
+      hit.addEventListener('mouseenter', mostrar); hit.addEventListener('mousemove', mostrar); hit.addEventListener('mouseleave', () => tip.classList.remove('show'));
+    });
   }
 
   // Leads por día — contactos nuevos de GHL (Worker: /leads-por-dia).
