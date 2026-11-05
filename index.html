@@ -2916,7 +2916,7 @@
       return `<tr class="en-fila${abierta ? ' sel' : ''}" data-id="${e(a.contactId)}" style="--i:${Math.min(idx, 14)}">
         <td><div class="en-al"><span class="en-ini">${e(entIniciales(a.nombre))}</span><div><span class="en-nom">${e(a.nombre)}</span>${tipo}${nc}</div></div></td>
         <td>${e(etapa)}</td>
-        <td>${ll ? entDots(ll.hechas, ll.total) : (!psi && a.auditoria ? `<span class="en-mut">${a.auditoria.hecha ? '✓ Auditoría' : 'Auditoría agendada'}</span>` : '<span class="en-mut">—</span>')}</td>
+        <td>${ll ? entDots(ll.hechas, ll.total) : (!psi && a.low && !a.high ? entDots(a.auditoria && a.auditoria.hecha ? 1 : 0, a.auditoria ? 1 : 0) : '<span class="en-mut">—</span>')}</td>
         <td>${a.proximoPaso ? e(a.proximoPaso) : '<span class="en-mut">—</span>'}</td>
         <td>${a.vence ? entFmt(a.vence) : '<span class="en-mut">Sin fecha</span>'}</td>
         <td><span class="en-estado ${a.estado}">${ENT_ESTADOS[a.estado]}</span>${a.estado === 'falta_agendar' && a.porAgendar && a.porAgendar.length ? `<small class="en-mot">${a.porAgendar.join(' + ')}</small>` : ''}</td></tr>` + (abierta ? entFilaFicha(a, true) : '');
