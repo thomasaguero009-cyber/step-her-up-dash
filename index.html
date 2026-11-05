@@ -6554,7 +6554,6 @@
           <button type="button" class="chart-chip${st.comparar ? ' active' : ''}" id="${tipo}ProgCmp">${st.comparar ? '✓ ' : ''}Comparar con el mes anterior</button>
         </div>
       </div>
-      <div class="chart-panel pg-panel" id="${tipo}ProgAvance">${tituloPanel('Avance del mes')}<div class="pg-cargando"><span class="en-giro"></span>Cargando…</div></div>
       <div class="chart-panel pg-panel">${tituloPanel('Día a día')}
         <div class="chart-legend" id="${tipo}ProgLeyenda"></div>
         <div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartProg${tipo}"></svg><div class="chart-tooltip" id="tooltipProg${tipo}"></div></div>
@@ -6568,28 +6567,6 @@
     document.getElementById(tipo + 'ProgCmp').addEventListener('click', () => { st.comparar = !st.comparar; renderProgresoPersona(tipo); });
     const [ser, serPrev] = await Promise.all([progSeriesPersona(tipo, n, anio, mes), st.comparar ? progSeriesPersona(tipo, n, pAnio, pMes) : null]);
     if(token !== st.token) return;   // el usuario ya eligió otra cosa
-    const suma = (o, c) => (o[c] || []).slice(0, diasMostrar).reduce((x, y) => x + y, 0);
-    const barra = (titulo, valor, meta, fmt, antes) => {
-      const pct = meta > 0 ? Math.min(100, Math.round(valor / meta * 100)) : 0;
-      return `<div class="pg-barra" style="--pg:${color}"><div class="pg-top"><span>${titulo}</span><b>${fmt(valor)}${meta > 0 ? ` <small>de ${fmt(meta)} · ${Math.round(valor / meta * 100)}%</small>` : ''}${antes != null ? ` <small>· mes anterior a esta altura: ${fmt(antes)}</small>` : ''}</b></div><div class="pg-pista"><i data-pct="${pct}"></i></div></div>`;
-    };
-    const mesVsAnt = (c) => serPrev ? suma(serPrev, c) : null;
-    // Días hábiles del mes (lunes a viernes) con meta: la escalera del SOP empieza el 2 de noviembre de 2026.
-    const inicioMetas = new Date(2026, 10, 2);
-    let diasMeta = 0;
-    for(let d = 1; d <= diasMostrar; d++){ const f = new Date(anio, mes, d); if(f >= inicioMetas && f.getDay() >= 1 && f.getDay() <= 5) diasMeta++; }
-    let barras = '', nota = '';
-    if(esSetter){
-      barras = barra('Llamadas del mes', suma(ser, 'llamadas'), SOP_LLAMADAS * diasMeta, num, mesVsAnt('llamadas')) + barra('Agendadas del mes', suma(ser, 'agendadas'), SOP_SETS * diasMeta, num, mesVsAnt('agendadas'))
-        + `<div class="pg-top"><span>Cash como setter</span><b>${usdEq(suma(ser, 'ventas'))}${serPrev ? ` <small>· mes anterior a esta altura: ${usdEq(suma(serPrev, 'ventas'))}</small>` : ''}</b></div>`;
-      nota = diasMeta ? `Meta del SOP: ${SOP_LLAMADAS} llamadas y ${SOP_SETS} agendadas por día hábil. Van ${diasMeta} día(s) hábil(es) con meta en ${nombreMes(anio, mes)}.` : `La escalera de metas del SOP empieza el lunes 2 de noviembre de 2026; en ${nombreMes(anio, mes)} no hay meta, se ve solo lo que hizo.`;
-    } else {
-      const activos = nombres.length, metaCash = METAS_CLOSER[n] || Math.round(META_CASH_MES / activos);
-      barras = barra('Cash del mes', suma(ser, 'cash'), metaCash, usdEq, mesVsAnt('cash'))
-        + `<div class="pg-top"><span>Agendas · Shows · Cierres</span><b>${num(suma(ser, 'agendas'))} · ${num(suma(ser, 'shows'))} · ${num(suma(ser, 'cierres'))}${serPrev ? ` <small>· mes anterior: ${num(suma(serPrev, 'agendas'))} · ${num(suma(serPrev, 'shows'))} · ${num(suma(serPrev, 'cierres'))}</small>` : ''}</b></div>`;
-      nota = METAS_CLOSER[n] ? `Meta de cash de ${escapeHtml(n)}: ${usdEq(metaCash)}.` : `Meta de cash: ${usdEq(metaCash)}, un reparto parejo de la meta del equipo (${usdEq(META_CASH_MES)}) entre ${activos} closers. Se puede fijar una meta propia para cada una.`;
-    }
-    document.getElementById(tipo + 'ProgAvance').innerHTML = `${tituloPanel('Avance del mes')}${barras}<div class="pg-nota">${nota}</div>`;
     const campo = m.valor === 'ventas' && !esSetter ? 'cash' : m.valor;
     const cortar = a => { const r = (a || []).slice(0, diasMostrar); while(r.length < diasMostrar) r.push(0); return r; };
     const vacio = 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' de ' + n + ' en ' + nombreMes(anio, mes);
