@@ -873,6 +873,7 @@
   .pg-top small{ color:var(--text-dim); font-weight:400; }
   .pg-pista{ height:10px; border-radius:6px; background:rgba(255,255,255,0.08); overflow:hidden; }
   .pg-pista i{ display:block; height:100%; width:0; border-radius:6px; background:var(--pg,#f0a8be); transition:width .7s cubic-bezier(.22,.7,.2,1); }
+  .pg-cargando{ padding:16px 2px; color:var(--text-dim); font-size:13px; }
   .pg-nota{ font-size:12px; color:var(--text-dim); margin:4px 0 14px; line-height:1.4; }
   .en-of{ display:block; margin-top:2px; font-size:11px; line-height:1.3; color:var(--text-dim); }
   .en-mot{ display:block; margin-top:4px; font-size:11px; line-height:1.3; color:var(--text-dim); }
@@ -6475,63 +6476,120 @@
     }).join('');
   }
 
-  // ===== Progreso de cada persona (debajo de las tarjetas de Setters y de Closers): se elige a la persona y se ve cuánto lleva del mes contra su meta
-  // y cómo viene día a día (o acumulado). Metas: setters = SOP (125 llamadas y 5 agendadas por día hábil desde el 2 de noviembre); closers = METAS_CLOSER, o un reparto parejo de la meta del equipo. =====
-  const CLOSERS_FIJOS = ['Gianie', 'Paula', 'Mia', 'Belen'];   // el equipo de closers, tengan o no datos este mes
+  // ===== Progreso de cada persona (debajo de las tarjetas de Setters y de Closers): se elige a la persona y el mes (también meses anteriores) y se ve cuánto lleva
+  // contra su meta y cómo viene día a día (o acumulado), con la opción de compararlo con el mes anterior. Metas: setters = SOP (125 llamadas y 5 agendadas por día hábil
+  // desde el 2 de noviembre de 2026); closers = METAS_CLOSER, o un reparto parejo de la meta del equipo. =====
+  const CLOSERS_FIJOS = ['Gianie', 'Paula', 'Mia', 'Belen'];   // el equipo de closers, tengan o no datos ese mes
   const METAS_CLOSER = {};   // ej.: { Gianie: 40000 } para fijar la meta de cash de una closer
-  const progEstado = { setter: { persona: null, metrica: null, modo: 'dia' }, closer: { persona: null, metrica: null, modo: 'dia' } };
-  function renderProgresoPersona(tipo){
+  const progEstado = { setter: { persona: null, metrica: null, modo: 'dia', mes: null, comparar: false, token: 0 }, closer: { persona: null, metrica: null, modo: 'dia', mes: null, comparar: false, token: 0 } };
+  const progVentasCache = new Map();
+  async function progVentasDeMes(anio, mes){
+    const clave = anio + '-' + mes;
+    if(!progVentasCache.has(clave)){
+      progVentasCache.set(clave, (async () => {
+        try {
+          const data = JSON.parse(await fetchTextConTimeout(LECCIONES_WRITE_URL + '?action=ventasDesglose&mes=' + anio + '-' + String(mes + 1).padStart(2, '0'), 20000));
+          return data.status === 'ok' ? (data.ventas || []) : [];
+        } catch(e){ progVentasCache.delete(clave); return []; }
+      })());
+    }
+    return progVentasCache.get(clave);
+  }
+  const CAMPOS_PROG = { setter: ['llamadas', 'agendadas', 'noCalifica', 'noAtendieron', 'infoWhatsapp', 'cortaron', 'llamarMasTarde', 'shows', 'cierres'], closer: ['agendas', 'shows', 'noShows', 'cierres'] };
+  // Series por día de una persona en un mes cualquiera, armadas con las mismas filas del Tracker y de la pestaña Ventas que usa el resto del dashboard.
+  async function progSeriesPersona(tipo, n, anio, mes){
+    const dias = new Date(anio, mes + 1, 0).getDate(), esSetter = tipo === 'setter';
+    const out = {}; (esSetter ? [...CAMPOS_PROG.setter, 'ventas'] : [...CAMPOS_PROG.closer, 'cash', 'cobros']).forEach(c => { out[c] = new Array(dias).fill(0); });
+    const filas = esSetter ? await obtenerFilasTracker() : await obtenerFilasRanking();
+    filas.forEach(f => {
+      if(f.fecha.getFullYear() !== anio || f.fecha.getMonth() !== mes || !mismaPersona(esSetter ? f.setter : f.closer, n)) return;
+      const d = f.fecha.getDate() - 1;
+      if(esSetter){ CAMPOS_PROG.setter.forEach(c => { out[c][d] += f[c] || 0; }); out.ventas[d] += f.ventas || 0; }
+      else { CAMPOS_PROG.closer.forEach(c => { out[c][d] += f[c] || 0; }); out.cash[d] += f.monto || 0; if(f.monto > 0) out.cobros[d]++; }
+    });
+    // El cash sale de la pestaña Ventas (cada cobro con su closer y su setter); si ese mes no tiene, queda lo que cargó el Tracker.
+    const ventas = await progVentasDeMes(anio, mes);
+    if(ventas.length){
+      const campo = esSetter ? 'ventas' : 'cash', cash = new Array(dias).fill(0), cobros = new Array(dias).fill(0);
+      ventas.forEach(x => {
+        if(!mismaPersona(esSetter ? x.setter : x.closer, n)) return;
+        const d = parseInt(String(x.fecha).slice(0, 2), 10);
+        if(d >= 1 && d <= dias){ cash[d - 1] += x.cash || 0; cobros[d - 1]++; }
+      });
+      out[campo] = cash; if(!esSetter) out.cobros = cobros;
+    }
+    return out;
+  }
+  async function renderProgresoPersona(tipo){
     const cont = document.getElementById(tipo === 'setter' ? 'settersProgreso' : 'closersProgreso');
     if(!cont || !ctxMes.dias) return;
-    const esSetter = tipo === 'setter', st = progEstado[tipo];
+    const esSetter = tipo === 'setter', st = progEstado[tipo], token = ++st.token;
     const nombres = esSetter ? nombresSetters().filter(n => !esSetterInactivo(n)) : [...datosClosers.keys(), ...CLOSERS_FIJOS.filter(f => ![...datosClosers.keys()].some(k => mismaPersona(k, f)))];
     if(!nombres.length){ cont.innerHTML = '<div class="vz-cap"><span>Todavía no hay datos cargados este mes</span></div>'; return; }
     if(!st.persona || !nombres.includes(st.persona)) st.persona = nombres[0];
+    // El mes arranca en el del dashboard; si en el dashboard cambian de mes, la sección los sigue.
+    const claveBase = ctxMes.anio + '-' + ctxMes.mes;
+    if(!st.mes || st.base !== claveBase){ st.mes = { anio: ctxMes.anio, mes: ctxMes.mes }; st.base = claveBase; }
     const metricas = esSetter ? METRICAS_SETTER : METRICAS_CLOSER;
     if(!st.metrica || !metricas.some(x => x.valor === st.metrica)) st.metrica = esSetter ? 'llamadas' : 'cash';
-    const m = metricas.find(x => x.valor === st.metrica), n = st.persona, dias = ctxMes.diasAMostrar || ctxMes.dias;
-    const ceros = () => new Array(ctxMes.dias).fill(0);
-    const suma = a => a.slice(0, dias).reduce((x, y) => x + y, 0);
-    const serieDe = (campo) => {
-      if(esSetter){
-        if(campo === 'ventas' && equipo.ventas.length) return serieCashEq('setter', n);
-        return datosSetters.has(n) && datosSetters.get(n)[campo] ? datosSetters.get(n)[campo] : ceros();
-      }
-      if(campo === 'cash' && equipo.ventas.length) return serieCashEq('closer', n);
-      return datosClosers.has(n) && datosClosers.get(n)[campo] ? datosClosers.get(n)[campo] : ceros();
-    };
-    // Días hábiles del mes (lunes a viernes) hasta hoy; la escalera de metas empieza el 2 de noviembre de 2026.
-    const inicioMetas = new Date(2026, 10, 2);
-    let diasMeta = 0;
-    for(let d = 1; d <= dias; d++){ const f = new Date(ctxMes.anio, ctxMes.mes, d); if(f >= inicioMetas && f.getDay() >= 1 && f.getDay() <= 5) diasMeta++; }
-    const barra = (titulo, valor, meta, fmt, color) => {
-      const pct = meta > 0 ? Math.min(100, Math.round(valor / meta * 100)) : 0;
-      return `<div class="pg-barra" style="--pg:${color}"><div class="pg-top"><span>${titulo}</span><b>${fmt(valor)}${meta > 0 ? ` <small>de ${fmt(meta)} · ${meta > 0 ? Math.round(valor / meta * 100) : 0}%</small>` : ''}</b></div><div class="pg-pista"><i data-pct="${pct}"></i></div></div>`;
-    };
+    const m = metricas.find(x => x.valor === st.metrica), n = st.persona;
+    const { anio, mes } = st.mes, prev = new Date(anio, mes - 1, 1), pAnio = prev.getFullYear(), pMes = prev.getMonth();
+    const hoy = new Date(), dias = new Date(anio, mes + 1, 0).getDate();
+    const diasMostrar = (anio === hoy.getFullYear() && mes === hoy.getMonth()) ? hoy.getDate() : dias;
+    const nombreMes = (a, mm) => MESES_ES[mm] + ' ' + a;
+    const meses = Array.from({ length: 6 }, (_, i) => { const d = new Date(ctxMes.anio, ctxMes.mes - i, 1); return { anio: d.getFullYear(), mes: d.getMonth() }; });
     const color = colorDeSetter(n, nombres.indexOf(n)), num = v => Math.round(v).toLocaleString('es-AR');
-    let barras = '', nota = '';
-    if(esSetter){
-      barras = barra('Llamadas del mes', suma(serieDe('llamadas')), SOP_LLAMADAS * diasMeta, num, color) + barra('Agendadas del mes', suma(serieDe('agendadas')), SOP_SETS * diasMeta, num, color)
-        + `<div class="pg-top"><span>Cash como setter</span><b>${usdEq(suma(serieDe('ventas')))}</b></div>`;
-      nota = diasMeta ? `Meta del SOP: ${SOP_LLAMADAS} llamadas y ${SOP_SETS} agendadas por día hábil. Van ${diasMeta} día(s) hábil(es) con meta este mes.` : 'La escalera de metas empieza el lunes 2 de noviembre; antes de esa fecha no hay meta.';
-    } else {
-      const activos = nombres.length, metaCash = METAS_CLOSER[n] || Math.round(META_CASH_MES / activos);
-      barras = barra('Cash del mes', suma(serieDe('cash')), metaCash, usdEq, color)
-        + `<div class="pg-top"><span>Agendas · Shows · Cierres</span><b>${num(suma(serieDe('agendas')))} · ${num(suma(serieDe('shows')))} · ${num(suma(serieDe('cierres')))}</b></div>`;
-      nota = METAS_CLOSER[n] ? `Meta de cash de ${escapeHtml(n)}: ${usdEq(metaCash)}.` : `Meta de cash: ${usdEq(metaCash)}, un reparto parejo de la meta del equipo (${usdEq(META_CASH_MES)}) entre ${activos} closers. Se puede fijar una meta propia para cada una.`;
-    }
+    const colorProg = '#b9a7d6';
+
     cont.innerHTML = `<div class="section-label" style="margin:0 0 10px;font-size:13px;">Progreso de ${esSetter ? 'cada setter' : 'cada closer'}</div>
       <div class="chart-chips" id="${tipo}ProgPersona"></div>
-      ${barras}<div class="pg-nota">${nota}</div>
+      <div class="chart-chips" id="${tipo}ProgMes"></div>
+      <div class="pg-cargando"><span class="en-giro"></span>Cargando…</div>`;
+    pintarChips(tipo + 'ProgPersona', nombres.map(x => ({ valor: x, texto: x })), n, v => { st.persona = v; renderProgresoPersona(tipo); });
+    pintarChips(tipo + 'ProgMes', [...meses.map(x => ({ valor: x.anio + '-' + x.mes, texto: nombreMes(x.anio, x.mes) })), { valor: 'cmp', texto: st.comparar ? '✓ Comparando con el mes anterior' : 'Comparar con el mes anterior' }], anio + '-' + mes, v => {
+      if(v === 'cmp'){ st.comparar = !st.comparar; } else { const [a, mm] = v.split('-').map(Number); st.mes = { anio: a, mes: mm }; }
+      renderProgresoPersona(tipo);
+    });
+    const [ser, serPrev] = await Promise.all([progSeriesPersona(tipo, n, anio, mes), st.comparar ? progSeriesPersona(tipo, n, pAnio, pMes) : null]);
+    if(token !== st.token) return;   // el usuario ya eligió otra cosa
+    const suma = (o, c) => (o[c] || []).slice(0, diasMostrar).reduce((x, y) => x + y, 0);
+    const barra = (titulo, valor, meta, fmt, antes) => {
+      const pct = meta > 0 ? Math.min(100, Math.round(valor / meta * 100)) : 0;
+      return `<div class="pg-barra" style="--pg:${color}"><div class="pg-top"><span>${titulo}</span><b>${fmt(valor)}${meta > 0 ? ` <small>de ${fmt(meta)} · ${Math.round(valor / meta * 100)}%</small>` : ''}${antes != null ? ` <small>· mes anterior a esta altura: ${fmt(antes)}</small>` : ''}</b></div><div class="pg-pista"><i data-pct="${pct}"></i></div></div>`;
+    };
+    const mesVsAnt = (c) => serPrev ? suma(serPrev, c) : null;
+    // Días hábiles del mes (lunes a viernes) con meta: la escalera del SOP empieza el 2 de noviembre de 2026.
+    const inicioMetas = new Date(2026, 10, 2);
+    let diasMeta = 0;
+    for(let d = 1; d <= diasMostrar; d++){ const f = new Date(anio, mes, d); if(f >= inicioMetas && f.getDay() >= 1 && f.getDay() <= 5) diasMeta++; }
+    let barras = '', nota = '';
+    if(esSetter){
+      barras = barra('Llamadas del mes', suma(ser, 'llamadas'), SOP_LLAMADAS * diasMeta, num, mesVsAnt('llamadas')) + barra('Agendadas del mes', suma(ser, 'agendadas'), SOP_SETS * diasMeta, num, mesVsAnt('agendadas'))
+        + `<div class="pg-top"><span>Cash como setter</span><b>${usdEq(suma(ser, 'ventas'))}${serPrev ? ` <small>· mes anterior a esta altura: ${usdEq(suma(serPrev, 'ventas'))}</small>` : ''}</b></div>`;
+      nota = diasMeta ? `Meta del SOP: ${SOP_LLAMADAS} llamadas y ${SOP_SETS} agendadas por día hábil. Van ${diasMeta} día(s) hábil(es) con meta en ${nombreMes(anio, mes)}.` : `La escalera de metas del SOP empieza el lunes 2 de noviembre de 2026; en ${nombreMes(anio, mes)} no hay meta, se ve solo lo que hizo.`;
+    } else {
+      const activos = nombres.length, metaCash = METAS_CLOSER[n] || Math.round(META_CASH_MES / activos);
+      barras = barra('Cash del mes', suma(ser, 'cash'), metaCash, usdEq, mesVsAnt('cash'))
+        + `<div class="pg-top"><span>Agendas · Shows · Cierres</span><b>${num(suma(ser, 'agendas'))} · ${num(suma(ser, 'shows'))} · ${num(suma(ser, 'cierres'))}${serPrev ? ` <small>· mes anterior: ${num(suma(serPrev, 'agendas'))} · ${num(suma(serPrev, 'shows'))} · ${num(suma(serPrev, 'cierres'))}</small>` : ''}</b></div>`;
+      nota = METAS_CLOSER[n] ? `Meta de cash de ${escapeHtml(n)}: ${usdEq(metaCash)}.` : `Meta de cash: ${usdEq(metaCash)}, un reparto parejo de la meta del equipo (${usdEq(META_CASH_MES)}) entre ${activos} closers. Se puede fijar una meta propia para cada una.`;
+    }
+    cont.querySelector('.pg-cargando').outerHTML = `${barras}<div class="pg-nota">${nota}</div>
       <div class="chart-chips" id="${tipo}ProgMetrica"></div>
       <div class="chart-chips" id="${tipo}ProgModo"></div>
+      <div class="chart-legend" id="${tipo}ProgLeyenda"></div>
       <div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartProg${tipo}"></svg><div class="chart-tooltip" id="tooltipProg${tipo}"></div></div>`;
-    pintarChips(tipo + 'ProgPersona', nombres.map(x => ({ valor: x, texto: x })), n, v => { st.persona = v; renderProgresoPersona(tipo); });
     pintarChips(tipo + 'ProgMetrica', metricas.map(x => ({ valor: x.valor, texto: x.texto })), st.metrica, v => { st.metrica = v; renderProgresoPersona(tipo); });
     pintarChips(tipo + 'ProgModo', [{ valor: 'dia', texto: 'Por día' }, { valor: 'acum', texto: 'Acumulado del mes' }], st.modo, v => { st.modo = v; renderProgresoPersona(tipo); });
-    let serie = serieDe(m.valor).slice(0, dias);
-    if(st.modo === 'acum'){ let t = 0; serie = serie.map(v => (t += v)); }
-    drawChart('chartProg' + tipo, 'tooltipProg' + tipo, serie, m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio: 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' de ' + n + ' este mes' });
+    const campo = m.valor === 'ventas' && !esSetter ? 'cash' : m.valor;
+    const acum = a => { let t = 0; return a.map(v => (t += v)); };
+    const cortar = a => { const r = (a || []).slice(0, diasMostrar); while(r.length < diasMostrar) r.push(0); return st.modo === 'acum' ? acum(r) : r; };
+    const vacio = 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' de ' + n + ' en ' + nombreMes(anio, mes);
+    if(serPrev){
+      document.getElementById(tipo + 'ProgLeyenda').innerHTML = `<span><i style="background:${m.color}"></i>${nombreMes(anio, mes)}</span><span><i style="background:${colorProg}"></i>${nombreMes(pAnio, pMes)}</span>`;
+      drawMultiChart('chartProg' + tipo, 'tooltipProg' + tipo, [{ nombre: MESES_ES[mes], color: m.color, valores: cortar(ser[campo]) }, { nombre: MESES_ES[pMes], color: colorProg, valores: cortar(serPrev[campo]) }], anio, mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
+    } else {
+      drawChart('chartProg' + tipo, 'tooltipProg' + tipo, cortar(ser[campo]), m.color, anio, mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
+    }
     requestAnimationFrame(() => cont.querySelectorAll('.pg-pista i').forEach(i => { i.style.width = i.dataset.pct + '%'; }));
     setTimeout(() => cont.querySelectorAll('.pg-pista i').forEach(i => { i.style.width = i.dataset.pct + '%'; }), 60);
   }
