@@ -6530,9 +6530,8 @@
     const nombres = esSetter ? nombresSetters().filter(n => !esSetterInactivo(n)) : [...datosClosers.keys(), ...CLOSERS_FIJOS.filter(f => ![...datosClosers.keys()].some(k => mismaPersona(k, f)))];
     if(!nombres.length){ cont.innerHTML = '<div class="vz-cap"><span>Todavía no hay datos cargados este mes</span></div>'; return; }
     if(!st.persona || !nombres.includes(st.persona)) st.persona = nombres[0];
-    // El mes arranca en el del dashboard; si en el dashboard cambian de mes, la sección los sigue.
-    const claveBase = ctxMes.anio + '-' + ctxMes.mes;
-    if(!st.mes || st.base !== claveBase){ st.mes = { anio: ctxMes.anio, mes: ctxMes.mes }; st.base = claveBase; }
+    // El mes es siempre el del dashboard (el selector "Cambiar mes" de arriba): la sección lo sigue.
+    st.mes = { anio: ctxMes.anio, mes: ctxMes.mes };
     const metricas = esSetter ? METRICAS_SETTER : METRICAS_CLOSER;
     if(!st.metrica || !metricas.some(x => x.valor === st.metrica)) st.metrica = esSetter ? 'llamadas' : 'cash';
     const m = metricas.find(x => x.valor === st.metrica), n = st.persona;
@@ -6543,9 +6542,6 @@
     const meses = Array.from({ length: 6 }, (_, i) => { const d = new Date(ctxMes.anio, ctxMes.mes - i, 1); return { anio: d.getFullYear(), mes: d.getMonth() }; });
     const color = colorDeSetter(n, nombres.indexOf(n)), num = v => Math.round(v).toLocaleString('es-AR');
     const colorProg = '#b9a7d6';
-    const mesesLista = Array.from({ length: 12 }, (_, i) => { const d = new Date(ctxMes.anio, ctxMes.mes - i, 1); return { anio: d.getFullYear(), mes: d.getMonth() }; });
-    if(!mesesLista.some(x => x.anio === anio && x.mes === mes)) mesesLista.unshift({ anio, mes });
-    const opcionesMes = mesesLista.map(x => `<option value="${x.anio}-${x.mes}"${x.anio === anio && x.mes === mes ? ' selected' : ''}>${nombreMes(x.anio, x.mes)}</option>`).join('');
     const opcionesMet = metricas.map(x => `<option value="${x.valor}"${x.valor === st.metrica ? ' selected' : ''}>${x.texto}</option>`).join('');
 
     const opcionesPersona = nombres.map(x => `<option value="${escapeHtml(x)}"${x === n ? ' selected' : ''}>${escapeHtml(x)}</option>`).join('');
@@ -6554,7 +6550,6 @@
         ${tituloPanel('Progreso de ' + (esSetter ? 'cada setter' : 'cada closer'))}
         <div class="pg-ctl">
           <select class="en-in pg-sel" id="${tipo}ProgSelPer" aria-label="${esSetter ? 'Setter' : 'Closer'}">${opcionesPersona}</select>
-          <select class="en-in pg-sel" id="${tipo}ProgSelMes" aria-label="Mes">${opcionesMes}</select>
           <select class="en-in pg-sel" id="${tipo}ProgSelMet" aria-label="Métrica">${opcionesMet}</select>
           <button type="button" class="chart-chip${st.comparar ? ' active' : ''}" id="${tipo}ProgCmp">${st.comparar ? '✓ ' : ''}Comparar con el mes anterior</button>
         </div>
@@ -6569,7 +6564,6 @@
         <div class="fact-bars" id="barras${tipo}"></div>
       </div>`;
     document.getElementById(tipo + 'ProgSelPer').addEventListener('change', ev => { st.persona = ev.target.value; renderProgresoPersona(tipo); });
-    document.getElementById(tipo + 'ProgSelMes').addEventListener('change', ev => { const [a2, m2] = ev.target.value.split('-').map(Number); st.mes = { anio: a2, mes: m2 }; renderProgresoPersona(tipo); });
     document.getElementById(tipo + 'ProgSelMet').addEventListener('change', ev => { st.metrica = ev.target.value; renderProgresoPersona(tipo); });
     document.getElementById(tipo + 'ProgCmp').addEventListener('click', () => { st.comparar = !st.comparar; renderProgresoPersona(tipo); });
     const [ser, serPrev] = await Promise.all([progSeriesPersona(tipo, n, anio, mes), st.comparar ? progSeriesPersona(tipo, n, pAnio, pMes) : null]);
