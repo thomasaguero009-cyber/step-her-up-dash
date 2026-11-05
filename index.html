@@ -867,6 +867,13 @@
   .en-estado{ display:inline-block; font-size:12px; font-weight:600; padding:3px 11px; border-radius:999px; white-space:nowrap; border:1px solid transparent; }
   .en-estado.al_dia{ background:rgba(95,211,154,0.13); color:#5fd39a; border-color:rgba(95,211,154,0.35); }
   .en-estado.falta_agendar{ background:rgba(127,178,240,0.14); color:#8fbcf5; border-color:rgba(127,178,240,0.38); }
+  .pg-barra{ margin:12px 0; }
+  .pg-top{ display:flex; justify-content:space-between; gap:10px; font-size:13px; color:var(--cream); margin-bottom:6px; }
+  .pg-top b{ font-weight:600; }
+  .pg-top small{ color:var(--text-dim); font-weight:400; }
+  .pg-pista{ height:10px; border-radius:6px; background:rgba(255,255,255,0.08); overflow:hidden; }
+  .pg-pista i{ display:block; height:100%; width:0; border-radius:6px; background:var(--pg,#f0a8be); transition:width .7s cubic-bezier(.22,.7,.2,1); }
+  .pg-nota{ font-size:12px; color:var(--text-dim); margin:4px 0 14px; line-height:1.4; }
   .en-of{ display:block; margin-top:2px; font-size:11px; line-height:1.3; color:var(--text-dim); }
   .en-mot{ display:block; margin-top:4px; font-size:11px; line-height:1.3; color:var(--text-dim); }
   .en-estado.por_vencer{ background:rgba(233,196,106,0.14); color:#e9c46a; border-color:rgba(233,196,106,0.4); }
@@ -2136,6 +2143,7 @@
         </div>
         <div class="chart-panel" id="settersVisual" style="margin-bottom:18px;"></div>
         <div class="breakdown-grid" id="settersGrid"></div>
+        <div class="chart-panel" id="settersProgreso" style="margin:18px 0;"></div>
         <div class="chart-status" id="statusSetters" style="margin-bottom:44px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
       </div>
 
@@ -2221,6 +2229,7 @@
         </div>
         <div class="chart-panel" id="closersVisual" style="margin-bottom:18px;"></div>
         <div class="breakdown-grid" id="closersGrid"></div>
+        <div class="chart-panel" id="closersProgreso" style="margin:18px 0;"></div>
         <div class="chart-status" id="statusClosers" style="margin-bottom:44px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
       </div>
 
@@ -6402,6 +6411,7 @@
       serie = serie.slice(0, ctxMes.diasAMostrar);
       drawChart('chartSetters', 'tooltipSetters', serie, m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
     }
+    try { renderProgresoPersona('setter'); } catch(e){ console.error('Progreso setter', e); }
   }
 
   const METRICAS_CLOSER = [
@@ -6432,6 +6442,7 @@
       leyenda.innerHTML = esCash ? '<span style="opacity:.7">Cash cobrado cada día</span>' : '';
       drawChart('chartClosers', 'tooltipClosers', base(closerFiltro), m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio });
     }
+    try { renderProgresoPersona('closer'); } catch(e){ console.error('Progreso closer', e); }
   }
   function renderBreakdownClosers(mapa){
     ultimoMapaClosers = mapa;
@@ -6462,6 +6473,67 @@
         ${barraVentasEq(f.nombre, 'closer')}
       </div>`;
     }).join('');
+  }
+
+  // ===== Progreso de cada persona (debajo de las tarjetas de Setters y de Closers): se elige a la persona y se ve cuánto lleva del mes contra su meta
+  // y cómo viene día a día (o acumulado). Metas: setters = SOP (125 llamadas y 5 agendadas por día hábil desde el 2 de noviembre); closers = METAS_CLOSER, o un reparto parejo de la meta del equipo. =====
+  const CLOSERS_FIJOS = ['Gianie', 'Paula', 'Mia', 'Belen'];   // el equipo de closers, tengan o no datos este mes
+  const METAS_CLOSER = {};   // ej.: { Gianie: 40000 } para fijar la meta de cash de una closer
+  const progEstado = { setter: { persona: null, metrica: null, modo: 'dia' }, closer: { persona: null, metrica: null, modo: 'dia' } };
+  function renderProgresoPersona(tipo){
+    const cont = document.getElementById(tipo === 'setter' ? 'settersProgreso' : 'closersProgreso');
+    if(!cont || !ctxMes.dias) return;
+    const esSetter = tipo === 'setter', st = progEstado[tipo];
+    const nombres = esSetter ? nombresSetters().filter(n => !esSetterInactivo(n)) : [...datosClosers.keys(), ...CLOSERS_FIJOS.filter(f => ![...datosClosers.keys()].some(k => mismaPersona(k, f)))];
+    if(!nombres.length){ cont.innerHTML = '<div class="vz-cap"><span>Todavía no hay datos cargados este mes</span></div>'; return; }
+    if(!st.persona || !nombres.includes(st.persona)) st.persona = nombres[0];
+    const metricas = esSetter ? METRICAS_SETTER : METRICAS_CLOSER;
+    if(!st.metrica || !metricas.some(x => x.valor === st.metrica)) st.metrica = esSetter ? 'llamadas' : 'cash';
+    const m = metricas.find(x => x.valor === st.metrica), n = st.persona, dias = ctxMes.diasAMostrar || ctxMes.dias;
+    const ceros = () => new Array(ctxMes.dias).fill(0);
+    const suma = a => a.slice(0, dias).reduce((x, y) => x + y, 0);
+    const serieDe = (campo) => {
+      if(esSetter){
+        if(campo === 'ventas' && equipo.ventas.length) return serieCashEq('setter', n);
+        return datosSetters.has(n) && datosSetters.get(n)[campo] ? datosSetters.get(n)[campo] : ceros();
+      }
+      if(campo === 'cash' && equipo.ventas.length) return serieCashEq('closer', n);
+      return datosClosers.has(n) && datosClosers.get(n)[campo] ? datosClosers.get(n)[campo] : ceros();
+    };
+    // Días hábiles del mes (lunes a viernes) hasta hoy; la escalera de metas empieza el 2 de noviembre de 2026.
+    const inicioMetas = new Date(2026, 10, 2);
+    let diasMeta = 0;
+    for(let d = 1; d <= dias; d++){ const f = new Date(ctxMes.anio, ctxMes.mes, d); if(f >= inicioMetas && f.getDay() >= 1 && f.getDay() <= 5) diasMeta++; }
+    const barra = (titulo, valor, meta, fmt, color) => {
+      const pct = meta > 0 ? Math.min(100, Math.round(valor / meta * 100)) : 0;
+      return `<div class="pg-barra" style="--pg:${color}"><div class="pg-top"><span>${titulo}</span><b>${fmt(valor)}${meta > 0 ? ` <small>de ${fmt(meta)} · ${meta > 0 ? Math.round(valor / meta * 100) : 0}%</small>` : ''}</b></div><div class="pg-pista"><i data-pct="${pct}"></i></div></div>`;
+    };
+    const color = colorDeSetter(n, nombres.indexOf(n)), num = v => Math.round(v).toLocaleString('es-AR');
+    let barras = '', nota = '';
+    if(esSetter){
+      barras = barra('Llamadas del mes', suma(serieDe('llamadas')), SOP_LLAMADAS * diasMeta, num, color) + barra('Agendadas del mes', suma(serieDe('agendadas')), SOP_SETS * diasMeta, num, color)
+        + `<div class="pg-top"><span>Cash como setter</span><b>${usdEq(suma(serieDe('ventas')))}</b></div>`;
+      nota = diasMeta ? `Meta del SOP: ${SOP_LLAMADAS} llamadas y ${SOP_SETS} agendadas por día hábil. Van ${diasMeta} día(s) hábil(es) con meta este mes.` : 'La escalera de metas empieza el lunes 2 de noviembre; antes de esa fecha no hay meta.';
+    } else {
+      const activos = nombres.length, metaCash = METAS_CLOSER[n] || Math.round(META_CASH_MES / activos);
+      barras = barra('Cash del mes', suma(serieDe('cash')), metaCash, usdEq, color)
+        + `<div class="pg-top"><span>Agendas · Shows · Cierres</span><b>${num(suma(serieDe('agendas')))} · ${num(suma(serieDe('shows')))} · ${num(suma(serieDe('cierres')))}</b></div>`;
+      nota = METAS_CLOSER[n] ? `Meta de cash de ${escapeHtml(n)}: ${usdEq(metaCash)}.` : `Meta de cash: ${usdEq(metaCash)}, un reparto parejo de la meta del equipo (${usdEq(META_CASH_MES)}) entre ${activos} closers. Se puede fijar una meta propia para cada una.`;
+    }
+    cont.innerHTML = `<div class="section-label" style="margin:0 0 10px;font-size:13px;">Progreso de ${esSetter ? 'cada setter' : 'cada closer'}</div>
+      <div class="chart-chips" id="${tipo}ProgPersona"></div>
+      ${barras}<div class="pg-nota">${nota}</div>
+      <div class="chart-chips" id="${tipo}ProgMetrica"></div>
+      <div class="chart-chips" id="${tipo}ProgModo"></div>
+      <div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartProg${tipo}"></svg><div class="chart-tooltip" id="tooltipProg${tipo}"></div></div>`;
+    pintarChips(tipo + 'ProgPersona', nombres.map(x => ({ valor: x, texto: x })), n, v => { st.persona = v; renderProgresoPersona(tipo); });
+    pintarChips(tipo + 'ProgMetrica', metricas.map(x => ({ valor: x.valor, texto: x.texto })), st.metrica, v => { st.metrica = v; renderProgresoPersona(tipo); });
+    pintarChips(tipo + 'ProgModo', [{ valor: 'dia', texto: 'Por día' }, { valor: 'acum', texto: 'Acumulado del mes' }], st.modo, v => { st.modo = v; renderProgresoPersona(tipo); });
+    let serie = serieDe(m.valor).slice(0, dias);
+    if(st.modo === 'acum'){ let t = 0; serie = serie.map(v => (t += v)); }
+    drawChart('chartProg' + tipo, 'tooltipProg' + tipo, serie, m.color, ctxMes.anio, ctxMes.mes, { prefijo: m.prefijo, conteo: !m.prefijo, vacio: 'Todavía no hay ' + m.texto.replace(' $', '').toLowerCase() + ' de ' + n + ' este mes' });
+    requestAnimationFrame(() => cont.querySelectorAll('.pg-pista i').forEach(i => { i.style.width = i.dataset.pct + '%'; }));
+    setTimeout(() => cont.querySelectorAll('.pg-pista i').forEach(i => { i.style.width = i.dataset.pct + '%'; }), 60);
   }
 
   // Leads por día — contactos nuevos de GHL (Worker: /leads-por-dia).
