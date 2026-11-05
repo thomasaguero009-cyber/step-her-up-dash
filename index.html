@@ -858,6 +858,7 @@
   .en-et{ display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:0.06em; padding:2px 7px; border-radius:4px; margin-left:7px; vertical-align:1px; }
   .en-et.high{ background:var(--wine-3); color:#fff; border:1px solid rgba(240,168,190,0.45); }
   .en-et.low{ background:rgba(240,168,190,0.18); color:var(--blush); }
+  .en-et.ant{ background:rgba(177,160,230,0.16); color:#c9bdf2; border:1px solid rgba(177,160,230,0.34); }
   .en-et.nc{ background:rgba(255,138,138,0.16); color:#ff8a8a; }
   .en-mut{ color:var(--text-dim); }
   .en-dots{ display:inline-flex; gap:4px; vertical-align:middle; margin-right:7px; }
@@ -2828,6 +2829,7 @@
     ['todas', 'Todas (activas)', a => a.estado !== 'terminada'],
     ['high', 'High ticket', a => a.tipo === 'high' && a.estado !== 'terminada'],
     ['low', 'Low ticket', a => a.tipo === 'low' && a.estado !== 'terminada'],
+    ['anterior', 'Oferta anterior', a => a.tipo === 'anterior' && a.estado !== 'terminada'],
     ['psicologa', 'Psicóloga (sesiones pendientes)', a => !!a.psicologa && !/^(done|vencido)/i.test(a.psicologa.etapa) && a.sesiones && a.sesiones.hechas < a.sesiones.total],
     ['vencer', 'Por vencer y vencidas', a => a.estado === 'por_vencer' || a.estado === 'vencida'],
     ['agendar', 'Falta agendar', a => a.estado === 'falta_agendar'],
@@ -2837,7 +2839,7 @@
   const ENT_ESTADOS = { al_dia: 'Al día', falta_agendar: 'Falta agendar', por_vencer: 'Por vencer', vencida: 'Vencida', terminada: 'Terminada' };
   const ENT_PRIORIDAD = { vencida: 0, por_vencer: 1, falta_agendar: 2, al_dia: 3, terminada: 4 };
   const entIniciales = n => String(n).trim().split(/\s+/).slice(0, 2).map(p => p[0] || '').join('').toUpperCase();
-  const entEtapa = a => (a.high || a.low || a.psicologa || {}).etapa || '—';
+  const entEtapa = a => (a.high || a.low || a.anterior || a.psicologa || {}).etapa || '—';
   const entFmt = iso => { if(!iso) return '—'; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
   const entProg = a => { const x = (a.llamadas ? a.llamadas.hechas : 0) + (a.sesiones ? a.sesiones.hechas : 0), t = (a.llamadas ? a.llamadas.total : 0) + (a.sesiones ? a.sesiones.total : 0); return t ? x / t : 0; };
   const entClave = (a, col) => {
@@ -2868,7 +2870,7 @@
   function entDato(etq, valor, fuente){ return `<div class="en-dato"><span>${etq}</span><div>${valor}${fuente ? `<small>· ${fuente}</small>` : ''}</div></div>`; }
   function entFicha(a){
     const e = escapeHtml;
-    const etapas = [a.high && `High: ${e(a.high.etapa)}`, a.low && `Low: ${e(a.low.etapa)}`, a.psicologa && `Psicóloga: ${e(a.psicologa.etapa)}`].filter(Boolean).join(' · ') || '—';
+    const etapas = [a.high && `High: ${e(a.high.etapa)}`, a.low && `Low: ${e(a.low.etapa)}`, a.anterior && `Oferta anterior: ${e(a.anterior.etapa)}`, a.psicologa && `Psicóloga: ${e(a.psicologa.etapa)}`].filter(Boolean).join(' · ') || '—';
     const avance = [
       entDato('Etapa', etapas, 'GHL'),
       a.contrato ? entDato('Contrato', a.contrato, 'GHL') : '',
@@ -2909,7 +2911,7 @@
     const e = escapeHtml, psi = entTab === 'psicologa';
     const flecha = c => entOrden.col === c ? (entOrden.dir === 'asc' ? ' ↑' : ' ↓') : '';
     const cuerpo = filas.map((a, idx) => {
-      const tipo = a.tipo === 'high' ? '<span class="en-et high">HIGH</span>' : a.webinar ? '<span class="en-et low">OFERTA WEBINAR</span>' : a.tipo === 'low' ? '<span class="en-et low">LOW</span>' : '';
+      const tipo = a.tipo === 'anterior' ? '<span class="en-et ant">OFERTA ANTERIOR</span>' : a.tipo === 'high' ? '<span class="en-et high">HIGH</span>' : a.webinar ? '<span class="en-et low">OFERTA WEBINAR</span>' : a.tipo === 'low' ? '<span class="en-et low">LOW</span>' : '';
       const nc = a.noCuadra.length ? '<span class="en-et nc">NO CUADRA</span>' : '';
       const etapa = psi ? (a.psicologa ? a.psicologa.etapa : '—') : entEtapa(a);
       const ll = psi ? a.sesiones : a.llamadas;
