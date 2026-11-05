@@ -5558,7 +5558,7 @@
           }
         }
       }
-      statusEl.textContent = (hayNuevo ? '✓ Guardado — gracias ' + nombre + '. Se ve en el Dashboard en unos minutos.' : '✓ Ya estaba todo guardado, ' + nombre + '.') + avisoRanking + ' Tus números siguen en pantalla: es el total del día.';
+      statusEl.textContent = (hayNuevo ? '✓ Guardado — gracias ' + nombre + '. Se ve en el Dashboard en unos segundos.' : '✓ Ya estaba todo guardado, ' + nombre + '.') + avisoRanking + ' Tus números siguen en pantalla: es el total del día.';
       // Se anota en el Worker lo que ya quedó en el Tracker. Slack NO recibe nada ahora: el total de cada una se publica a la 1:00 PM y a las 8:00 PM.
       try {
         const rs = await fetch(WORKER_URL + '/metricas-borrador', { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -7779,6 +7779,20 @@
     cargarYPintarLeads(true);
     cargarYPintarFunnelPorDia(true);
   }, REFRESCO_GHL_MS);
+  // Cada vez que alguien toca "Guardar métricas" (o corre el guardado automático) el Worker anota la hora del cambio; el dashboard abierto lo consulta cada 10 s
+  // (una lectura mínima, sin tocar el Google Sheet) y, si hubo un cambio nuevo, se actualiza solo: las métricas aparecen en segundos, sin esperar los 5 minutos.
+  let ultimoCambioMetricas = null;
+  async function revisarCambioMetricas(){
+    if(!dashboardVisible()) return;
+    try {
+      const r = await fetch(WORKER_URL + '/metricas-cambio', { cache: 'no-store' });
+      const d = await r.json();
+      if(!d || !d.ok) return;
+      if(ultimoCambioMetricas === null){ ultimoCambioMetricas = d.t; return; }   // primera lectura: queda de referencia
+      if(d.t > ultimoCambioMetricas){ ultimoCambioMetricas = d.t; actualizarDashboard(); }
+    } catch(e){ /* sin conexión: queda el refresco de cada 5 minutos */ }
+  }
+  setInterval(revisarCambioMetricas, 10000);
   // Volver a la pestaña después de un rato: refrescar en el momento, sin esperar el próximo ciclo.
   document.addEventListener('visibilitychange', () => {
     if(dashboardVisible() && Date.now() - ultimoRefresco > REFRESCO_AUTOMATICO_MS) actualizarDashboard();
