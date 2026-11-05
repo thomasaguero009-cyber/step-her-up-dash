@@ -873,6 +873,7 @@
   .pg-top small{ color:var(--text-dim); font-weight:400; }
   .pg-pista{ height:10px; border-radius:6px; background:rgba(255,255,255,0.08); overflow:hidden; }
   .pg-pista i{ display:block; height:100%; width:0; border-radius:6px; background:var(--pg,#f0a8be); transition:width .7s cubic-bezier(.22,.7,.2,1); }
+  .kpi-aviso-cash{ margin-top:8px; font-size:11.5px; line-height:1.35; color:#e9c46a; }
   .pg-panel{ margin-bottom:18px; }
   .pg-ctl{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin:6px 0 4px; }
   .pg-sel{ width:auto; min-width:150px; }
@@ -6996,13 +6997,40 @@
   document.addEventListener('click', (e) => { if(e.target.closest && e.target.closest('[data-tab="llamadas"]')) cargarShowsTab(); });
 
   // Cash collected del mes según la pestaña "Ventas" del Tracker (null si no se pudo leer).
-  async function cashRealDelMes(anio, mes0){
+  // Respaldo: cash que cargaron los closers en el Tracker (pestaña Ranking). Se usa cuando la pestaña "Ventas" todavía no tiene cobros de ese mes
+  // (por ejemplo, una venta nueva que aún no se pasó a Ventas), así el Resumen no muestra $0 con cierres hechos.
+  async function cashRankingDelMes(anio, mes0){
     try {
-      const m = anio + '-' + String(mes0 + 1).padStart(2, '0');
-      const data = JSON.parse(await fetchTextConTimeout(LECCIONES_WRITE_URL + '?action=ventasDesglose&mes=' + m, 20000));
-      if(data.status !== 'ok' || !data.hoja) return null;
-      return (data.ventas || []).reduce((a, v) => a + (v.cash || 0), 0);
+      const filas = await obtenerFilasRanking();
+      const t = filas.filter(f => f.fecha.getFullYear() === anio && f.fecha.getMonth() === mes0).reduce((a, f) => a + (f.monto || 0), 0);
+      return t > 0 ? t : null;
     } catch(e){ return null; }
+  }
+  // El cash del mes es el MAYOR entre la pestaña "Ventas" y lo que cargaron los closers (nunca baja el cash: lo de los closers suele ser menor).
+  // Si los closers cargaron más que "Ventas", falta pasar ventas a esa pestaña: se guarda en cashDetalleMes para avisarlo en pantalla.
+  const cashDetalleMes = {};
+  async function cashRealDelMes(anio, mes0){
+    let ventas = null;
+    const clave = anio + '-' + String(mes0 + 1).padStart(2, '0');
+    try {
+      const data = JSON.parse(await fetchTextConTimeout(LECCIONES_WRITE_URL + '?action=ventasDesglose&mes=' + clave, 20000));
+      if(data.status === 'ok' && data.hoja) ventas = (data.ventas || []).reduce((a, v) => a + (v.cash || 0), 0);
+    } catch(e){ ventas = null; }
+    const ranking = await cashRankingDelMes(anio, mes0);
+    cashDetalleMes[clave] = { ventas, ranking };
+    if(ventas == null && ranking == null) return null;
+    return Math.max(ventas || 0, ranking || 0);
+  }
+  // Aviso bajo la tarjeta Cash collected cuando "Ventas" está por debajo de lo que cargaron los closers.
+  function avisoCashFaltante(anio, mes0){
+    const el = document.getElementById('ghlVentas'), card = el && el.closest('.kpi-card');
+    if(!card) return;
+    let nota = card.querySelector('.kpi-aviso-cash');
+    const d = cashDetalleMes[anio + '-' + String(mes0 + 1).padStart(2, '0')] || {};
+    const falta = d.ranking != null && d.ranking > (d.ventas || 0) + 1 ? d.ranking - (d.ventas || 0) : 0;
+    if(!falta){ if(nota) nota.remove(); return; }
+    if(!nota){ nota = document.createElement('div'); nota.className = 'kpi-aviso-cash'; card.appendChild(nota); }
+    nota.textContent = '⚠ Los closers cargaron $' + Math.round(falta).toLocaleString('es-AR') + ' que todavía no están en la pestaña Ventas del Tracker.';
   }
   async function cargarYPintarGHL(silencioso = false){
     const pedido = ++ghlPedidoActual;
@@ -7063,6 +7091,7 @@
       if(pedido !== ghlPedidoActual) return;
       const cashMostrar = cashReal != null ? cashReal : cashTotal; // si el Tracker no responde, queda el de GHL
       fijarValorNumero('ghlVentas', '$' + Math.round(cashMostrar).toLocaleString('es-AR'));
+      avisoCashFaltante(anio, mes);
       // AOV = cash collected ÷ cierres (llamadas + webinar).
       fijarValorNumero('ghlAov', cierresTotal > 0 ? '$' + Math.round(cashMostrar / cierresTotal).toLocaleString('es-AR') : '–');
       // El cash collected real sale de la pestaña "Ventas" del Tracker (cada cobro, cuotas y ventas pasadas incluidas):
@@ -7870,6 +7899,7 @@
       porSetterVentasActual.set(st, (porSetterVentasActual.get(st) || 0) + (v.cash || 0));
     });
     (ventasHoy || []).forEach(v => { const f = parseFechaSheet(v.fecha); if(f && mismoDia(f, hoy)) totalDia += v.cash || 0; });
+    { const respaldo = await cashRankingDelMes(anio, mes); if(respaldo && respaldo > totalMes) totalMes = respaldo; }   // el mayor entre "Ventas" y lo que cargaron los closers
 
     document.getElementById('gaugeMaxMes').textContent = META_CASH_MES.toLocaleString('es-AR');
     document.getElementById('gaugeMaxDia').textContent = META_CASH_DIA.toLocaleString('es-AR');
