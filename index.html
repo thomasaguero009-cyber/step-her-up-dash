@@ -846,6 +846,11 @@
   .en-tabla th{ text-align:left; padding:12px 14px; font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--blush); border-bottom:1px solid var(--border); cursor:pointer; white-space:nowrap; user-select:none; transition:color .2s ease; }
   .en-tabla th:hover{ color:var(--cream); }
   .en-tabla td{ padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.06); vertical-align:middle; color:var(--cream); }
+  .en-pz{ display:flex; gap:5px; flex-wrap:wrap; }
+  .en-pz i{ font-style:normal; font-size:10.5px; font-weight:700; padding:3px 7px; border-radius:99px; white-space:nowrap; background:rgba(255,255,255,0.07); color:var(--text-dim,#9a9a9a); }
+  .en-pz i.ok{ background:rgba(76,175,120,0.18); color:#6fd49b; } .en-pz i.pronto{ background:rgba(240,170,60,0.2); color:#f0b04a; } .en-pz i.venc{ background:rgba(230,90,90,0.2); color:#f07a7a; }
+  .en-plazos{ display:grid; gap:6px; margin-top:2px; } .en-plazo{ display:flex; justify-content:space-between; gap:10px; align-items:center; font-size:12.5px; }
+  .en-plazo em{ font-style:normal; font-size:11px; font-weight:700; padding:2px 8px; border-radius:99px; background:rgba(255,255,255,0.07); } .en-plazo em.ok{ background:rgba(76,175,120,0.18); color:#6fd49b; } .en-plazo em.pronto{ background:rgba(240,170,60,0.2); color:#f0b04a; } .en-plazo em.venc{ background:rgba(230,90,90,0.2); color:#f07a7a; }
   .en-tabla tr.en-fila{ cursor:pointer; }
   .en-tabla tr.en-fila td{ transition:background .25s ease; }
   .en-tabla tr.en-fila:hover td, .en-tabla tr.en-fila.sel td{ background:rgba(255,255,255,0.05); }
@@ -2884,6 +2889,12 @@
   }
   const entBusca = (a, q) => !q || [a.nombre, a.email, a.telefono].some(v => String(v || '').toLowerCase().includes(q)) || String(a.telefono || '').replace(/\D/g, '').includes(q.replace(/\D/g, '') || '§');
   const entDots = (h, t) => `<span class="en-dots">${Array.from({ length: t }, (_, i) => `<i class="${i < h ? 'on' : ''}"></i>`).join('')}</span>${h}/${t}`;
+  const ENT_PZ_CLASE = est => /^activo/i.test(est) ? 'ok' : /30 d/i.test(est) ? 'pronto' : /^vencido/i.test(est) ? 'venc' : '';
+  const ENT_PZ_CORTO = { grupales: 'Grupales', uno: '1:1', psicologa: 'Psico' };
+  const entPlazoTxt = p => `${p.vence ? entFmt(p.vence) + ' · ' : ''}${p.estatus || 'Sin dato'}`;
+  const entPlazosMini = a => a.venc ? `<div class="en-pz">${a.venc.plazos.map(p => `<i class="${ENT_PZ_CLASE(p.estatus)}" title="${escapeHtml(p.etiqueta + ': ' + entPlazoTxt(p))}">${ENT_PZ_CORTO[p.clave]}${p.vence ? ' ' + entFmt(p.vence) : ''}</i>`).join('')}</div>` : (a.vence ? entFmt(a.vence) : '<span class="en-mut">Sin fecha</span>');
+  const entPlazosFicha = a => `<div class="en-plazos">${a.venc.plazos.map(p => `<div class="en-plazo"><span>${p.etiqueta}</span><span>${p.vence ? entFmt(p.vence) + ' ' : ''}<em class="${ENT_PZ_CLASE(p.estatus)}">${escapeHtml(p.estatus || 'Sin dato')}</em></span></div>`).join('')}<div class="en-plazo"><span>Programa grabado</span><span>${escapeHtml(a.venc.grabado || '—')}</span></div></div>`;
+  const ENT_CONTRATO = { firmado: 'Firmado', enviado: 'Enviado, falta la copia firmada', pendiente: 'Por enviar', sin_contrato: 'Sin contrato (confirmar)' };
   function entDato(etq, valor, fuente){ return `<div class="en-dato"><span>${etq}</span><div>${valor}${fuente ? `<small>· ${fuente}</small>` : ''}</div></div>`; }
   function entFicha(a){
     const e = escapeHtml;
@@ -2891,7 +2902,7 @@
     const avance = [
       entOferta(a) ? entDato('Oferta', e(entOferta(a)), 'Ventas') : '',
       entDato('Etapa', etapas, 'GHL'),
-      a.contrato ? entDato('Contrato', a.contrato, 'GHL') : '',
+      a.contrato ? entDato('Contrato', ENT_CONTRATO[a.contrato] || a.contrato, a.venc ? 'hoja de Gianie' : 'GHL') : '',
       a.llamadas ? entDato('Llamadas 1:1', `${a.llamadas.hechas} de ${a.llamadas.total} <small>(columna y calendario)</small>`, 'GHL') : '',
       a.auditoria ? entDato('Auditoría de Instagram',`${a.auditoria.hecha ? 'Hecha' : 'Agendada'}${a.auditoria.fecha ? ' el ' + new Date(a.auditoria.fecha).toLocaleDateString('es-PR', { day: 'numeric', month: 'short' }) : ''}`, 'GHL') : '',
       a.acceso ? entDato('Incluye', a.acceso.whatsapp ? 'Skool, grupo de WhatsApp y reuniones grupales' : 'Solo acceso a Skool', 'Ventas') : '',
@@ -2906,7 +2917,9 @@
       entDato(a.compras && a.compras.length > 1 ? 'Productos' : 'Producto', compras, 'ventas'),
       entDato('Fecha de compra', entFmt(a.fechaCompra), 'ventas'),
       entDato('Pago', e(a.pago || '—'), 'ventas'),
-      entDato('Vence', a.vence ? `${entFmt(a.vence)} <small>(${dv})</small>` : 'Sin fecha', 'GHL'),
+      a.venc ? entDato('Plazos del contrato', entPlazosFicha(a), 'hoja de Gianie') : entDato('Vence', a.vence ? `${entFmt(a.vence)} <small>(${dv})</small>` : 'Sin fecha', 'GHL'),
+      a.venc && a.venc.version ? entDato('Contrato (versión)', e(a.venc.version), 'hoja de Gianie') : '',
+      a.venc && a.venc.notas ? entDato('Nota de Gianie', e(a.venc.notas), 'hoja de Gianie') : '',
       entDato('Skool', a.skool ? (a.skool.tiene ? `Tiene acceso${a.skool.porNombre ? ' <small>(encontrada por nombre: revisar el correo)</small>' : ''}${a.skool.desde ? ` <small>· desde ${e(a.skool.desde)}</small>` : ''}` : 'Sin acceso') : 'Sin dato (falta cargar la lista de Skool)', a.skool ? 'Skool' : ''),
       entDato('Quién la atiende', `${a.closer ? e(a.closer) : 'Sin dato'} <small>· Paula (seguimiento)</small>`, 'ventas'),
     ].join('');
@@ -2918,7 +2931,7 @@
       <a class="en-crm" target="_blank" rel="noopener" href="https://app.fortunacrm.ai/v2/location/6cXs7Gwtzk0m50TZkWPg/contacts/detail/${encodeURIComponent(a.contactId)}">Abrir en el CRM →</a>
     </div>`;
   }
-  const entCols = () => [['nombre', 'Alumna'], ['etapa', entTab === 'psicologa' ? 'Etapa psicóloga' : 'Etapa'], ['llamadas', entTab === 'psicologa' ? 'Sesiones' : 'Llamadas 1:1'], ['proximo', 'Próximo paso'], ['vence', 'Vence'], ['estado', 'Estado']];
+  const entCols = () => [['nombre', 'Alumna'], ['etapa', entTab === 'psicologa' ? 'Etapa psicóloga' : 'Etapa'], ['llamadas', entTab === 'psicologa' ? 'Sesiones' : 'Llamadas 1:1'], ['proximo', 'Próximo paso'], ['vence', 'Plazos'], ['estado', 'Estado']];
   function entFilaFicha(a, abierta){
     return `<tr class="en-ficha"><td colspan="6"><div class="en-fx${abierta ? ' open' : ''}"><div class="en-fxin">${entFicha(a)}</div></div></td></tr>`;
   }
@@ -2939,7 +2952,7 @@
         <td>${e(etapa)}</td>
         <td>${ll ? entDots(ll.hechas, ll.total) : (!psi && (a.low || a.webinar) && !a.high ? (a.webinar ? entDots(a.auditoria && a.auditoria.hecha ? 1 : 0, 1) : entDots(0, 0)) : '<span class="en-mut">—</span>')}</td>
         <td>${a.proximoPaso ? e(a.proximoPaso) : '<span class="en-mut">—</span>'}</td>
-        <td>${a.vence ? entFmt(a.vence) : '<span class="en-mut">Sin fecha</span>'}</td>
+        <td>${entPlazosMini(a)}</td>
         <td><span class="en-estado ${a.estado}">${ENT_ESTADOS[a.estado]}</span>${a.estado === 'falta_agendar' && a.porAgendar && a.porAgendar.length ? `<small class="en-mot">${a.porAgendar.join(' + ')}</small>` : ''}</td></tr>` + (abierta ? entFilaFicha(a, true) : '');
     }).join('');
     const box = document.getElementById('entTabla');
@@ -2948,6 +2961,9 @@
       : '<div class="en-vacio">No hay alumnas en esta vista.</div>';
     if(entTab === 'revisar' && ENTREGA.sinTarjeta && ENTREGA.sinTarjeta.length){
       box.insertAdjacentHTML('beforeend', `<details class="en-sin"><summary>${ENTREGA.sinTarjeta.length} compras de la hoja de ventas que no pude unir a ninguna alumna (nombre incompleto o distinto)</summary><ul>${ENTREGA.sinTarjeta.map(c => `<li>${e(c.nombre)} · ${e(c.producto || '—')} · ${entFmt(c.fecha)}${c.correo ? ' · ' + e(c.correo) : ''}</li>`).join('')}</ul></details>`);
+    }
+    if(entTab === 'revisar' && ENTREGA.sinCrm && ENTREGA.sinCrm.length){
+      box.insertAdjacentHTML('beforeend', `<details class="en-sin"><summary>${ENTREGA.sinCrm.length} clientas de la hoja de vencimientos de Gianie que no encontré en el CRM (nombre distinto o sin contacto)</summary><ul>${ENTREGA.sinCrm.map(c => `<li>${e(c.nombre)} · ${e(c.programa || c.version || '—')}</li>`).join('')}</ul></details>`);
     }
     box.querySelectorAll('th').forEach(th => th.addEventListener('click', () => entOrdenarPor(th.dataset.c)));
     box.querySelectorAll('tr.en-fila').forEach(tr => tr.addEventListener('click', () => entAlternarFicha(tr)));
