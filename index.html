@@ -2851,13 +2851,13 @@
     ['low', 'Low ticket', a => a.tipo === 'low' && a.estado !== 'terminada'],
     ['anterior', 'Oferta anterior', a => a.tipo === 'anterior' && a.estado !== 'terminada'],
     ['psicologa', 'Psicóloga (sesiones pendientes)', a => !!a.psicologa && !/^(done|vencido)/i.test(a.psicologa.etapa) && a.sesiones && a.sesiones.hechas < a.sesiones.total],
-    ['vencer', 'Por vencer y vencidas', a => a.estado === 'por_vencer' || a.estado === 'vencida'],
-    ['agendar', 'Falta agendar', a => a.estado === 'falta_agendar'],
+    ['vencer', 'Vencen en 30 días y vencidas', a => a.estado === 'por_vencer' || a.estado === 'vencida'],
+    ['agendar', 'Por agendar', a => a.estado === 'falta_agendar'],
     ['terminadas', 'Terminadas (Done y Vencido)', a => a.estado === 'terminada'],
     ['skool', 'Falta Skool', a => !!a.skool && !a.skool.tiene && a.estado !== 'vencida' && a.estado !== 'terminada'],
     ['revisar', 'Revisar', a => a.revisar.length > 0],
   ];
-  const ENT_ESTADOS = { al_dia: 'Al día', falta_agendar: 'Falta agendar', por_vencer: 'Por vencer', vencida: 'Vencida', terminada: 'Terminada' };
+  const ENT_ESTADOS = { al_dia: 'Activa', falta_agendar: 'Por agendar', por_vencer: 'Vence en 30 días', vencida: 'Vencida', terminada: 'Terminada' };   // mismas palabras que la hoja de Gianie
   const ENT_PRIORIDAD = { vencida: 0, por_vencer: 1, falta_agendar: 2, al_dia: 3, terminada: 4 };
   const entIniciales = n => String(n).trim().split(/\s+/).slice(0, 2).map(p => p[0] || '').join('').toUpperCase();
   const entOferta = a => { const o = a.oferta || {}; return [o.producto || (o.pipelineViejo ? 'Oferta anterior' : ''), o.paquete, o.fecha ? new Date(o.fecha + 'T12:00:00').toLocaleDateString('es-PR', { month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · '); };
@@ -2997,7 +2997,7 @@
   function renderEntregaKpis(){
     const def = ENT_TABS.find(t => t[0] === entTab), v = ENTREGA.alumnas.filter(def[2]);
     const n = k => v.filter(a => a.estado === k).length;
-    const k = [['En esta vista', v.length, '#c98aa0'], ['Al día', n('al_dia'), '#5fd39a'], ['Falta agendar', n('falta_agendar'), '#7fb2f0'], ['Por vencer', n('por_vencer'), '#e9c46a'], ['Vencidas', n('vencida'), '#ff8a8a']];
+    const k = [['En esta vista', v.length, '#c98aa0'], ['Activas', n('al_dia'), '#5fd39a'], ['Por agendar', n('falta_agendar'), '#7fb2f0'], ['Vencen en 30 días', n('por_vencer'), '#e9c46a'], ['Vencidas', n('vencida'), '#ff8a8a']];
     const box = document.getElementById('entKpis');
     if(box.children.length !== k.length || !box.querySelector('b')) box.innerHTML = k.map(([t, x, c]) => `<div class="en-kpi" style="--c:${c}"><span>${t}</span><b>0</b></div>`).join('');
     [...box.children].forEach((el, i) => {
