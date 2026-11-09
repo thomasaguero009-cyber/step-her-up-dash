@@ -2892,7 +2892,7 @@
   const ENT_PZ_CLASE = est => /^activo/i.test(est) ? 'ok' : /30 d/i.test(est) ? 'pronto' : /^vencido/i.test(est) ? 'venc' : '';
   const ENT_PZ_CORTO = { grupales: 'Grupales', uno: '1:1', psicologa: 'Psico' };
   const entPlazoTxt = p => `${p.vence ? entFmt(p.vence) + ' · ' : ''}${p.estatus || 'Sin dato'}`;
-  const entPlazosMini = a => a.venc ? `<div class="en-pz">${a.venc.plazos.map(p => `<i class="${ENT_PZ_CLASE(p.estatus)}" title="${escapeHtml(p.etiqueta + ': ' + entPlazoTxt(p))}">${ENT_PZ_CORTO[p.clave]}${p.vence ? ' ' + entFmt(p.vence) : ''}</i>`).join('')}</div>` : (a.vence ? entFmt(a.vence) : '<span class="en-mut">Sin fecha</span>');
+  const entPlazosMini = a => a.venc ? `<div class="en-pz">${a.venc.plazos.map(p => `<i class="${ENT_PZ_CLASE(p.estatus)}" title="${escapeHtml(p.etiqueta + ': ' + entPlazoTxt(p))}">${ENT_PZ_CORTO[p.clave]}${p.vence ? ' ' + entFmt(p.vence) : ''}</i>`).join('')}</div>` : (a.hojaGianie && a.hojaGianie.tipo !== 'probable' ? `<span class="en-mut" title="${escapeHtml(a.hojaGianie.texto)}">${escapeHtml(a.hojaGianie.texto)}</span>` : a.vence ? entFmt(a.vence) : '<span class="en-mut">Sin fecha</span>');
   const entPlazosFicha = a => `<div class="en-plazos">${a.venc.plazos.map(p => `<div class="en-plazo"><span>${p.etiqueta}</span><span>${p.vence ? entFmt(p.vence) + ' ' : ''}<em class="${ENT_PZ_CLASE(p.estatus)}">${escapeHtml(p.estatus || 'Sin dato')}</em></span></div>`).join('')}<div class="en-plazo"><span>Programa grabado</span><span>${escapeHtml(a.venc.grabado || '—')}</span></div></div>`;
   const ENT_CONTRATO = { firmado: 'Firmado', enviado: 'Enviado, falta la copia firmada', pendiente: 'Por enviar', sin_contrato: 'Sin contrato (confirmar)' };
   function entDato(etq, valor, fuente){ return `<div class="en-dato"><span>${etq}</span><div>${valor}${fuente ? `<small>· ${fuente}</small>` : ''}</div></div>`; }
@@ -2917,7 +2917,7 @@
       entDato(a.compras && a.compras.length > 1 ? 'Productos' : 'Producto', compras, 'ventas'),
       entDato('Fecha de compra', entFmt(a.fechaCompra), 'ventas'),
       entDato('Pago', e(a.pago || '—'), 'ventas'),
-      a.venc ? entDato('Plazos del contrato', entPlazosFicha(a), 'hoja de Gianie') : entDato('Vence', a.vence ? `${entFmt(a.vence)} <small>(${dv})</small>` : 'Sin fecha', 'GHL'),
+      a.venc ? entDato('Plazos del contrato', entPlazosFicha(a) + (a.hojaGianie && a.hojaGianie.tipo === 'probable' ? `<div class="en-mut">${escapeHtml(a.hojaGianie.texto)}</div>` : ''), 'hoja de Gianie') : a.hojaGianie ? entDato('Hoja de Gianie', escapeHtml(a.hojaGianie.texto) + (a.hojaGianie.monto ? ` <small>(${escapeHtml(a.hojaGianie.monto)}${a.hojaGianie.fecha ? ' · ' + entFmt(a.hojaGianie.fecha) : ''})</small>` : '') + (a.vence ? `<div class="en-mut">Vence en GHL: ${entFmt(a.vence)}</div>` : ''), 'hoja de Gianie') : entDato('Vence', a.vence ? `${entFmt(a.vence)} <small>(${dv})</small>` : 'Sin fecha', 'GHL'),
       a.venc && a.venc.version ? entDato('Contrato (versión)', e(a.venc.version), 'hoja de Gianie') : '',
       a.venc && a.venc.notas ? entDato('Nota de Gianie', e(a.venc.notas), 'hoja de Gianie') : '',
       entDato('Skool', a.skool ? (a.skool.tiene ? `Tiene acceso${a.skool.porNombre ? ' <small>(encontrada por nombre: revisar el correo)</small>' : ''}${a.skool.desde ? ` <small>· desde ${e(a.skool.desde)}</small>` : ''}` : 'Sin acceso') : 'Sin dato (falta cargar la lista de Skool)', a.skool ? 'Skool' : ''),
