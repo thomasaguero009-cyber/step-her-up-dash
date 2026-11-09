@@ -2927,6 +2927,7 @@
     return `<div class="en-fichain">
       ${a.noCuadra.length ? `<div class="en-alerta"><b>No cuadra:</b> ${a.noCuadra.map(e).join(' · ')}</div>` : ''}
       ${otros.length ? `<p class="en-nota">Para revisar: ${otros.map(e).join(' · ')}</p>` : ''}
+      ${(a.avisos || []).length ? `<p class="en-mut">Avisos: ${a.avisos.map(e).join(' · ')}</p>` : ''}
       <div class="en-bloques"><div><h4>Avance</h4>${avance}</div><div><h4>Compra y acceso</h4>${compra}</div></div>
       <a class="en-crm" target="_blank" rel="noopener" href="https://app.fortunacrm.ai/v2/location/6cXs7Gwtzk0m50TZkWPg/contacts/detail/${encodeURIComponent(a.contactId)}">Abrir en el CRM →</a>
     </div>`;
