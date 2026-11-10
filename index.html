@@ -562,6 +562,19 @@
   }
   .admin-tiny-btn:hover{ opacity:0.85; color:var(--cream); }
   .modal-card.utm-card{ max-width:440px; text-align:left; max-height:88vh; overflow-y:auto; }
+  .modal-card.ret-card{ max-width:720px; text-align:left; max-height:92vh; overflow-y:auto; }
+  .ret-top{ display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; }
+  .ret-top select{ width:auto; }
+  .ret-leyenda{ display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; }
+  .ret-leyenda label{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
+  .ret-leyenda i{ width:14px; height:4px; border-radius:2px; display:inline-block; }
+  .ret-lectura{ font-size:13px; color:var(--text-dim); min-height:20px; }
+  #retGrafico svg{ width:100%; height:auto; display:block; touch-action:none; }
+  #retTabla{ overflow-x:auto; }
+  .ret-tabla{ width:100%; border-collapse:collapse; font-size:13px; }
+  .ret-tabla th, .ret-tabla td{ text-align:left; padding:7px 8px; border-bottom:1px solid var(--border); }
+  .ret-tabla th{ color:var(--text-dim); font-weight:600; font-size:12px; }
+  .ret-tabla small{ color:var(--text-dim); }
   .utm-field{ display:flex; flex-direction:column; gap:6px; }
   .utm-field label{ font-size:12px; color:var(--text-dim); font-weight:600; }
   .utm-meta{ display:flex; flex-direction:column; gap:6px; padding:14px; border-radius:12px; background:rgba(240,168,190,0.08); border:1px solid rgba(240,168,190,0.35); }
@@ -1459,12 +1472,36 @@
       <div class="utm-field">
         <label>Destino</label>
         <div class="utm-chips" id="utmDestinoChips">
+      <button type="button" class="ghost-link-btn" id="adminGoRetencion" style="text-align:left; border-radius:12px;">Retención del video (VSL)</button>
           <button type="button" class="chart-chip active" data-valor="vsl">VSL</button>
           <button type="button" class="chart-chip" data-valor="webinar">Webinar · Marca personal</button>
           <button type="button" class="chart-chip" data-valor="webinar2">Webinar · Instagram</button>
           <button type="button" class="chart-chip" data-valor="formulario">Formulario</button>
           <button type="button" class="chart-chip" data-valor="pdf">PDF</button>
           <button type="button" class="chart-chip" data-valor="otro">Otro…</button>
+  <div class="modal-overlay" id="retOverlay">
+    <div class="modal-card ret-card">
+      <div class="modal-title">Retención del video (VSL)</div>
+      <p class="modal-sub">De las personas que dejaron sus datos y vieron arrancar el video, qué porcentaje sigue mirando en cada momento. Cada versión de la prueba (rosa, dorada, libre) por separado y en total.</p>
+      <div class="ret-top">
+        <select id="retDias" class="modal-input" aria-label="Período">
+          <option value="7">Últimos 7 días</option>
+          <option value="14">Últimos 14 días</option>
+          <option value="30" selected>Últimos 30 días</option>
+          <option value="90">Últimos 90 días</option>
+        </select>
+        <div class="ret-leyenda" id="retLeyenda"></div>
+      </div>
+      <div id="retMsg" class="modal-sub"></div>
+      <div id="retGrafico"></div>
+      <div id="retLectura" class="ret-lectura">Pasá el dedo o el mouse por el gráfico para ver cada momento.</div>
+      <div id="retTabla"></div>
+      <div class="modal-actions">
+        <button type="button" class="ghost-link-btn" id="retCerrar">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
         </div>
         <input type="text" id="utmBaseLink" class="modal-input" placeholder="https://… (el link al que quieres mandar)" autocomplete="off" style="display:none;">
       </div>
@@ -4210,6 +4247,100 @@
   }
   // Texto con **negritas** y <br> -> runs de Word.
   function estrRuns(texto, todoNegrita){
+  document.getElementById('adminGoRetencion').addEventListener('click', () => { adminMenuOverlay.classList.remove('open'); abrirRetencion(); });
+
+  // ===== Retención del video de la VSL (Admin). Lee los conteos que guarda el Worker (un aviso por persona al salir de la página).
+  const retOverlay = document.getElementById('retOverlay');
+  const RET_NOMBRES = { a: 'Versión A', b: 'Versión B (rosa)', dorado: 'Dorada', libre: 'Libre (video sin datos)' };
+  const RET_COLORES = ['#f0a8be', '#5fd39a', '#e9d3a0', '#8ab4f8', '#c792ea', '#ffb86b'];
+  const RET_COLOR_FIJO = { a: '#f0a8be', b: '#5fd39a', dorado: '#e9d3a0', libre: '#8ab4f8' };
+  let retDatos = null, retVisibles = {};
+  const retMin = (seg) => Math.floor(seg / 60) + ':' + String(Math.floor(seg % 60)).padStart(2, '0');
+  const retPct = (x, n) => n ? Math.round(x / n * 100) + '%' : '–';
+  // Total = suma de todas las versiones; después una línea por cada versión que tenga datos.
+  function retSeries(d){
+    const vs = Object.keys(d.versiones || {}).sort();
+    const h = [];
+    let n = 0, fin = 0, ap = 0;
+    vs.forEach(v => { const x = d.versiones[v]; n += x.n; fin += x.fin; ap += x.ap; x.h.forEach((c, i) => { h[i] = (h[i] || 0) + (c || 0); }); });
+    let extra = 0;
+    return [{ k: 't', nombre: 'Total', color: '#f7ece9', n, fin, ap, h }].concat(vs.map(v => ({
+      k: v, nombre: RET_NOMBRES[v] || ('Versión ' + v), color: RET_COLOR_FIJO[v] || RET_COLORES[(extra++) % RET_COLORES.length], ...d.versiones[v]
+    })));
+  }
+  function abrirRetencion(){
+    retOverlay.classList.add('open');
+    cargarRetencion();
+  }
+  document.getElementById('retCerrar').addEventListener('click', () => retOverlay.classList.remove('open'));
+  retOverlay.addEventListener('click', (e) => { if(e.target === retOverlay) retOverlay.classList.remove('open'); });
+  document.getElementById('retDias').addEventListener('change', cargarRetencion);
+  async function cargarRetencion(){
+    const msg = document.getElementById('retMsg');
+    msg.textContent = 'Cargando…';
+    let clave = '';
+    try { clave = sessionStorage.getItem('shu_estr_key') || ''; } catch(e){}
+    try {
+      const res = await fetch(WORKER_URL + '/admin/vsl-retencion?dias=' + document.getElementById('retDias').value, { headers: { 'X-Admin-Key': clave } });
+      if(res.status === 401){
+        try { sessionStorage.removeItem('shu_estr_key'); sessionStorage.removeItem('shu_admin_utm_ok'); } catch(e){}
+        msg.textContent = 'El servidor no aceptó la contraseña de Admin. Salí y volvé a entrar a Admin.';
+        return;
+      }
+      const d = await res.json();
+      if(!res.ok || !d.ok) throw new Error(d.error || res.status);
+      retDatos = d;
+      msg.textContent = '';
+      dibujarRetencion();
+    } catch(e){
+      msg.textContent = 'No se pudo cargar la retención (' + e.message + ').';
+    }
+  }
+  function dibujarRetencion(){
+    const d = retDatos;
+    if(!d) return;
+    const paso = d.paso || 15, dur = d.dur || 637;
+    const series = retSeries(d);
+    series.forEach(s => { if(!(s.k in retVisibles)) retVisibles[s.k] = true; });
+    document.getElementById('retLeyenda').innerHTML = series.map(s =>
+      `<label><input type="checkbox" data-k="${s.k}"${retVisibles[s.k] ? ' checked' : ''}><i style="background:${s.color}"></i>${s.nombre} (${s.n})</label>`).join('');
+    document.querySelectorAll('#retLeyenda input').forEach(c => c.addEventListener('change', () => { retVisibles[c.dataset.k] = c.checked; dibujarRetencion(); }));
+    const tot = series[0];
+    const W = 680, H = 260, L = 38, R = 12, T = 12, B = 28, pw = W - L - R, ph = H - T - B;
+    const X = (seg) => L + Math.min(1, seg / dur) * pw;
+    const Y = (p) => T + (1 - p) * ph;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" id="retSvg" role="img" aria-label="Retención del video">`;
+    for(let p = 0; p <= 1.001; p += 0.25) svg += `<line x1="${L}" x2="${W - R}" y1="${Y(p)}" y2="${Y(p)}" stroke="rgba(255,255,255,0.12)"/><text x="${L - 6}" y="${Y(p) + 4}" text-anchor="end" font-size="11" fill="rgba(247,236,233,0.72)">${Math.round(p * 100)}%</text>`;
+    for(let seg = 0; seg <= dur; seg += 120) svg += `<text x="${X(seg)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="rgba(247,236,233,0.72)">${retMin(seg)}</text>`;
+    series.forEach(s => {
+      if(!retVisibles[s.k] || !s.n) return;
+      let pts = '';
+      for(let i = 0; i < s.h.length; i++) pts += (i ? ' ' : '') + X(i * paso).toFixed(1) + ',' + Y(Math.min(1, (s.h[i] || 0) / s.n)).toFixed(1);
+      svg += `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="${s.k === 't' ? 3 : 2}" stroke-linejoin="round" opacity="${s.k === 't' ? 1 : 0.9}"/>`;
+    });
+    svg += `<line id="retGuia" x1="0" x2="0" y1="${T}" y2="${T + ph}" stroke="rgba(255,255,255,0.45)" style="display:none"/></svg>`;
+    document.getElementById('retGrafico').innerHTML = tot.n ? svg : '<p class="modal-sub">Todavía no hay datos de retención en este período. Aparecen cuando la VSL nueva esté publicada y alguien vea el video.</p>';
+    const lectura = document.getElementById('retLectura');
+    const svgEl = document.getElementById('retSvg');
+    if(svgEl){
+      const mover = (ev) => {
+        const r = svgEl.getBoundingClientRect();
+        const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX);
+        const x = (cx - r.left) / r.width * W;
+        const i = Math.max(0, Math.min(Math.round((x - L) / pw * dur / paso), Math.floor(dur / paso)));
+        const g = document.getElementById('retGuia');
+        g.setAttribute('x1', X(i * paso)); g.setAttribute('x2', X(i * paso)); g.style.display = '';
+        lectura.textContent = 'A los ' + retMin(i * paso) + ' del video: ' + series.filter(s => retVisibles[s.k] && s.n).map(s => s.nombre + ' ' + retPct(s.h[i] || 0, s.n) + ' (' + (s.h[i] || 0) + ' de ' + s.n + ')').join(' · ');
+      };
+      svgEl.addEventListener('mousemove', mover);
+      svgEl.addEventListener('touchstart', mover, { passive: true });
+      svgEl.addEventListener('touchmove', mover, { passive: true });
+    }
+    const mitad = Math.floor(dur / 2 / paso);
+    document.getElementById('retTabla').innerHTML = `<table class="ret-tabla"><thead><tr><th></th><th>Empezaron el video</th><th>Siguen a los 30 s</th><th>Llegan a la mitad</th><th>Llegaron al final</th><th>Tocaron "Aplicar"</th></tr></thead><tbody>${
+      series.map(s => `<tr><td><b style="color:${s.color}">${s.nombre}</b></td><td>${s.n}</td><td>${retPct(s.h[2] || 0, s.n)}</td><td>${retPct(s.h[mitad] || 0, s.n)}</td><td>${s.fin} <small>${retPct(s.fin, s.n)}</small></td><td>${s.ap} <small>${retPct(s.ap, s.n)}</small></td></tr>`).join('')
+    }</tbody></table><p class="modal-sub" style="margin-top:8px;">${tot.n < 30 ? 'Todavía son pocas personas (' + tot.n + '): la curva puede cambiar mucho. Conviene esperar a tener más de 30 por versión antes de comparar versiones. ' : ''}Solo cuenta a quien dejó sus datos y vio arrancar el video; se mide cada 15 segundos.</p>`;
+  }
     return String(texto).split(/<br\s*\/?>/i).map(linea =>
       linea.split(/\*\*(.+?)\*\*/g).map((t, i) => t ? `<w:r>${(i % 2 || todoNegrita) ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${estrXml(t)}</w:t></w:r>` : '').join('')
     ).join('<w:r><w:br/></w:r>');
