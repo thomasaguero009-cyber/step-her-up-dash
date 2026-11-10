@@ -4104,8 +4104,8 @@
   // ===== Retención del video de la VSL (Admin). Lee los conteos que guarda el Worker (un aviso por persona al salir de la página).
   const retOverlay = document.getElementById('retOverlay');
   const RET_NOMBRES = { a: 'Versión A', b: 'Versión B (rosa)', dorado: 'Dorada', libre: 'Libre (video sin datos)' };
-  const RET_COLORES = ['#f0a8be', '#5fd39a', '#e9d3a0', '#8ab4f8', '#c792ea', '#ffb86b'];
-  const RET_COLOR_FIJO = { a: '#f0a8be', b: '#5fd39a', dorado: '#e9d3a0', libre: '#8ab4f8' };
+  const RET_COLOR_NUEVA = '#5fd39a'; // la landing más nueva siempre va en verde
+  const RET_COLORES = ['#f0a8be', '#e9d3a0', '#8ab4f8', '#c792ea', '#ffb86b', '#7fe0e0'];
   let retDatos = null, retVisibles = {};
   const retMin = (seg) => Math.floor(seg / 60) + ':' + String(Math.floor(seg % 60)).padStart(2, '0');
   const retPct = (x, n) => n ? Math.round(x / n * 100) + '%' : '–';
@@ -4138,10 +4138,14 @@
     const h = [];
     let fin = 0, ap = 0;
     vs.forEach(v => { const x = d.versiones[v]; fin += x.fin; ap += x.ap; x.h.forEach((c, i) => { h[i] = (h[i] || 0) + (c || 0); }); });
+    // Orden de aparición que lleva el Worker: la última es la landing más nueva y siempre va en verde; las anteriores toman los otros colores en orden.
+    const ya = d.orden || [];
+    const ord = ya.filter(v => vs.includes(v)).concat(vs.filter(v => !ya.includes(v)));
+    const nueva = ord[ord.length - 1];
     let extra = 0;
     // n = personas que dieron play = las que llegaron al primer tramo (h[0]). Es más fiable que el contador "empezaron", que se pierde si un aviso falla.
-    return [{ k: 't', nombre: 'Total', color: '#f7ece9', fin, ap, h, n: h[0] || 0 }].concat(vs.map(v => ({
-      k: v, nombre: RET_NOMBRES[v] || ('Versión ' + v), color: RET_COLOR_FIJO[v] || RET_COLORES[(extra++) % RET_COLORES.length], ...d.versiones[v], n: (d.versiones[v].h || [])[0] || 0
+    return [{ k: 't', nombre: 'Total', color: '#f7ece9', fin, ap, h, n: h[0] || 0 }].concat(ord.map(v => ({
+      k: v, nombre: RET_NOMBRES[v] || ('Versión ' + v), color: v === nueva ? RET_COLOR_NUEVA : RET_COLORES[(extra++) % RET_COLORES.length], ...d.versiones[v], n: (d.versiones[v].h || [])[0] || 0
     })));
   }
   function abrirRetencion(){
@@ -4190,7 +4194,10 @@
     for(let seg = 0; seg <= dur; seg += 120) svg += `<text x="${X(seg)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="rgba(247,236,233,0.72)">${retMin(seg)}</text>`;
     series.forEach(s => {
       if(!retVisibles[s.k] || !s.n) return;
-      const P = s.h.map((c, i) => [X(i * paso), Y(Math.min(1, (c || 0) / s.n))]);
+      // Solo para dibujar: se alisa dos veces (promedio con los vecinos) para que la línea sea más curva; la lectura al pasar el mouse y la tabla usan los números exactos.
+      let q = s.h.map(c => Math.min(1, (c || 0) / s.n));
+      for(let r = 0; r < 2; r++) q = q.map((v, i) => (i === 0 || i === q.length - 1) ? v : (q[i - 1] + 2 * v + q[i + 1]) / 4);
+      const P = q.map((v, i) => [X(i * paso), Y(v)]);
       svg += `<path d="${retCurva(P)}" fill="none" stroke="${s.color}" stroke-width="${s.k === 't' ? 3 : 2}" stroke-linecap="round" stroke-linejoin="round" opacity="${s.k === 't' ? 1 : 0.9}"/>`;
       if(s.n < 30) P.forEach(p => { svg += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.2" fill="${s.color}" opacity="0.8"/>`; });
     });
