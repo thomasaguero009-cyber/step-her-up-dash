@@ -1468,7 +1468,7 @@
   <div class="modal-overlay" id="retOverlay">
     <div class="modal-card ret-card">
       <div class="modal-title">Retención del video (VSL)</div>
-      <p class="modal-sub">De las personas que dejaron sus datos y vieron arrancar el video, qué porcentaje sigue mirando en cada momento. Cada versión de la prueba (rosa, dorada, libre) por separado y en total.</p>
+      <p class="modal-sub">De las personas que le dieron play al video, qué porcentaje llegó a ver cada momento. Cada versión de la prueba (rosa, dorada, libre) por separado y en total.</p>
       <div class="ret-top">
         <select id="retDias" class="modal-input" aria-label="Período">
           <option value="7">Últimos 7 días</option>
@@ -4109,15 +4109,39 @@
   let retDatos = null, retVisibles = {};
   const retMin = (seg) => Math.floor(seg / 60) + ':' + String(Math.floor(seg % 60)).padStart(2, '0');
   const retPct = (x, n) => n ? Math.round(x / n * 100) + '%' : '–';
+  // Curva suave que pasa por cada punto sin inventar subidas ni bajadas entre ellos (interpolación monótona de Fritsch–Carlson).
+  function retCurva(P){
+    const n = P.length;
+    if(n < 3) return P.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    const dx = [], m = [], t = new Array(n);
+    for(let i = 0; i < n - 1; i++){ dx[i] = P[i + 1][0] - P[i][0]; m[i] = (P[i + 1][1] - P[i][1]) / dx[i]; }
+    t[0] = m[0]; t[n - 1] = m[n - 2];
+    for(let i = 1; i < n - 1; i++) t[i] = m[i - 1] * m[i] <= 0 ? 0 : (m[i - 1] + m[i]) / 2;
+    for(let i = 0; i < n - 1; i++){
+      if(m[i] === 0){ t[i] = 0; t[i + 1] = 0; continue; }
+      const a = t[i] / m[i], b = t[i + 1] / m[i], q = a * a + b * b;
+      if(q > 9){ const k = 3 / Math.sqrt(q); t[i] = k * a * m[i]; t[i + 1] = k * b * m[i]; }
+    }
+    let d = 'M' + P[0][0].toFixed(1) + ' ' + P[0][1].toFixed(1);
+    for(let i = 0; i < n - 1; i++){
+      const h3 = dx[i] / 3;
+      d += ' C' + (P[i][0] + h3).toFixed(1) + ' ' + (P[i][1] + t[i] * h3).toFixed(1) + ' ' + (P[i + 1][0] - h3).toFixed(1) + ' ' + (P[i + 1][1] - t[i + 1] * h3).toFixed(1) + ' ' + P[i + 1][0].toFixed(1) + ' ' + P[i + 1][1].toFixed(1);
+    }
+    return d;
+  }
   // Total = suma de todas las versiones; después una línea por cada versión que tenga datos.
   function retSeries(d){
     const vs = Object.keys(d.versiones || {}).sort();
+    // Quien llegó al minuto 4 también pasó por el 3: si un tramo tiene más gente que el anterior, son visitas con avisos perdidos (de antes de publicar el contador) y no se cuentan.
+    const limpio = (hs) => { const o = []; (hs || []).forEach((c, i) => { o[i] = Math.min(c || 0, i ? o[i - 1] : Infinity); }); return o; };
+    vs.forEach(v => { d.versiones[v] = { ...d.versiones[v], h: limpio(d.versiones[v].h) }; });
     const h = [];
-    let n = 0, fin = 0, ap = 0;
-    vs.forEach(v => { const x = d.versiones[v]; n += x.n; fin += x.fin; ap += x.ap; x.h.forEach((c, i) => { h[i] = (h[i] || 0) + (c || 0); }); });
+    let fin = 0, ap = 0;
+    vs.forEach(v => { const x = d.versiones[v]; fin += x.fin; ap += x.ap; x.h.forEach((c, i) => { h[i] = (h[i] || 0) + (c || 0); }); });
     let extra = 0;
-    return [{ k: 't', nombre: 'Total', color: '#f7ece9', n, fin, ap, h }].concat(vs.map(v => ({
-      k: v, nombre: RET_NOMBRES[v] || ('Versión ' + v), color: RET_COLOR_FIJO[v] || RET_COLORES[(extra++) % RET_COLORES.length], ...d.versiones[v]
+    // n = personas que dieron play = las que llegaron al primer tramo (h[0]). Es más fiable que el contador "empezaron", que se pierde si un aviso falla.
+    return [{ k: 't', nombre: 'Total', color: '#f7ece9', fin, ap, h, n: h[0] || 0 }].concat(vs.map(v => ({
+      k: v, nombre: RET_NOMBRES[v] || ('Versión ' + v), color: RET_COLOR_FIJO[v] || RET_COLORES[(extra++) % RET_COLORES.length], ...d.versiones[v], n: (d.versiones[v].h || [])[0] || 0
     })));
   }
   function abrirRetencion(){
@@ -4166,9 +4190,9 @@
     for(let seg = 0; seg <= dur; seg += 120) svg += `<text x="${X(seg)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="rgba(247,236,233,0.72)">${retMin(seg)}</text>`;
     series.forEach(s => {
       if(!retVisibles[s.k] || !s.n) return;
-      let pts = '';
-      for(let i = 0; i < s.h.length; i++) pts += (i ? ' ' : '') + X(i * paso).toFixed(1) + ',' + Y(Math.min(1, (s.h[i] || 0) / s.n)).toFixed(1);
-      svg += `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="${s.k === 't' ? 3 : 2}" stroke-linejoin="round" opacity="${s.k === 't' ? 1 : 0.9}"/>`;
+      const P = s.h.map((c, i) => [X(i * paso), Y(Math.min(1, (c || 0) / s.n))]);
+      svg += `<path d="${retCurva(P)}" fill="none" stroke="${s.color}" stroke-width="${s.k === 't' ? 3 : 2}" stroke-linecap="round" stroke-linejoin="round" opacity="${s.k === 't' ? 1 : 0.9}"/>`;
+      if(s.n < 30) P.forEach(p => { svg += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.2" fill="${s.color}" opacity="0.8"/>`; });
     });
     svg += `<line id="retGuia" x1="0" x2="0" y1="${T}" y2="${T + ph}" stroke="rgba(255,255,255,0.45)" style="display:none"/></svg>`;
     document.getElementById('retGrafico').innerHTML = tot.n ? svg : '<p class="modal-sub">Todavía no hay datos de retención en este período. Aparecen cuando la VSL nueva esté publicada y alguien vea el video.</p>';
@@ -4191,7 +4215,7 @@
     const mitad = Math.floor(dur / 2 / paso);
     document.getElementById('retTabla').innerHTML = `<table class="ret-tabla"><thead><tr><th></th><th>Empezaron el video</th><th>Siguen a los 30 s</th><th>Llegan a la mitad</th><th>Llegaron al final</th><th>Tocaron "Aplicar"</th></tr></thead><tbody>${
       series.map(s => `<tr><td><b style="color:${s.color}">${s.nombre}</b></td><td>${s.n}</td><td>${retPct(s.h[2] || 0, s.n)}</td><td>${retPct(s.h[mitad] || 0, s.n)}</td><td>${s.fin} <small>${retPct(s.fin, s.n)}</small></td><td>${s.ap} <small>${retPct(s.ap, s.n)}</small></td></tr>`).join('')
-    }</tbody></table><p class="modal-sub" style="margin-top:8px;">${tot.n < 30 ? 'Todavía son pocas personas (' + tot.n + '): la curva puede cambiar mucho. Conviene esperar a tener más de 30 por versión antes de comparar versiones. ' : ''}Solo cuenta a quien dejó sus datos y vio arrancar el video; se mide cada 15 segundos.</p>`;
+    }</tbody></table><p class="modal-sub" style="margin-top:8px;">${tot.n < 30 ? 'Todavía son pocas personas (' + tot.n + '): la curva puede cambiar mucho. Conviene esperar a tener más de 30 por versión antes de comparar versiones. ' : ''}Cuenta a quien le dio play al video. Cada persona suma una vez; se mide en tramos de 15 segundos: un punto de la curva es el porcentaje que llegó a ver, como mínimo, ese momento del video.</p>`;
   }
 
   // ===== Estrategias de alumnas (Admin). Las RESPUESTAS siguen siendo de
