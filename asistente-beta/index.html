@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEm0lEQVR42sWXy2+VVRTFf/t85765vX2X0paWggTii6YJGOThIwwMxsQHziQmEhPjH8HMoUxMTIwjSJwYE4MkhsQBWAgSQVAk2KDUFkpLaal93Nt7+51ztoPeEMCg0ErZw++Rs/Y+a+29tgACKMDOwuo9iPkgBO1FyFff/R+hKDPGyFk0fHp8aujL6nOR/WCO0BtlC+OfR2L2KkpQ5VGEEUEQvIaDpanGfa9y1gvA9pqOg6ko8U45eA+IgHkUABQCoGkTRRUfH+qbvrpXdhQ63zBivnIanIBlGULBWTE2aHgzWp2q/UyEDl3IXFimEAFV2qxCT1Bd3sPBBFUUeowIOR5TiJBbEtlUFV2iYszikAveOQr1ddTU1eKdR0SWDwAiuNjRsLKZ+uZGnIsXXQG7SBIRvCdfW8DNxwQfEJFFXYddLI1DCORq8sSVeTSE5amAiIAI1iYIGkhn0hhj8MERJSwaO3hIYj4wAA2Byvw83jk0KO3dayg0NFAulljV1cnI4DWMWQCXSCUfmJT2QeWWzKRZvX4tdU1NpLMZWtpX8faH7xF8IFfIc31giNLsLDdHRrkxNIx3bqHdLRlAtWcmkkkaWppp6+6itrGehpZmmlpX4pyjua2VTC7LxOgYLo4Zv34D7/3SK2AigyC4ELh5fZSBa/1UcACsbVrH1MQkAIc+/oQrtwaIgCQJ8lGBTC6LtRZFCf7+JJXthU69N2NjDD52FGdm8HgaGptZ++QG1m96is7162hd3U4qk6alox0NgfHRG5RmZhm9Osxg/+/0n7/AlYu/MTExRoQlV5MnspYQfNX63AeAMYY4jpmbLVLb2MDml3ew87VX6Fi3hnh+nrHhEUb+vMr4yA2uDw2x5aWdOOc4+/1J2rq6aFq1klVdHTS3tRLZBEOX/+D44W85/d0xpiYmya7IYRMJwh2yvQ1AVamUy9Q3NbFt9y42bXuO+bkyF06f4ZdTPzI8MEipXEQJWJJMM8lbe94ljmMOf/0FeQo4YgyGbGYF7d1dbHp+C89s3UwikeDM8ZP0HTnK5M0J0tnMPwEYY9jY+ywbezcxNjzCub5TDA8OApDJZEmmUpjIAIIxwvTkFC++vhsfO/qOHCVfVyAEheqdV8oVyuUSArR3d9O7cyuNrS38evonLp09f7tXyI7aLnXO0b1xPZlcjv6fLzAzOUUmt3CoVnvAnc3FGENxeoYtu17AO8eZYyfI5fN3l7bKJWABTKlETX0dG3qepjg9y5VL/VhrsapKZCOGLl+hPDdHMpWipr4ODeG+UlJAjGFutoj3HjHmXm6hqrf/TyQTJNN1eOc4d+IH0tksURShqlUZ6oJvTmcyqCrhvzSsiokMpWKJ4D3GRPAv7VdVUb8wstOZzF2zw9774QPP8SiiND1D0EAUmYcyMUuehqqKtZa/Jm4BEFm7aGdkVCk+LkumStEInDMiWl0aWKa9IBgRrZ7NAVkYW8sGAAiCiAgHosHK1KWOZH5tOrI9TtVXDY88wtUspE1k4+AO9U0PfRTtB3Ox8sQ3JlXstGJ6RBB9RGlHIhKJMbGGg6Xppn3vM4I87vX8b7ecN6X/5FkIAAAAAElFTkSuQmCC">
+<title>Step Her Up · Tu asistente de contenido</title>
+<style>
+@font-face{font-family:"Bodoni Moda";src:url(BodoniModa-normal.woff2) format("woff2");font-weight:400 900;font-style:normal}
+@font-face{font-family:"Bodoni Moda";src:url(BodoniModa-italic.woff2) format("woff2");font-weight:400 900;font-style:italic}
+@font-face{font-family:"Inter";src:url(Inter-normal.woff2) format("woff2");font-weight:300 800}
+:root{
+  --fondo:#14050b; --lado:#1b0811; --sup:#24101a; --sup2:#2e1521;
+  --crema:#f4ece4; --champan:#e9d3a0; --oro:#c9a45c;
+  --suave:rgba(244,236,228,.62); --tenue:rgba(244,236,228,.4); --linea:rgba(233,211,160,.16);
+  --papel:#f3ebe0; --tinta:#1c0a10;
+}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{font-family:Inter,system-ui,sans-serif;color:var(--crema);background:var(--fondo);-webkit-font-smoothing:antialiased;line-height:1.5;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
+a{color:inherit}
+
+/* ================= PÁGINA DE INICIO (aquí vive Gianie animada) ================= */
+.portal{height:100%;overflow:auto;position:relative;
+  background:radial-gradient(56% 60% at 74% 44%, rgba(122,31,60,.62), transparent 72%),linear-gradient(180deg,#1b0610,var(--fondo) 80%)}
+.p-barra{display:flex;align-items:center;justify-content:space-between;padding:18px 28px 0;position:relative;z-index:3}
+.p-barra img{height:40px;width:auto}
+.p-barra span{font-size:12px;color:var(--suave)}
+.p-barra span.pronto{color:var(--champan)}
+.p-cuerpo{max-width:1080px;margin:0 auto;padding:0 28px 30px;display:grid;grid-template-columns:1.05fr .95fr;align-items:center;min-height:calc(100% - 58px);gap:10px}
+.p-texto h1{font-family:"Bodoni Moda",serif;font-weight:500;font-size:clamp(40px,5.6vw,76px);line-height:1.02;letter-spacing:-.025em}
+.p-texto h1 i{display:block;color:var(--champan)}
+.p-texto>p{color:var(--suave);font-size:17px;margin-top:18px;max-width:42ch}
+.p-texto .err{color:#ffb4c0}
+.p-botones{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:28px}
+.entrar{padding:16px 34px;border-radius:99px;font-weight:600;font-size:16px;color:var(--tinta);text-align:center;text-decoration:none;display:inline-block;
+  background:linear-gradient(95deg,var(--oro),var(--champan) 55%,#f3e6c4);box-shadow:0 14px 34px rgba(201,164,92,.22)}
+.entrar:disabled{opacity:.6}
+.seguir{font-size:15px;color:var(--champan);padding:8px 2px;border-bottom:1px solid rgba(233,211,160,.4)}
+.p-secciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:34px}
+.p-secciones small{flex-basis:100%;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--tenue);margin-bottom:2px}
+.p-secciones button{padding:9px 15px;border-radius:99px;border:1px solid var(--linea);font-size:14px;color:var(--crema)}
+.p-secciones button:hover{border-color:rgba(233,211,160,.45)}
+.codigo{display:flex;gap:10px;margin-top:26px;max-width:460px}
+.codigo input{flex:1;min-width:0;background:rgba(36,16,26,.7);border:1px solid rgba(233,211,160,.3);border-radius:99px;padding:15px 22px;color:var(--crema);font:500 17px Inter,sans-serif;letter-spacing:.06em;outline:0}
+.codigo input:focus{border-color:var(--champan)}
+.codigo input::placeholder{color:var(--tenue);letter-spacing:0}
+.como{display:grid;gap:10px;margin-top:26px;max-width:46ch;list-style:none;padding:0}
+.como li{display:flex;gap:12px;align-items:baseline;color:var(--suave);font-size:15px}
+.como b{font:italic 400 22px "Bodoni Moda",serif;color:var(--oro);flex:none;width:18px}
+.p-lista{margin-top:22px;max-width:520px;max-height:34vh;overflow:auto}
+.p-lista div{padding:10px 0;border-top:1px solid var(--linea);font-size:14.5px}
+.p-lista small{display:block;color:var(--suave);font-size:12px}
+
+/* Los videos de gestos tienen fondo negro; con "screen" el negro desaparece sobre el vino */
+.viva{position:relative;justify-self:center;height:min(76vh,640px);aspect-ratio:480/1140;overflow:hidden}
+.viva video{position:absolute;width:150%;left:-27.1%;top:-5.3%;mix-blend-mode:screen;transition:opacity .5s ease;filter:contrast(1.1) brightness(.95);
+  -webkit-mask-image:linear-gradient(180deg,#000 84%,transparent 99%),linear-gradient(90deg,transparent 0,#000 16%,#000 84%,transparent 100%);
+  mask-image:linear-gradient(180deg,#000 84%,transparent 99%),linear-gradient(90deg,transparent 0,#000 16%,#000 84%,transparent 100%);
+  -webkit-mask-composite:source-in;mask-composite:intersect}
+.viva video.fuera{opacity:0}
+
+/* ================= CHAT ================= */
+.app{display:grid;grid-template-columns:272px 1fr;height:100%}
+.lado{background:var(--lado);border-right:1px solid var(--linea);display:flex;flex-direction:column;min-height:0;padding:16px 12px 12px}
+.marca{display:flex;align-items:center;gap:10px;padding:2px 8px 16px;width:100%}
+.marca img{height:34px;width:auto}
+.nueva{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--linea);font-weight:500;font-size:14.5px}
+.nueva:hover,.item:hover{background:var(--sup)}
+.nueva svg{color:var(--champan)}
+.grupo{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--tenue);padding:20px 10px 8px}
+.item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:10px;font-size:14.5px;color:var(--crema);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .n{font-family:"Bodoni Moda",serif;font-style:italic;font-size:16px;color:var(--oro);width:20px;flex:none}
+.item.activa{background:var(--sup2)}
+.item.rec{color:var(--suave);display:block}
+.item.semana{margin-top:10px;border:1px solid var(--linea)}
+.item.semana .punto{width:8px;height:8px;border-radius:50%;background:var(--champan);flex:none;margin:0 6px}
+.item.semana small{margin-left:auto;font-size:11px;color:var(--oro)}
+.scroll{overflow:auto;min-height:0;flex:1}
+.pie{border-top:1px solid var(--linea);margin-top:8px;padding-top:8px}
+.yo{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px}
+.yo .inicial{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--oro),var(--champan));color:var(--tinta);display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.yo b{display:block;font-size:14px;font-weight:600}
+.yo small{display:block;font-size:12px;color:var(--suave)}
+.yo small.pronto{color:var(--champan)}
+
+.centro{display:flex;flex-direction:column;min-width:0;min-height:0;position:relative;
+  background:radial-gradient(60% 46% at 50% 0%, rgba(122,31,60,.36), transparent 70%)}
+.arriba{display:flex;align-items:center;gap:10px;padding:12px 16px;min-height:56px}
+.arriba .abrir{display:none;width:40px;height:40px;border-radius:10px;place-items:center}
+.seccion{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;font-weight:600;font-size:15px}
+.seccion span{color:var(--tenue);font-weight:400}
+.hilo{flex:1;min-height:0;overflow:auto;padding:8px 20px 20px}
+.col{max-width:720px;margin:0 auto}
+
+.vacio{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px 0 30px}
+.vacio h1{font-family:"Bodoni Moda",serif;font-weight:500;font-size:clamp(34px,6vw,52px);line-height:1.06;letter-spacing:-.015em}
+.vacio h1 i{color:var(--champan)}
+.vacio p{color:var(--suave);font-size:15.5px;margin-top:14px;max-width:50ch}
+.ideas{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px;width:100%}
+.idea{padding:13px 15px;border-radius:14px;border:1px solid var(--linea);background:rgba(36,16,26,.6);font-size:14.5px;line-height:1.35}
+.idea:hover{border-color:rgba(233,211,160,.42)}
+.idea small{display:block;color:var(--oro);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px}
+
+.msg{display:flex;gap:12px;margin-top:22px;animation:entra .45s ease both}
+@keyframes entra{from{opacity:0;transform:translateY(8px)}}
+.msg.yo-msg{justify-content:flex-end}
+.burbuja{background:var(--sup2);border-radius:20px 20px 6px 20px;padding:12px 16px;max-width:78%;font-size:15.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg .mini{width:34px;height:34px;border-radius:50%;overflow:hidden;flex:none;border:1px solid rgba(233,211,160,.45);background:#3a0f20}
+.msg .mini img{width:100%;height:100%;display:block;object-fit:cover}
+.dice{min-width:0;flex:1}
+.dice .quien{font-family:"Bodoni Moda",serif;font-style:italic;color:var(--champan);font-size:16px}
+.dice>p{font-size:15.5px;margin-top:4px;white-space:pre-line}
+.puntos{display:inline-flex;gap:5px;padding:10px 0}
+.puntos i{width:7px;height:7px;border-radius:50%;background:var(--champan);opacity:.35;animation:pun 1.1s infinite}
+.puntos i:nth-child(2){animation-delay:.18s}.puntos i:nth-child(3){animation-delay:.36s}
+@keyframes pun{50%{opacity:1}}
+.hoja{background:var(--papel);color:var(--tinta);border-radius:14px;padding:22px 22px 18px;margin-top:14px;box-shadow:0 22px 48px rgba(0,0,0,.4)}
+.hoja small{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8a6a2e}
+.hoja h3{font-family:"Bodoni Moda",serif;font-weight:700;font-size:25px;line-height:1.1;letter-spacing:-.01em;margin:8px 0 10px}
+.hoja p{font-size:16px;line-height:1.55;margin-top:8px}
+.hoja .et{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a6a2e;margin-bottom:1px}
+.hoja .linea{margin-top:12px}.hoja .linea p{margin-top:0}
+.hoja .nota{font-size:13.5px;color:#7a6a58;margin-top:14px}
+.pasos{margin:10px 0 0;padding-left:22px;font-size:16px;line-height:1.5}
+.pasos li{margin-top:8px;padding-left:4px}
+.pasos li::marker{font-family:"Bodoni Moda",serif;font-style:italic;color:#8a6a2e}
+.fuente{margin-top:16px;padding-top:12px;border-top:1px solid rgba(28,10,16,.14);font-size:13.5px;font-weight:600}
+.fuente span{font-weight:400;color:#7a6a58}
+.acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.acciones button,.acciones a{border-radius:99px;padding:10px 16px;font-size:13.5px;font-weight:500;border:1px solid rgba(28,10,16,.3);text-decoration:none;color:var(--tinta);display:inline-block}
+.acciones .grabar{background:var(--tinta);color:var(--champan);border-color:var(--tinta);font-weight:600}
+.acciones .sutil{border-color:transparent;color:#7a6a58;padding-left:6px;padding-right:6px}
+.acciones .sutil.on{color:var(--tinta);font-weight:600}
+.gancho{padding:12px 0;border-top:1px solid rgba(28,10,16,.12)}
+.gancho:first-of-type{border-top:0;padding-top:4px}
+.gancho p{margin-top:2px}
+.gancho button{font-size:13px;font-weight:600;color:#7a4a1a;margin-top:6px;border-bottom:1px solid rgba(122,74,26,.4)}
+.dia{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;padding:13px 0;border-top:1px solid rgba(28,10,16,.12)}
+.dia:first-of-type{border-top:0;padding-top:6px}
+.dia .dn{font:italic 500 26px/1 "Bodoni Moda",serif;color:#8a6a2e;grid-row:span 2}
+.dia b{font:700 17px/1.25 "Bodoni Moda",serif}
+.dia p{margin:2px 0 0;font-size:14.5px}
+.dia .ac{grid-column:2;display:flex;gap:16px;align-items:center;margin-top:4px}
+.dia .ac label{font-size:13px;color:#7a6a58;display:flex;gap:6px;align-items:center;cursor:pointer}
+.dia .ac input{accent-color:#8a6a2e;width:16px;height:16px}
+.dia .ac button{font-size:13px;font-weight:600;color:#7a4a1a;border-bottom:1px solid rgba(122,74,26,.4)}
+.dia.ok b{opacity:.5;text-decoration:line-through}
+
+.abajo{padding:6px 20px 14px}
+.chips{max-width:720px;margin:0 auto 10px;display:flex;gap:8px;flex-wrap:wrap}
+.chips button{padding:8px 14px;border-radius:99px;border:1px solid rgba(233,211,160,.34);font-size:13.5px;color:var(--champan)}
+.chips button:hover{background:var(--sup2)}
+.caja{max-width:720px;margin:0 auto;background:var(--sup);border:1px solid rgba(233,211,160,.26);border-radius:24px;padding:12px 12px 10px 18px;box-shadow:0 18px 44px rgba(0,0,0,.35);position:relative}
+.caja textarea{display:block;width:100%;background:transparent;border:0;outline:0;resize:none;color:var(--crema);font:400 16px/1.45 Inter,sans-serif;min-height:28px;max-height:160px;height:28px}
+.caja textarea::placeholder{color:var(--tenue)}
+.fila{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.pastilla{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:99px;border:1px solid var(--linea);font-size:13px;color:var(--champan)}
+.enviar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--oro),var(--champan));color:var(--tinta);display:grid;place-items:center}
+.enviar:disabled{opacity:.5}
+.menuSec{position:absolute;left:12px;bottom:58px;background:var(--sup2);border:1px solid rgba(233,211,160,.3);border-radius:14px;padding:6px;min-width:210px;z-index:10;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.menuSec button{display:block;width:100%;padding:9px 12px;border-radius:9px;font-size:14px}
+.menuSec button:hover,.menuSec button.on{background:var(--sup)}
+.aviso{text-align:center;font-size:12px;color:var(--tenue);margin-top:8px}
+.aviso.pronto{color:var(--champan)}
+.velo{display:none}
+
+/* vistas Mi ficha / Mis creaciones */
+.vista h2{font-family:"Bodoni Moda",serif;font-weight:500;font-size:clamp(30px,4.4vw,42px);line-height:1.08;letter-spacing:-.015em;margin-top:18px}
+.vista h2 i{color:var(--champan)}
+.vista>p{color:var(--suave);margin-top:10px;max-width:56ch}
+.fi{margin-top:18px}
+.fi label{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--oro);margin-bottom:6px}
+.fi textarea{width:100%;background:var(--sup);border:1px solid var(--linea);border-radius:14px;padding:12px 14px;color:var(--crema);font:400 15.5px/1.45 Inter,sans-serif;min-height:68px;resize:vertical;outline:0}
+.fi textarea:focus{border-color:rgba(233,211,160,.5)}
+.fi.falta label:after{content:" · falta";color:var(--champan)}
+.cre{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:baseline;padding:14px 0;border-top:1px solid var(--linea)}
+.cre .n{font:italic 400 24px "Bodoni Moda",serif;color:var(--oro)}
+.cre b{display:block;font-weight:600;font-size:15.5px}.cre small{display:block;color:var(--suave);font-size:13px}
+.cre .f{font-size:12.5px;color:var(--tenue)}
+
+/* teleprompter */
+#tp{position:fixed;inset:0;z-index:300;background:#000;color:#fff;font-family:Inter,system-ui,sans-serif}
+#tp[hidden]{display:none}
+.tp-view{position:absolute;inset:0;overflow:hidden;-webkit-mask-image:linear-gradient(transparent 0,#000 16%,#000 84%,transparent 100%);mask-image:linear-gradient(transparent 0,#000 16%,#000 84%,transparent 100%)}
+.tp-txt{position:absolute;left:0;right:0;top:0;padding:40vh 7vw 70vh;text-align:center;will-change:transform}
+.tp-b{margin:0 auto 1.1em;max-width:15em;font-weight:600;line-height:1.3}
+.tp-tag{display:block;font:600 .28em/1 Inter,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:rgba(217,180,106,.75);margin-bottom:.5em}
+.tp-line{position:absolute;left:0;right:0;top:40%;height:0;border-top:2px solid rgba(217,180,106,.55);pointer-events:none;z-index:2}
+.tp-line:before{content:"";position:absolute;left:0;top:-8px;border:8px solid transparent;border-left-color:rgba(217,180,106,.9)}
+.tp-bar{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;padding:14px 18px 18px;background:linear-gradient(to top,rgba(0,0,0,.95),rgba(0,0,0,.6) 70%,transparent);transition:opacity .4s}
+.tp-bar.off{opacity:0;pointer-events:none}
+.tp-bar button{border:1px solid rgba(255,255,255,.4);color:#fff;padding:9px 16px;font:600 14px Inter,sans-serif;cursor:pointer;border-radius:99px}
+.tp-bar button#tpplay{background:#d9b46a;color:#1c0a10;border-color:#d9b46a;min-width:110px;text-align:center}
+.tp-bar button.on{background:#fff;color:#000}
+.tp-bar label{font:12.5px Inter,sans-serif;color:rgba(255,255,255,.75);display:flex;flex-direction:column;gap:4px;min-width:150px}
+.tp-bar input[type=range]{accent-color:#d9b46a;width:100%}
+.tp-count{position:absolute;inset:0;z-index:6;display:none;align-items:center;justify-content:center;font:700 38vh/1 Inter,sans-serif;color:#d9b46a;background:rgba(0,0,0,.55)}
+.tp-hint{position:absolute;top:14px;left:0;right:0;text-align:center;font:12px Inter,sans-serif;color:rgba(255,255,255,.45);z-index:3}
+
+@media (max-width:860px){
+  .portal{background:radial-gradient(90% 44% at 50% 26%, rgba(122,31,60,.66), transparent 74%),linear-gradient(180deg,#1b0610,var(--fondo) 80%)}
+  .p-barra{padding:14px 18px 0}.p-barra img{height:34px}
+  .p-cuerpo{grid-template-columns:1fr;padding:0 20px 26px;text-align:center;gap:0;align-content:start}
+  .viva{order:-1;height:44vh;aspect-ratio:220/310;margin-top:4px}
+  .viva video{width:163.6%;left:-31.8%;top:-11%;
+    -webkit-mask-image:linear-gradient(180deg,#000 66%,transparent 97%),linear-gradient(90deg,transparent 0,#000 12%,#000 88%,transparent 100%);
+    mask-image:linear-gradient(180deg,#000 66%,transparent 97%),linear-gradient(90deg,transparent 0,#000 12%,#000 88%,transparent 100%)}
+  .p-texto{margin-top:-10px;position:relative}
+  .p-texto>p{margin:14px auto 0;font-size:16px}
+  .p-botones{flex-direction:column;gap:12px;margin-top:22px}
+  .entrar{width:100%;text-align:center}
+  .p-secciones{justify-content:center;margin-top:24px}
+  .codigo{margin-left:auto;margin-right:auto}
+  .como{margin-left:auto;margin-right:auto;text-align:left}
+  .p-lista{text-align:left;margin-left:auto;margin-right:auto}
+
+  .app{grid-template-columns:1fr}
+  .lado{position:fixed;inset:0 auto 0 0;width:84%;max-width:310px;z-index:20;transform:translateX(-102%);transition:transform .25s ease}
+  body.menu .lado{transform:none}
+  body.menu .velo{display:block;position:fixed;inset:0;background:rgba(8,2,5,.6);z-index:15}
+  .arriba .abrir{display:grid}
+  .ideas{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:20px -16px 0;padding:0 16px 4px;width:auto;align-self:stretch;scrollbar-width:none}
+  .ideas::-webkit-scrollbar{display:none}
+  .idea{flex:0 0 76%;scroll-snap-align:start;text-align:left}
+  .hilo{padding:6px 16px 16px}.abajo{padding:6px 12px 12px}
+  .burbuja{max-width:88%}
+  .cre{grid-template-columns:34px 1fr}.cre .f{display:none}
+}
+@media(prefers-reduced-motion:reduce){.msg{animation:none}.puntos i{animation:none;opacity:.7}}
+</style>
+</head>
+<body>
+
+<!-- ================= PÁGINA DE INICIO ================= -->
+<section class="portal" id="portal">
+  <div class="p-barra">
+    <img src="logo.png" alt="Step Her Up">
+    <span id="pAcceso"></span>
+  </div>
+  <div class="p-cuerpo">
+    <div class="p-texto" id="pTexto"></div>
+    <div class="viva" aria-label="Gianie Milet">
+      <video id="vReposo" class="fuera" src="reposo.mp4" poster="reposo.jpg" muted playsinline loop preload="auto"></video>
+      <video id="vSaludo" src="saludo.mp4" poster="reposo.jpg" muted playsinline preload="auto"></video>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CHAT ================= -->
+<div class="app" id="app" hidden>
+  <aside class="lado" id="lado"></aside>
+  <div class="velo" id="velo"></div>
+
+  <main class="centro">
+    <div class="arriba">
+      <button class="abrir" id="abrir" aria-label="Abrir menú">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
+      <div class="seccion"><b id="titulo">Nueva conversación</b><span>con Gianie</span></div>
+    </div>
+    <div class="hilo" id="hilo"></div>
+    <div class="abajo" id="abajo">
+      <div class="chips" id="chips"></div>
+      <div class="caja">
+        <div class="menuSec" id="menuSec" hidden></div>
+        <textarea id="txt" rows="1" placeholder="Escríbele a tu guía"></textarea>
+        <div class="fila">
+          <button class="pastilla" id="pSec" type="button"><span id="pSecT">Elige sección</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button class="enviar" id="enviar" type="button" aria-label="Enviar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+          </button>
+        </div>
+      </div>
+      <p class="aviso" id="aviso"></p>
+    </div>
+  </main>
+</div>
+
+<!-- ================= TELEPROMPTER ================= -->
+<div id="tp" hidden>
+ <div class="tp-hint">Toca la pantalla para mostrar u ocultar los controles · Espacio para iniciar o pausar · Esc para cerrar</div>
+ <div class="tp-line"></div>
+ <div class="tp-view" id="tpv"><div class="tp-txt" id="tpt"></div></div>
+ <div class="tp-count" id="tpc"></div>
+ <div class="tp-bar" id="tpbar">
+  <button id="tpplay" type="button">Iniciar</button>
+  <label>Velocidad <span id="tpspl">100 %</span><input type="range" id="tpspd" min="40" max="220" value="100"></label>
+  <label>Tamaño de letra<input type="range" id="tpsz" min="28" max="110" value="58"></label>
+  <button id="tpmir" type="button">Espejo</button>
+  <button id="tprst" type="button">Volver al inicio</button>
+  <button id="tpx" type="button">Cerrar</button>
+ </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s),todas=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const SIN_DET="No tengo ninguno, arma con mi ficha";
+
+/* ===== acceso: enlace personal (?t=TOKEN) o código corto de invitación ===== */
+const QS=new URLSearchParams(location.search);
+let TOKEN=(QS.get("t")||"").trim();
+const API=(QS.get("api")||"https://step-her-up-calendar.thomasaguero009.workers.dev").replace(/\/+$/,"");
+const CONTACTO="https://www.instagram.com/gianiemilet/";
+const SKOOL="https://www.skool.com/step-her-up";
+let DESDE_GUARDADO=false;
+try{if(QS.has("salir"))localStorage.removeItem("shu-token");if(TOKEN)localStorage.setItem("shu-token",TOKEN);else if(!QS.has("salir")){TOKEN=localStorage.getItem("shu-token")||"";DESDE_GUARDADO=!!TOKEN}}catch(e){}
+let AVENCE=null,VENCIDA=false,CUPO=null;
+async function api(ruta,cuerpo){
+  const r=await fetch(API+ruta,{method:cuerpo?"POST":"GET",headers:{"Content-Type":"application/json","X-Token":TOKEN},body:cuerpo?JSON.stringify(cuerpo):undefined});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.ok){const e=new Error(j.error||"error");e.code=j.error||"error";e.status=r.status;if(e.code==="acceso_vencido"&&TOKEN){AVENCE=AVENCE||j.vence||null;VENCIDA=true;vencido()}throw e}
+  return j}
+
+/* ===== datos de la alumna ===== */
+const S={resp:{},guiones:[],plan:null};
+const Q=[
+ {k:"nombre"},
+ {k:"negocio",t:"¿A qué te dedicas y qué vendes exactamente?"},
+ {k:"clienta",t:"¿A quién le vendes? Descríbela como si fuera una persona real."},
+ {k:"frases",t:"¿Qué frases dice tu clienta cuando tiene el problema que resuelves?"},
+ {k:"diferente",t:"¿Qué te hace diferente de otras en tu nicho?"},
+ {k:"resultados",t:"¿Qué resultados reales has logrado con clientas? Solo los que puedes demostrar."},
+ {k:"meta",t:"¿Qué quieres lograr este mes? Más mensajes, más ventas o más seguidoras."}
+];
+const ETI={nombre:"Nombre",negocio:"Tu negocio",clienta:"Tu clienta",frases:"Lo que dice tu clienta",diferente:"Lo que te diferencia",resultados:"Tus resultados",meta:"Tu meta del mes"};
+const QK={};Q.forEach(q=>QK[q.k]=q);
+const BAS=["negocio","clienta","meta"],AFI=["frases","diferente","resultados"];
+const faltan=l=>l.filter(k=>!S.resp[k]);
+let syncT=0,syncP=Promise.resolve();
+const sync=()=>{syncP=api("/asistente/sync",{resp:S.resp,creaciones:S.guiones,...(S.plan?{plan:S.plan}:{})}).catch(()=>{});return syncP};
+const save=()=>{clearTimeout(syncT);syncT=setTimeout(sync,600)};
+const flush=async()=>{if(syncT){clearTimeout(syncT);syncT=0;await sync()}else await syncP};
+const cap=v=>{v=(v||"").trim();return v?v[0].toUpperCase()+v.slice(1):v};
+const nombre=()=>(S.resp.nombre||"").replace(/(^|\s)\p{L}/gu,c=>c.toUpperCase());
+const corto=(v,n)=>{v=(v||"").replace(/\s+/g," ").trim();return v.length>n?v.slice(0,n-1).replace(/[\s,.;:]+$/,"")+"…":v};
+const sinP=v=>(v||"").replace(/[.]+$/,"");
+const FECHA_L=iso=>new Date(iso).toLocaleDateString("es",{day:"numeric",month:"long"});
+const diasPara=iso=>iso?Math.ceil((Date.parse(iso)-Date.now())/86400000):null;
+const hoy=()=>new Date().toLocaleDateString("es");
+function semanaId(d){d=d||new Date();const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=t.getUTCFullYear();return y+"-W"+String(Math.ceil(((t-Date.UTC(y,0,1))/86400000+1)/7)).padStart(2,"0")}
+const planActual=()=>S.plan&&S.plan.dias&&S.plan.dias.length&&S.plan.sem===semanaId()?S.plan:null;
+function guardaPlan(raw){const ant=planActual()?S.plan.dias:[];S.plan={sem:semanaId(),dias:raw.map((d,i)=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle,hecho:!!(ant[i]&&ant[i].tema===d.tema&&ant[i].hecho)}))};save()}
+const frase=()=>{const f=S.resp.frases||"";const m=f.match(/[«"“]([^»"”]+)[»"”]/);return sinP(m?m[1]:corto(f,60))};
+
+async function cargar(){const j=await api("/asistente/yo");CUPO=j.cupo||null;AVENCE=j.vence||null;VENCIDA=!!j.vencida;S.resp=j.resp||{};if(!S.resp.nombre&&j.nombre)S.resp.nombre=j.nombre;S.plan=j.plan||null;S.guiones=(j.creaciones||[]).map(c=>({tipo:c.tipo,tema:c.tema,det:c.det,fecha:c.fecha}))}
+
+/* ===== secciones (agrupan los cursos de la Skool) ===== */
+const SECS=["Contenido","Marca personal","Anuncios","Ventas","Oferta y negocio","Planificación","Identidad y propósito"];
+const SUG={
+ "":[["Contenido","Dame ideas para grabar esta semana","semana"],["Ventas","Me dijeron que está caro, ¿qué contesto?"],["Anuncios","Quiero hacer mi primer anuncio en Meta"],["Oferta y negocio","Ayúdame a definir cuánto cobrar"]],
+ "Contenido":[["Ganchos","Quiero ganchos para mi próximo video","ganchos"],["Guion","Quiero un guion listo para grabar","guion"],["Caption","Quiero un caption para mi publicación","caption"],["Historias","Quiero una secuencia de historias","historias"]],
+ "Marca personal":[["Perfil","¿Cómo mejoro mi biografía de Instagram?"],["Autoridad","¿Cómo me posiciono como experta en mi nicho?"],["Presencia","¿Qué muestro de mí para que me recuerden?"],["Alcance","¿Cómo hago para que más gente me conozca?"]],
+ "Anuncios":[["Primer anuncio","Quiero hacer mi primer anuncio en Meta"],["Inversión","¿Cuánto debo invertir al empezar?"],["Oferta","¿Qué anuncio me conviene según mi oferta?"],["Resultados","Mi anuncio no convierte, ¿qué reviso?"]],
+ "Ventas":[["Objeciones","Una clienta me dice que está caro"],["Mensajes","¿Cómo respondo cuando me escriben por precio?"],["Llamadas","¿Cómo cierro una llamada de venta?"],["Seguimiento","Me leen y no contestan, ¿qué hago?"]],
+ "Oferta y negocio":[["Precio","Ayúdame a definir cuánto cobrar"],["Oferta","¿Cómo armo mi oferta principal?"],["Programa","¿Cómo convierto mi servicio en un programa?"],["Ingresos","¿Qué otra forma de ingreso puedo sumar?"]],
+ "Planificación":[["Metas","Armemos mi meta de este mes"],["Números","¿Qué números debo medir cada semana?"],["Semana","¿Cómo organizo mi semana de trabajo?"],["Avance","¿Cómo sé si voy bien?"]],
+ "Identidad y propósito":[["Identidad","¿Cómo comunico quién soy sin sonar a vender?"],["Mostrarte","Me cuesta mostrarme, ¿por dónde empiezo?"],["Propósito","¿Cómo conecto mi propósito con mi negocio?"],["Dudas","¿Cómo lidero mis propias dudas?"]]
+};
+const ERR={limite_diario:"Llegaste al límite de creaciones de hoy. Vuelve mañana y seguimos, ¿ok?",limite_total:"Hoy hay mucho movimiento y llegué a mi límite. Inténtalo de nuevo mañana.",en_pausa:"El asistente está en pausa por un momento. Vuelve a intentarlo más tarde.",limite_mes:"Este mes ya se usó todo el cupo del asistente. Escríbele a Step Her Up.",ficha_incompleta:"Primero completa tu ficha para que pueda escribir con tu voz.",acceso_revocado:"Tu acceso ya no está activo. Escríbele a Step Her Up para renovarlo.",acceso_vencido:"Tu acceso terminó. Escríbele a Step Her Up para renovarlo."};
+
+/* ================= PÁGINA DE INICIO ================= */
+const vS=$("#vSaludo"),vR=$("#vReposo");
+function aReposo(){vR.classList.remove("fuera");vR.play().catch(()=>{});vS.classList.add("fuera")}
+function saludar(){try{vS.currentTime=0}catch(e){}vS.classList.remove("fuera");vR.classList.add("fuera");vS.play().catch(aReposo)}
+vS.addEventListener("ended",aReposo);
+function accesoTxt(){const d=diasPara(AVENCE);const a=AVENCE?(d!==null&&d>=0&&d<=7?`Tu acceso llega hasta el ${FECHA_L(AVENCE)}`:`Acceso hasta el ${FECHA_L(AVENCE)}`):"";return{t:[nombre(),a].filter(Boolean).join(" · "),pronto:d!==null&&d>=0&&d<=7}}
+function pintaBarra(){const a=accesoTxt(),e=$("#pAcceso");e.textContent=a.t;e.classList.toggle("pronto",a.pronto)}
+function portal(html,saluda){$("#app").hidden=true;$("#portal").hidden=false;document.body.classList.remove("menu");$("#pTexto").innerHTML=html;$("#portal").scrollTop=0;pintaBarra();if(saluda!==false)saludar()}
+function verPortal(){
+  if(VENCIDA){vencido();return}
+  const faltaBas=faltan(BAS).length,ult=S.guiones[0];
+  if(faltaBas){
+    portal(`<h1>Hola, ${esc(nombre())}.<i>Vamos a empezar.</i></h1><p>Pues vamos a dejar lista tu primera idea para grabar esta semana, ¿ok? Solo necesito que me cuentes tres cosas de tu negocio.</p><div class="p-botones"><button class="entrar" id="bEmp">Empezar</button></div>`);
+    $("#bEmp").onclick=empiezaOnb;return}
+  portal(`<h1>Hola, ${esc(nombre())}.<i>¿En qué trabajamos hoy?</i></h1><p>Pues aquí tienes todo lo que enseño en Step Her Up, aplicado a tu negocio. Tu contenido, tus ventas, tus anuncios, tu oferta. Tú me dices qué necesitas, ¿ok?</p>
+   <div class="p-botones"><button class="entrar" id="bEmp">Empezar</button>${ult?`<button class="seguir" id="bSeg">Seguir con «${esc(corto(ult.tema,34))}»</button>`:""}</div>
+   <div class="p-secciones"><small>O entra directo a una sección</small><button data-s="semana">Tu semana</button>${SECS.map(s=>`<button data-s="${esc(s)}">${esc(s)}</button>`).join("")}</div>`);
+  $("#bEmp").onclick=()=>abreSec("");
+  const sg=$("#bSeg");if(sg)sg.onclick=()=>{abreSec("Contenido");seguirCon(ult)};
+  todas("#pTexto [data-s]").forEach(b=>b.onclick=()=>b.dataset.s==="semana"?abreSemana():abreSec(b.dataset.s))}
+function entrada(err){
+  const M={codigo_invalido:"Ese código no coincide con ninguno. Revisa que esté bien escrito.",acceso_revocado:"Ese código ya no está activo. Escríbele a Step Her Up.",error:"No pude conectarme. Revisa tu internet y vuelve a intentar."};
+  portal(`<h1>Dime qué haces<i>y te dejo lista tu próxima idea para grabar.</i></h1><p class="${err?"err":""}">${esc(err?(M[err]||M.error):"Entra con el código de invitación que te mandó Step Her Up.")}</p>
+   <form class="codigo" id="fCod"><input id="cod" autocomplete="off" autocapitalize="characters" placeholder="Tu código"><button class="entrar" type="submit">Entrar</button></form>
+   <ul class="como"><li><b>1</b>Me cuentas tres cosas de tu negocio</li><li><b>2</b>Te dejo tu semana de ideas y un guion listo</li><li><b>3</b>Te grabas leyendo con el teleprompter</li></ul>`);
+  $("#cod").focus();
+  $("#fCod").onsubmit=async e=>{e.preventDefault();const v=$("#cod").value.trim();if(!v)return;$("#cod").disabled=true;
+    try{const r=await fetch(API+"/asistente/entrar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({codigo:v})});const j=await r.json().catch(()=>({}));
+      if(!j.ok){entrada(j.error||"error");return}
+      TOKEN=j.token;try{localStorage.setItem("shu-token",TOKEN)}catch(x){}
+      try{history.replaceState(null,"",location.pathname)}catch(x){}
+      arranca()}catch(x){entrada("error")}}}
+function sinAcceso(e){const c=e&&e.code;
+  const M={acceso_revocado:["Este acceso ya no está activo.","Escríbele a Step Her Up para que te lo vuelvan a abrir."],sin_acceso:["No reconozco este enlace.","Puede que esté incompleto. Pide tu enlace o tu código de invitación otra vez."]};
+  const m=M[c]||["No pude conectarme.","Revisa tu conexión a internet y abre el enlace de nuevo."];
+  portal(`<h1>${esc(m[0])}</h1><p>${esc(m[1])}</p><div class="p-botones"><a class="entrar" href="${CONTACTO}" target="_blank" rel="noopener">Escribir a Step Her Up</a>${DESDE_GUARDADO||c==="sin_acceso"?`<button class="seguir" id="otro">Entrar con otro código</button>`:""}</div>`);
+  const o=$("#otro");if(o)o.onclick=()=>{try{localStorage.removeItem("shu-token")}catch(x){}TOKEN="";entrada()}}
+function vencido(){
+  const f=AVENCE?FECHA_L(AVENCE):"";
+  portal(`<h1>${esc(nombre()?nombre()+",":"")}<i>tu acceso terminó${f?" el "+esc(f):""}.</i></h1><p>${S.guiones.length?"Lo que ya creaste sigue aquí para que lo veas y lo copies. Para seguir creando conmigo, escríbele a Step Her Up.":"Para seguir creando conmigo, escríbele a Step Her Up y te lo renuevan."}</p>
+   <div class="p-botones"><a class="entrar" href="${CONTACTO}" target="_blank" rel="noopener">Escribir a Step Her Up</a></div>
+   ${S.guiones.length?`<div class="p-lista">${S.guiones.map(g=>`<div>${esc(g.tema)}<small>${esc(g.tipo||"Guion")}${g.det?" · "+esc(g.det):""}${g.fecha?" · "+esc(g.fecha):""}</small></div>`).join("")}</div>`:""}`)}
+
+/* ================= CHAT ================= */
+let CONVS=[],CUR=null,VISTA="chat",MODO=null,BUSY=false;
+const CV_KEY=()=>"shu-cv2-"+(TOKEN||"x").slice(0,12);
+function cargaConvs(){try{CONVS=JSON.parse(localStorage.getItem(CV_KEY())||"[]")}catch(e){CONVS=[]}}
+function guardaConvs(){try{localStorage.setItem(CV_KEY(),JSON.stringify(CONVS.filter(c=>c.msgs.length).slice(0,14)))}catch(e){}}
+const nuevaConv=(sec)=>({id:Date.now()+"-"+Math.floor(Math.random()*1e4),sec:sec||"",msgs:[],t:Date.now()});
+
+function pintaLado(){
+  const pl=planActual(),rec=CONVS.filter(c=>c.msgs.length).slice(0,5);
+  const act=(sec)=>VISTA==="chat"&&CUR&&CUR.sec===sec&&!CUR.esSemana?" activa":"";
+  const a=accesoTxt();
+  $("#lado").innerHTML=`<button class="marca" data-a="portal" title="Volver al inicio"><img src="logo.png" alt="Step Her Up"></button>
+   <button class="nueva" data-a="nueva"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nueva conversación</button>
+   <div class="scroll">
+    <button class="item semana${VISTA==="chat"&&CUR&&CUR.esSemana?" activa":""}" data-a="semana"><span class="punto"></span>Tu semana<small>${pl?"Plan listo":"Armar"}</small></button>
+    <div class="grupo">Secciones</div>
+    ${SECS.map((s,i)=>`<button class="item${act(s)}" data-sec="${esc(s)}"><span class="n">${i+1}</span>${esc(s)}</button>`).join("")}
+    ${rec.length?`<div class="grupo">Recientes</div>`+rec.map(c=>`<button class="item rec${CUR&&CUR.id===c.id&&VISTA==="chat"?" activa":""}" data-conv="${esc(c.id)}">${esc(corto(c.tit||c.msgs.find(m=>m.r==="u")?.t||"Conversación",30))}</button>`).join(""):""}
+   </div>
+   <div class="pie">
+    <button class="item" data-a="portal">Inicio</button>
+    <button class="item${VISTA==="ficha"?" activa":""}" data-a="ficha">Mi ficha</button>
+    <button class="item${VISTA==="creaciones"?" activa":""}" data-a="creaciones">Mis creaciones</button>
+    <div class="yo"><span class="inicial">${esc((nombre()||"?")[0])}</span><div><b>${esc(nombre())}</b><small class="${a.pronto?"pronto":""}">${esc(AVENCE?(a.pronto?`Tu acceso llega hasta el ${FECHA_L(AVENCE)}`:`Acceso hasta el ${FECHA_L(AVENCE)}`):"Acceso activo")}</small></div></div>
+   </div>`;
+}
+function pintaAviso(){const e=$("#aviso");let t="";if(CUPO){const q=Math.max(0,CUPO.limite-CUPO.usadas);t=q===0?"Hoy ya usaste todas tus creaciones":`Te quedan ${q} ${q===1?"creación":"creaciones"} hoy`}
+  const d=diasPara(AVENCE);if(d!==null&&d>=0&&d<=7)t+=(t?" · ":"")+`Tu acceso llega hasta el ${FECHA_L(AVENCE)}`;e.textContent=t;e.classList.toggle("pronto",d!==null&&d>=0&&d<=7)}
+function verChat(){$("#portal").hidden=true;$("#app").hidden=false;try{vS.pause();vR.pause()}catch(e){}document.body.classList.remove("menu");pintaTodo()}
+function pintaTodo(){pintaLado();pintaAviso();pintaTitulo();pintaHilo();pintaCaja()}
+function pintaTitulo(){let t="Nueva conversación";if(VISTA==="ficha")t="Mi ficha";else if(VISTA==="creaciones")t="Mis creaciones";else if(CUR){t=CUR.esSemana?"Tu semana":CUR.sec||"Nueva conversación"}$("#titulo").textContent=t}
+function pintaCaja(){const sec=VISTA==="chat"&&CUR?CUR.sec:"";$("#pSecT").textContent=CUR&&CUR.esSemana?"Tu semana":sec||"Elige sección";$("#abajo").hidden=VISTA!=="chat";
+  $("#txt").placeholder=MODO&&MODO.k==="onb"?"Escribe tu respuesta":MODO&&MODO.k==="detalle"?"Lo que te pasó, lo que te dijeron…":MODO&&MODO.k==="tema"?"Escribe tu tema":"Escríbele a tu guía"}
+
+function pintaHilo(){
+  const h=$("#hilo");
+  if(VISTA==="ficha"){vistaFicha(h);return}
+  if(VISTA==="creaciones"){vistaCreaciones(h);return}
+  if(!CUR||!CUR.msgs.length){h.innerHTML=vacioHtml();enlazaVacio();pintaChips();return}
+  h.innerHTML=`<div class="col" id="col">${CUR.msgs.map((m,i)=>msgHtml(m,i)).join("")}</div>`;h.scrollTop=h.scrollHeight;pintaChips()}
+function vacioHtml(){
+  const sec=CUR?CUR.sec:"",L=SUG[sec]||SUG[""],hola=sec&&sec!=="Contenido"?`Cuéntame de ${sec.toLowerCase()}`:"";
+  return `<div class="col vacio"><h1>Hola, ${esc(nombre())}.<br><i>¿En qué te ayudo hoy?</i></h1><p>${sec?`Estás en ${esc(sec)}. Pregúntame lo que necesites y te contesto con lo que enseño en Step Her Up y con lo que me contaste de tu negocio.`:"Pregúntame de contenido, ventas, anuncios o tu oferta. Te contesto con lo que enseño en Step Her Up y con lo que me contaste de tu negocio."}</p>
+   <div class="ideas">${L.map((x,i)=>`<button class="idea" data-i="${i}"><small>${esc(x[0])}</small>${esc(x[1])}</button>`).join("")}</div></div>`}
+function enlazaVacio(){const sec=CUR?CUR.sec:"",L=SUG[sec]||SUG[""];todas("#hilo .idea").forEach(b=>b.onclick=()=>{const x=L[+b.dataset.i];
+  if(!sec&&x[0]!=="Contenido")cambiaSec(x[0]);
+  if(x[2]==="semana"){abreSemana();return}
+  if(x[2]){empiezaTipo(x[2]);return}
+  if(!sec&&x[0]==="Contenido")cambiaSec("Contenido");
+  enviarTexto(x[1])})}
+
+/* ----- mensajes ----- */
+const CARA='<div class="mini"><img src="cara.jpg" alt=""></div>';
+function lineasHtml(L){return L.map(l=>`<div class="linea"><span class="et">${esc(l.et)}</span><p>${esc(l.tx)}</p></div>`).join("")}
+function msgHtml(m,i){
+  if(m.r==="u")return `<div class="msg yo-msg"><div class="burbuja">${esc(m.t)}</div></div>`;
+  let dentro="";
+  if(m.k==="txt")dentro=`<p>${esc(m.t)}</p>`;
+  else if(m.k==="consejo"){
+    dentro=`<p>${esc(m.intro)}</p><div class="hoja"><small>${esc([m.sec,m.tit].filter(Boolean).join(" · "))}</small><ol class="pasos">${m.pasos.map(p=>`<li>${esc(p)}</li>`).join("")}</ol>${m.cierre?`<p>${esc(m.cierre)}</p>`:""}
+      ${m.curso?`<div class="fuente"><span>De la clase</span> ${esc(m.curso)}</div><div class="acciones"><a class="grabar" href="${SKOOL}" target="_blank" rel="noopener">Ver la clase en Skool</a></div>`:""}</div>`}
+  else if(m.k==="hoja"){
+    const meta=[m.tipo,m.meta].filter(Boolean).join(" · ");
+    let cuerpo="";
+    if(m.tipo==="Ganchos")cuerpo=m.items.map((g,n)=>`<div class="gancho"><span class="et">${esc(g.et)}</span><p>${esc(g.tx)}</p><button data-a="usar" data-m="${i}" data-n="${n}">Hacer guion con este</button></div>`).join("");
+    else cuerpo=lineasHtml(m.lineas)+(m.pant?`<p class="nota">Texto en pantalla «${esc(m.pant)}»</p>`:"");
+    dentro=`<p>${esc(m.intro)}</p><div class="hoja"><small>${esc(meta)}</small>${m.tit?`<h3>${esc(corto(m.tit,90))}</h3>`:""}${cuerpo}
+      <div class="acciones">${m.tipo==="Guion"?`<button class="grabar" data-a="grabar" data-m="${i}">Grabar con teleprompter</button>`:""}<button data-a="corto" data-m="${i}">Más corto</button><button data-a="otra" data-m="${i}">Otra versión</button><button data-a="copiar" data-m="${i}">Copiar</button>
+      <button class="sutil${m.fb==="1"?" on":""}" data-a="suena" data-m="${i}">Suena a mí</button><button class="sutil${m.fb==="0"?" on":""}" data-a="nosuena" data-m="${i}">No suena a mí</button></div></div>`}
+  else if(m.k==="semana"){
+    const P=planActual(),dias=P?P.dias:m.dias||[];
+    dentro=`<p>${esc(m.intro)}</p><div class="hoja"><small>Tu semana · ${dias.filter(d=>d.hecho).length} de ${dias.length} grabadas</small>${dias.map((d,n)=>`<div class="dia${d.hecho?" ok":""}"><span class="dn">${esc(d.dia)}</span><div><b>${esc(d.tema)}</b><p>${esc(d.pilar)} · ${esc(d.detalle)}</p></div><div class="ac"><label><input type="checkbox" data-a="hecho" data-n="${n}"${d.hecho?" checked":""}>Grabado</label><button data-a="dia" data-n="${n}">Hacer guion</button></div></div>`).join("")}
+      <div class="acciones"><button data-a="cambiaDia">Cambiar una idea</button><button data-a="nuevaSem">Armar otra semana</button></div></div>`}
+  return `<div class="msg">${CARA}<div class="dice"><div class="quien">Gianie</div>${dentro}</div></div>`}
+function anade(m){
+  if(!CUR)CUR=nuevaConv("");
+  if(!CONVS.includes(CUR))CONVS.unshift(CUR);
+  if(!CUR.tit&&m.r==="u")CUR.tit=corto(m.t,40);
+  CUR.msgs.push(m);guardaConvs();
+  const h=$("#hilo");if(VISTA!=="chat"||!$("#col")){VISTA="chat";pintaHilo();pintaLado();pintaTitulo()}
+  else{$("#col").insertAdjacentHTML("beforeend",msgHtml(m,CUR.msgs.length-1))}
+  h.scrollTo({top:h.scrollHeight,behavior:"smooth"})}
+const gDice=t=>anade({r:"g",k:"txt",t});
+async function conPuntos(fn){
+  BUSY=true;$("#enviar").disabled=true;
+  const col=$("#col");const id="pts"+Date.now();
+  if(col){col.insertAdjacentHTML("beforeend",`<div class="msg" id="${id}">${CARA}<div class="dice"><div class="quien">Gianie</div><div class="puntos"><i></i><i></i><i></i></div></div></div>`);$("#hilo").scrollTo({top:1e9,behavior:"smooth"})}
+  try{return await fn()}finally{const e=document.getElementById(id);if(e)e.remove();BUSY=false;$("#enviar").disabled=false}}
+function pintaChips(list){const c=$("#chips");c.innerHTML="";(list||CHIPS||[]).forEach(([t,f])=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>{if(BUSY)return;f()};c.appendChild(b)})}
+let CHIPS=[];
+const chips=l=>{CHIPS=l||[];pintaChips()};
+
+/* ----- cambiar de sección ----- */
+function abreSec(sec){VISTA="chat";MODO=null;chips([]);
+  if(CUR&&!CUR.msgs.length&&!CUR.esSemana)CUR.sec=sec;else CUR=nuevaConv(sec);
+  verChat();$("#txt").focus()}
+function cambiaSec(sec){if(CUR)CUR.sec=sec;else CUR=nuevaConv(sec);pintaLado();pintaTitulo();pintaCaja()}
+function abreConv(id){const c=CONVS.find(x=>x.id===id);if(!c)return;CUR=c;VISTA="chat";MODO=null;chips([]);verChat()}
+
+/* ----- enviar ----- */
+async function enviarTexto(t){
+  t=(t||"").trim();if(!t||BUSY)return;
+  if(VISTA!=="chat"){VISTA="chat";if(!CUR)CUR=nuevaConv("");pintaTodo()}
+  anade({r:"u",t});chips([]);
+  if(MODO){const M=MODO;
+    if(M.k==="onb")return respondeOnb(M,t);
+    if(M.k==="tema"){MODO=null;return tipoConTema(M.tipo,t)}
+    if(M.k==="detalle"){MODO=null;return pieza("guion",{tema:M.tema,detalle:t===SIN_DET?"":t,gancho:M.gancho||""})}
+    if(M.k==="ajuste"){MODO=null;return reGenera(M.m,t,false)}
+    if(M.k==="ajusteSemana"){MODO=null;return armarSemana(t)}}
+  const tp=tipoDe(t);
+  if(tp==="semana")return armarSemana();
+  if(tp)return tipoConTema(tp,t);
+  return consejoTurno(t)}
+function tipoDe(t){const x=t.toLowerCase();if(CUR&&CUR.sec&&CUR.sec!=="Contenido"&&!CUR.esSemana)return"";
+  if(/ideas?.*(semana|grabar)|plan.*semana|qu[eé] (publico|grabo|subo)/.test(x))return"semana";
+  if(/\bgu[ií]on\b/.test(x))return"guion";if(/\bganchos?\b/.test(x))return"ganchos";if(/\bcaption\b|pie de foto/.test(x))return"caption";if(/\bhistorias?\b/.test(x))return"historias";return""}
+function resumenPrevio(){return(CUR?CUR.msgs:[]).slice(-9).map(m=>m.r==="u"?{role:"user",content:m.t}:{role:"assistant",content:m.k==="consejo"?[m.intro,...m.pasos].join(" "):m.k==="txt"?m.t:m.intro||""}).filter(x=>x.content)}
+async function consejoTurno(t){
+  const hist=resumenPrevio();
+  const r=await conPuntos(async()=>{try{const r=await api("/asistente/consejo",{seccion:CUR&&!CUR.esSemana?CUR.sec:"",mensajes:hist});if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return r}catch(e){return{error:e.code||"error"}}});
+  if(r.error){if(r.error!=="acceso_vencido")gDice(ERR[r.error]||"No pude contestarte ahora. Inténtalo de nuevo en un momento.");return}
+  if(!r.pasos||!r.pasos.length){gDice([r.intro,r.cierre].filter(Boolean).join(" "));return}
+  anade({r:"g",k:"consejo",intro:r.intro,tit:r.titulo,pasos:r.pasos,cierre:r.cierre,curso:r.curso||"",sec:CUR&&CUR.sec||""})}
+
+/* ----- piezas de contenido ----- */
+const INTRO={ganchos:"Pues mira, te dejé cinco aperturas. Quédate con la que sonaría natural en tu boca, ¿ok?",guion:"Pues te lo dejé listo para grabar. Léelo en voz alta y si algo no suena a ti lo cambiamos, ¿ok?",caption:"Aquí tienes el caption con tu tono. Si lo quieres más corto o más cálido me dices.",historias:"Te armé la secuencia de historias para 24 horas. Dime si la quieres más corta o más cercana."};
+const TIPO={ganchos:"Ganchos",guion:"Guion",caption:"Caption",historias:"Historias"};
+const temasSug=()=>{const L=[],cl=corto(sinP(S.resp.clienta),60);
+  L.push(frase()?`Por qué tu clienta dice «${frase()}»`:"Para quién es lo que haces y para quién no");
+  L.push(S.resp.diferente?"Lo que me hace diferente a las demás":"Un día trabajando con una clienta");
+  L.push("Cómo acompaño a una clienta paso a paso");return L};
+async function empiezaTipo(tipo){
+  if(VISTA!=="chat"||!CUR||(CUR.msgs.length&&CUR.sec!=="Contenido")){CUR=nuevaConv("Contenido");VISTA="chat";verChat()}else if(!CUR.sec)cambiaSec("Contenido");
+  anade({r:"u",t:{ganchos:"Quiero ganchos para mi próximo video",guion:"Quiero un guion listo para grabar",caption:"Quiero un caption para mi publicación",historias:"Quiero una secuencia de historias"}[tipo]});
+  pideTema(tipo)}
+function pideTema(tipo){
+  MODO={k:"tema",tipo};pintaCaja();
+  gDice("Pues dime sobre qué tema lo trabajamos. Elige uno de estos o escríbeme el tuyo, ¿ok?");
+  chips([...temasSug().map(t=>[t,()=>{enviarTexto(t)}]),["Proponme otros",async()=>{
+    const r=await conPuntos(async()=>{try{return await api("/asistente/generar",{tool:"temas",ajuste:"temas distintos a los anteriores",previo:temasSug().join(" | ")})}catch(e){return{error:e.code}}});
+    if(r.error||!r.temas){gDice(ERR[r.error]||"No pude proponerte otros ahora.");chips(CHIPS);return}
+    chips([...r.temas.map(x=>[x.titulo,()=>enviarTexto(x.titulo)])])}]])}
+function tipoConTema(tipo,tema){
+  if(tipo==="guion"){MODO={k:"detalle",tema};pintaCaja();gDice("Esto es lo que lo hace tuyo y no de cualquiera. Una escena real de esta semana, un número verdadero o algo que te dijo una clienta. ¿Qué tienes?");chips([[SIN_DET,()=>enviarTexto(SIN_DET)]]);return}
+  return pieza(tipo,{tema})}
+async function seguirCon(c){anade({r:"u",t:"Quiero seguir con "+c.tema});tipoConTema("guion",c.tema)}
+async function pieza(tool,p,ajuste,previoMsg){
+  MODO=null;pintaCaja();
+  const params={tool,...p};
+  const r=await conPuntos(async()=>{try{const r=await api("/asistente/generar",params);if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return r}catch(e){return{error:e.code||"error"}}});
+  if(r.error){if(r.error!=="acceso_vencido")gDice(ERR[r.error]||"No pude escribirlo ahora. Inténtalo de nuevo en un momento.");chips([["Intentar de nuevo",()=>pieza(tool,p,ajuste)]]);return}
+  let m={r:"g",k:"hoja",tipo:TIPO[tool],tit:p.tema||"",intro:ajuste?"Listo, lo cambié como me pediste.":INTRO[tool],ctx:{tool,p:{...p,ajuste:undefined,previo:undefined}}};
+  if(tool==="ganchos")m.items=(r.items||[]).map(x=>({et:x.tipo,tx:x.texto}));
+  else if(tool==="guion"){m.lineas=(r.lineas||[]).map(x=>({et:x.etiqueta,tx:x.texto,t:x.t}));m.meta=((r.duracion||"")+" · reel").replace(/^ · /,"");m.pant=r.pantalla||"";m.dur=r.duracion||""}
+  else if(tool==="caption")m.lineas=(r.lineas||[]).map(x=>({et:x.etiqueta,tx:x.texto}));
+  else if(tool==="historias"){m.lineas=(r.historias||[]).map(x=>({et:x.n+" · "+x.tipo,tx:x.texto}));m.meta=(r.historias||[]).length+" historias · 24 h"}
+  anade(m);
+  if(!ajuste){S.guiones.unshift({tipo:TIPO[tool],tema:p.tema||"",det:p.detalle||"",fecha:hoy()});save();pintaLado()}
+  chips(tool==="ganchos"?[]:[["Otro tema",()=>pideTema(tool)]])}
+function reGenera(mi,ajuste,dice){const m=CUR.msgs[mi];if(!m||!m.ctx)return;
+  const previo=m.tipo==="Ganchos"?m.items.map(x=>x.tx).join(" | "):JSON.stringify(m.lineas.map(l=>({t:l.t||"",etiqueta:l.et,texto:l.tx})));
+  if(dice!==false)anade({r:"u",t:ajuste});return pieza(m.ctx.tool,{...m.ctx.p,ajuste,previo},true)}
+
+/* ----- tu semana ----- */
+async function armarSemana(ajuste){
+  const params={tool:"ideas"};if(ajuste){params.ajuste=ajuste;params.previo=JSON.stringify((planActual()||{dias:[]}).dias.map(d=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle})))}
+  const r=await conPuntos(async()=>{try{const r=await api("/asistente/generar",params);if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return r}catch(e){return{error:e.code||"error"}}});
+  if(r.error){if(r.error!=="acceso_vencido")gDice(ERR[r.error]||"No pude armarla ahora. Inténtalo de nuevo en un momento.");chips([["Intentar de nuevo",()=>armarSemana(ajuste)]]);return}
+  guardaPlan(r.dias);if(!ajuste){S.guiones.unshift({tipo:"Ideas",tema:"Ideas de la semana",det:"",fecha:hoy()});save()}
+  anade({r:"g",k:"semana",intro:ajuste?"Listo, así queda tu semana con el cambio.":`Así queda tu semana, armada con lo que me contaste de tu negocio. Tu meta es «${corto(sinP(S.resp.meta),70)}». Todavía no uso tendencias en vivo, ¿ok?`,dias:S.plan.dias});
+  pintaLado();chips([])}
+function abreSemana(){
+  CUR=nuevaConv("");CUR.esSemana=true;CUR.tit="Tu semana";VISTA="chat";MODO=null;chips([]);verChat();
+  if(planActual()){anade({r:"g",k:"semana",intro:"Esta es tu semana. Marca lo que ya grabaste y elige un día para armar el guion, ¿ok?",dias:S.plan.dias})}
+  else{gDice(S.plan?"Es una semana nueva. Si quieres, armo tu plan con lo que me contaste de tu negocio.":"Todavía no tienes tu semana. Si quieres, la armo con lo que me contaste de tu negocio.");chips([["Armar mi semana",()=>{if(!BUSY)armarSemana()}]])}}
+
+/* ----- ficha: 3 preguntas y entrega ----- */
+function empiezaOnb(lista){
+  const L=Array.isArray(lista)?lista:BAS,i=L.indexOf(faltan(L)[0]);if(i<0){abreSec("");return}
+  CUR=nuevaConv("");CUR.tit=L===BAS?"Tu primera idea":"Afinemos tu ficha";VISTA="chat";chips([]);verChat();
+  gDice(L===BAS?`Hola, ${nombre()}. Pues vamos a dejar lista tu primera idea para grabar esta semana, ¿ok? Solo necesito que me cuentes tres cosas de tu negocio.`:"Pues afinemos tu ficha para que todo suene todavía más a ti, ¿ok?");
+  MODO={k:"onb",lista:L};pintaCaja();setTimeout(()=>gDice(QK[L[i]].t),500)}
+async function respondeOnb(M,t){
+  const k=faltan(M.lista)[0];S.resp[k]=t;save();pintaLado();
+  const sig=faltan(M.lista)[0];
+  if(sig){await sleep(350);gDice(QK[sig].t);return}
+  MODO=null;pintaCaja();
+  if(M.lista===BAS){await flush();gDice(`Gracias, ${nombre()}. Con eso ya te armo tu semana, dame un segundo.`);await armarSemana();
+    if(faltan(AFI).length){gDice("Cuando quieras afinamos tu ficha con tres preguntas más, para que todo suene todavía más a ti.");chips([["Afinemos mi ficha",()=>empiezaOnb(AFI)]])}}
+  else{await flush();gDice(`Gracias, ${nombre()}. Ya sé mucho más de ti y lo guardé en tu ficha.`)}}
+
+/* ----- vistas ----- */
+function vistaFicha(h){
+  h.innerHTML=`<div class="col vista"><h2>Lo que sé<br><i>de ti.</i></h2><p>Con esto cada idea y cada guion sale con tu voz. Puedes corregirlo cuando quieras.</p>
+   ${Q.filter(q=>q.k!=="nombre").map(q=>`<div class="fi${S.resp[q.k]?"":" falta"}"><label>${esc(ETI[q.k])}</label><textarea data-k="${q.k}" placeholder="Todavía sin responder">${esc(S.resp[q.k]||"")}</textarea></div>`).join("")}</div>`;
+  todas("#hilo textarea").forEach(t=>t.onchange=()=>{const v=t.value.trim();if(v)S.resp[t.dataset.k]=v;else delete S.resp[t.dataset.k];t.closest(".fi").classList.toggle("falta",!v);save()})}
+function vistaCreaciones(h){
+  h.innerHTML=`<div class="col vista"><h2>Lo que ya<br><i>tienes listo.</i></h2>${S.guiones.length?"":`<p>Todavía no creaste nada. Cuéntame qué necesitas y empezamos.</p>`}
+   <div style="margin-top:18px">${S.guiones.map((g,i)=>`<div class="cre"><span class="n">${String(S.guiones.length-i).padStart(2,"0")}</span><div><b>${esc(g.tema)}</b><small>${esc(g.tipo||"Guion")}${g.det?" · Tu detalle "+esc(g.det):""}</small></div><span class="f">${esc(g.fecha||"")}</span></div>`).join("")}</div></div>`}
+
+/* ----- acciones dentro de las hojas ----- */
+$("#hilo").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-a]");if(!b||!CUR)return;const a=b.dataset.a,mi=+b.dataset.m,m=CUR.msgs[mi];
+  if(a==="grabar"&&m){abrirTP(m.lineas.map(l=>({tag:l.et,txt:l.tx})),tpDuracion(m.dur));return}
+  if(a==="copiar"&&m){const t=m.tipo==="Ganchos"?m.items.map(g=>g.tx).join("\n"):m.lineas.map(l=>l.tx).join("\n");try{await navigator.clipboard.writeText(t);b.textContent="Copiado"}catch(x){b.textContent="No se pudo copiar"}return}
+  if(BUSY)return;
+  if(a==="corto"&&m){reGenera(mi,m.tipo==="Guion"?"más corto, de 20 a 25 segundos":"más corto");return}
+  if(a==="otra"&&m){reGenera(mi,"una versión distinta a la anterior, con otro ángulo");return}
+  if(a==="usar"&&m){const g=m.items[+b.dataset.n];anade({r:"u",t:"Quiero hacer un guion con este gancho"});MODO={k:"detalle",tema:m.tit,gancho:g.tx};pintaCaja();gDice("Ese tiene fuerza. Ahora cuéntame algo real que lo haga tuyo, una escena de esta semana o algo que te dijo una clienta. ¿Qué tienes?");chips([[SIN_DET,()=>enviarTexto(SIN_DET)]]);return}
+  if((a==="suena"||a==="nosuena")&&m){m.fb=a==="suena"?"1":"0";guardaConvs();api("/asistente/opinion",{tool:m.tipo||"",ok:m.fb==="1",texto:(m.lineas||m.items||[]).map(l=>l.tx).join(" ").slice(0,700)}).catch(()=>{});
+    todas(`#hilo [data-m="${mi}"].sutil`).forEach(x=>x.classList.toggle("on",x===b));
+    if(a==="nosuena"){MODO={k:"ajuste",m:mi};pintaCaja();gDice("Gracias por decírmelo. ¿Qué no te sonó a ti? Escríbemelo y lo ajusto.")}return}
+  if(a==="hecho"){const n=+b.dataset.n;S.plan.dias[n].hecho=b.checked;save();const sm=b.closest(".hoja");b.closest(".dia").classList.toggle("ok",b.checked);sm.querySelector("small").textContent=`Tu semana · ${S.plan.dias.filter(d=>d.hecho).length} de ${S.plan.dias.length} grabadas`;return}
+  if(a==="dia"){const d=S.plan.dias[+b.dataset.n];if(!d)return;CUR=nuevaConv("Contenido");VISTA="chat";verChat();anade({r:"u",t:"Quiero hacer el guion de «"+corto(d.tema,60)+"»"});tipoConTema("guion",d.tema);return}
+  if(a==="cambiaDia"){MODO=null;gDice("Pues dime qué día quieres cambiar y cómo lo quieres, por ejemplo el martes con algo más personal.");MODO={k:"ajusteSemana"};return}
+  if(a==="nuevaSem"){anade({r:"u",t:"Quiero armar otra semana"});armarSemana("una semana totalmente distinta a la anterior");return}
+});
+/* ----- caja de escribir ----- */
+const txt=$("#txt");
+txt.addEventListener("input",()=>{txt.style.height="28px";txt.style.height=Math.min(160,txt.scrollHeight)+"px"});
+txt.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#enviar").click()}});
+$("#enviar").onclick=()=>{const t=txt.value.trim();if(!t||BUSY)return;txt.value="";txt.style.height="28px";enviarTexto(t)};
+$("#pSec").onclick=e=>{e.stopPropagation();const m=$("#menuSec");if(!m.hidden){m.hidden=true;return}
+  m.innerHTML=[""].concat(SECS).map(s=>`<button data-sec="${esc(s)}" class="${(CUR&&CUR.sec||"")===s?"on":""}">${esc(s||"Sin sección")}</button>`).join("");m.hidden=false;
+  todas("#menuSec button").forEach(b=>b.onclick=ev=>{ev.stopPropagation();m.hidden=true;if(CUR&&CUR.esSemana){CUR=nuevaConv(b.dataset.sec);VISTA="chat";pintaTodo()}else cambiaSec(b.dataset.sec);if(CUR&&!CUR.msgs.length)pintaHilo()})};
+document.addEventListener("click",()=>{$("#menuSec").hidden=true});
+
+/* ----- barra lateral ----- */
+$("#lado").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.sec){abreSec(b.dataset.sec);return}
+  if(b.dataset.conv){abreConv(b.dataset.conv);return}
+  const a=b.dataset.a;
+  if(a==="portal"){verPortal();return}
+  if(a==="nueva"){abreSec("");return}
+  if(a==="semana"){abreSemana();return}
+  if(a==="ficha"){VISTA="ficha";document.body.classList.remove("menu");pintaTodo();return}
+  if(a==="creaciones"){VISTA="creaciones";document.body.classList.remove("menu");pintaTodo();return}});
+$("#abrir").onclick=()=>document.body.classList.add("menu");
+$("#velo").onclick=()=>document.body.classList.remove("menu");
+
+/* ================= teleprompter ================= */
+const TP={pos:0,play:false,timer:0,last:0,dur:35,base:60,mir:false,bloques:[],hide:0,wake:null,fin:60};
+function tpDuracion(d){const m=String(d||"").match(/(\d+)\s*s/);return m?Math.max(10,parseInt(m[1],10)):35}
+function tpLayout(){const v=$("#tpv"),x=$("#tpt");const vh=v.clientHeight;TP.fin=Math.max(60,x.offsetHeight-vh*1.1);TP.base=TP.fin/TP.dur;tpVel()}
+function tpVel(){const f=parseInt($("#tpspd").value,10)/100;$("#tpspl").textContent=Math.round(f*100)+" % · termina en ~"+Math.round(TP.dur/f)+" s"}
+function tpPinta(){$("#tpt").style.transform=`translateY(${-TP.pos}px)${TP.mir?" scaleX(-1)":""}`}
+function abrirTP(bloques,dur){
+  TP.bloques=bloques;TP.dur=dur||35;TP.pos=0;TP.play=false;
+  $("#tpt").innerHTML=bloques.map(b=>`<p class="tp-b"><span class="tp-tag">${esc(b.tag)}</span>${esc(b.txt)}</p>`).join("");
+  $("#tpt").style.fontSize=$("#tpsz").value+"px";
+  $("#tp").hidden=false;$("#tpbar").classList.remove("off");$("#tpplay").textContent="Iniciar";
+  try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(e){}
+  try{navigator.wakeLock&&navigator.wakeLock.request("screen").then(w=>TP.wake=w).catch(()=>{})}catch(e){}
+  setTimeout(()=>{tpLayout();tpPinta()},60)}
+function cerrarTP(){tpPausa();$("#tp").hidden=true;try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}try{TP.wake&&TP.wake.release()}catch(e){}}
+function tpPausa(){TP.play=false;clearInterval(TP.timer);$("#tpplay").textContent=TP.pos>0?"Seguir":"Iniciar";$("#tpbar").classList.remove("off")}
+function tpInicia(){
+  if(TP.play){tpPausa();return}
+  const arranca=()=>{TP.play=true;TP.last=performance.now();$("#tpplay").textContent="Pausar";clearInterval(TP.timer);
+    TP.timer=setInterval(()=>{const n=performance.now(),dt=(n-TP.last)/1000;TP.last=n;const f=parseInt($("#tpspd").value,10)/100;TP.pos+=TP.base*f*dt;tpPinta();
+      if(TP.pos>=TP.fin){TP.pos=TP.fin;tpPinta();tpPausa();$("#tpplay").textContent="Listo"}},16);
+    clearTimeout(TP.hide);TP.hide=setTimeout(()=>{if(TP.play)$("#tpbar").classList.add("off")},3000)};
+  if(TP.pos>0){arranca();return}
+  const c=$("#tpc");let n=3;c.style.display="flex";c.textContent=n;$("#tpbar").classList.add("off");
+  const iv=setInterval(()=>{n--;if(n<=0){clearInterval(iv);c.style.display="none";arranca()}else c.textContent=n},800)}
+$("#tpplay").onclick=tpInicia;$("#tpx").onclick=cerrarTP;
+$("#tprst").onclick=()=>{TP.pos=0;tpPinta();tpPausa();$("#tpplay").textContent="Iniciar"};
+$("#tpmir").onclick=e=>{TP.mir=!TP.mir;e.target.classList.toggle("on",TP.mir);tpPinta()};
+$("#tpspd").oninput=tpVel;
+$("#tpsz").oninput=e=>{$("#tpt").style.fontSize=e.target.value+"px";setTimeout(()=>{const f=TP.fin?TP.pos/TP.fin:0;tpLayout();TP.pos=f*TP.fin;tpPinta()},30)};
+$("#tpv").onclick=()=>{$("#tpbar").classList.toggle("off");if(TP.play&&!$("#tpbar").classList.contains("off")){clearTimeout(TP.hide);TP.hide=setTimeout(()=>{if(TP.play)$("#tpbar").classList.add("off")},3000)}};
+document.addEventListener("keydown",e=>{if($("#tp").hidden)return;if(e.key==="Escape")cerrarTP();else if(e.key===" "){e.preventDefault();tpInicia()}else if(e.key==="ArrowUp"){TP.pos=Math.max(0,TP.pos-40);tpPinta()}else if(e.key==="ArrowDown"){TP.pos+=40;tpPinta()}});
+
+/* ================= arranque ================= */
+async function arranca(){
+  try{await cargar()}catch(e){if(e.code!=="acceso_vencido")sinAcceso(e);else vencido();return}
+  if(VENCIDA){vencido();return}
+  cargaConvs();verPortal()}
+(async()=>{
+  if(!TOKEN){entrada();return}
+  portal("",false);
+  await arranca();
+})();
+</script>
+</body>
+</html>
