@@ -557,9 +557,11 @@ function tipoConTema(tipo,tema){
   return pieza(tipo,{tema})}
 async function seguirCon(c){anade({r:"u",t:"Quiero seguir con "+c.tema});tipoConTema("guion",c.tema)}
 async function pieza(tool,p,ajuste,previoMsg){
+  if(faltan(BAS).length)return fichaPrimero(()=>pieza(tool,p,ajuste));
   MODO=null;pintaCaja();
   const params={tool,...p};
   const r=await conPuntos(async()=>{try{const r=await api("/asistente/generar",params);if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return r}catch(e){return{error:e.code||"error"}}});
+  if(r.error==="ficha_incompleta"){S.resp.negocio="";S.resp.clienta="";return fichaPrimero(()=>pieza(tool,p,ajuste))}
   if(r.error){if(r.error!=="acceso_vencido")gDice(ERR[r.error]||"No pude escribirlo ahora. Inténtalo de nuevo en un momento.");chips([["Intentar de nuevo",()=>pieza(tool,p,ajuste)]]);return}
   let m={r:"g",k:"hoja",tipo:TIPO[tool],tit:p.tema||"",intro:ajuste?"Listo, lo cambié como me pediste.":INTRO[tool],ctx:{tool,p:{...p,ajuste:undefined,previo:undefined}}};
   if(tool==="ganchos")m.items=(r.items||[]).map(x=>({et:x.tipo,tx:x.texto}));
@@ -575,6 +577,7 @@ function reGenera(mi,ajuste,dice){const m=CUR.msgs[mi];if(!m||!m.ctx)return;
 
 /* ----- tu semana ----- */
 async function armarSemana(ajuste){
+  if(faltan(BAS).length)return fichaPrimero(()=>armarSemana(ajuste));
   const params={tool:"ideas"};if(ajuste){params.ajuste=ajuste;params.previo=JSON.stringify((planActual()||{dias:[]}).dias.map(d=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle})))}
   const r=await conPuntos(async()=>{try{const r=await api("/asistente/generar",params);if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return r}catch(e){return{error:e.code||"error"}}});
   if(r.error){if(r.error!=="acceso_vencido")gDice(ERR[r.error]||"No pude armarla ahora. Inténtalo de nuevo en un momento.");chips([["Intentar de nuevo",()=>armarSemana(ajuste)]]);return}
@@ -584,9 +587,16 @@ async function armarSemana(ajuste){
 function abreSemana(){
   CUR=nuevaConv("");CUR.esSemana=true;CUR.tit="Tu semana";VISTA="chat";MODO=null;chips([]);verChat();
   if(planActual()){anade({r:"g",k:"semana",intro:"Esta es tu semana. Marca lo que ya grabaste y elige un día para armar el guion, ¿ok?",dias:S.plan.dias})}
+  else if(faltan(BAS).length){gDice("Todavía no tienes tu semana. Para armarla necesito conocer tu negocio, así que te hago tres preguntas aquí mismo, ¿ok?");fichaPrimero(()=>armarSemana(),true)}
   else{gDice(S.plan?"Es una semana nueva. Si quieres, armo tu plan con lo que me contaste de tu negocio.":"Todavía no tienes tu semana. Si quieres, la armo con lo que me contaste de tu negocio.");chips([["Armar mi semana",()=>{if(!BUSY)armarSemana()}]])}}
 
 /* ----- ficha: 3 preguntas y entrega ----- */
+/* si falta lo básico de la ficha, se pregunta ahí mismo, en la misma conversación, y después sigue con lo que estaba pidiendo */
+function fichaPrimero(despues,sinIntro){
+  const L=BAS,k=faltan(L)[0];if(!k){if(despues)despues();return}
+  MODO={k:"onb",lista:L,despues};pintaCaja();chips([]);
+  if(!sinIntro)gDice("Pues primero cuéntame tres cosas de tu negocio para que todo salga con lo tuyo, ¿ok?");
+  setTimeout(()=>gDice(QK[k].t),sinIntro?100:500)}
 function empiezaOnb(lista){
   const L=Array.isArray(lista)?lista:BAS,i=L.indexOf(faltan(L)[0]);if(i<0){abreSec("");return}
   CUR=nuevaConv("");CUR.tit=L===BAS?"Tu primera idea":"Afinemos tu ficha";VISTA="chat";chips([]);verChat();
@@ -597,6 +607,7 @@ async function respondeOnb(M,t){
   const sig=faltan(M.lista)[0];
   if(sig){await sleep(350);gDice(QK[sig].t);return}
   MODO=null;pintaCaja();
+  if(M.lista===BAS&&M.despues){await flush();gDice(`Gracias, ${nombre()}. Ya con eso seguimos.`);return M.despues()}
   if(M.lista===BAS){await flush();gDice(`Gracias, ${nombre()}. Con eso ya te armo tu semana, dame un segundo.`);await armarSemana();
     if(faltan(AFI).length){gDice("Cuando quieras afinamos tu ficha con tres preguntas más, para que todo suene todavía más a ti.");chips([["Afinemos mi ficha",()=>empiezaOnb(AFI)]])}}
   else{await flush();gDice(`Gracias, ${nombre()}. Ya sé mucho más de ti y lo guardé en tu ficha.`)}}
