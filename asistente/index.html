@@ -492,8 +492,8 @@ let tm=[],seqOn=false,tok=0,busy=false,CALM=true,lastG=0,playing=null;
 const GEST=true;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 /* gestos en video de Gianie (carpeta ~/SHU-sistema/avatar/gestos). Se suman a medida que salen. */
-const BASE_G=(QS.get("gestos")||"file:///Users/thomasnicolasaguerogarnica/SHU-sistema/avatar/gestos/").replace(/\/?$/,"/");
-let VID={asentir:"gianie_gesto_1_asentir.mp4",pulgar:"gianie_gesto_3_pulgar.mp4"};
+const BASE_G=(QS.get("gestos")||"https://step-her-up-calendar.thomasaguero009.workers.dev/videos/gestos/").replace(/\/?$/,"/");
+let VID={reposo:"gianie_full_v4_1_reposo_loop.mp4",asentir:"gianie_gesto_1_asentir.mp4",saludo:"gianie_gesto_1_saludo.mp4",explicar:"gianie_gesto_2_explicar.mp4",pulgar:"gianie_gesto_3_pulgar.mp4",senalar:"gianie_gesto_3_senalar.mp4",pensar:"gianie_gesto_4_pensar.mp4",celebrar:"gianie_gesto_5_celebrar.mp4",corazon:"gianie_gesto_6_corazon.mp4",negar:"gianie_gesto_7_negar.mp4"};
 /* nombres de los archivos nuevos -> nombre del gesto */
 const ALIAS={explica:"explicar",manos:"explicar",piensa:"pensar",pensando:"pensar",niega:"negar",senala:"senalar",aplaude:"aplaudir",celebra:"celebrar",rie:"sonreir",riendo:"sonreir",hola:"saludo",saluda:"saludo",gracias:"corazon"};
 /* qué gesto usa cada momento de la conversación, en orden de preferencia (si no existe el primero, prueba el siguiente) */
@@ -526,6 +526,7 @@ function go(p,fuerza){
   const pr=v.play();if(pr&&pr.catch)pr.catch(fin);
   return Promise.resolve()}
 const goF=p=>go(p,true);
+const lista=(n,ms)=>new Promise(r=>{const t0=Date.now();(function c(){const v=$("#gv-"+n);if((v&&v.readyState>=3)||Date.now()-t0>ms)r();else setTimeout(c,150)})()});
 const wave=()=>go("saludo",true);
 function pose(p){go(p)}
 function gestoPara(s,k){const x=s.toLowerCase();
@@ -577,7 +578,7 @@ function show(o){
   if(o.links)a2+=`<div class="links">`+o.links.map((l,i)=>`<button class="lnk" data-l="${i}" type="button">${l[0]}</button>`).join("")+`</div>`;
   const TURN={hola:"Para empezar",vuelve:"Para seguir",indice:"Elige una opción",ideas:"Tu semana",tema:"Elige o escribe",detalle:"Tu respuesta",entrega:"Tu guion",ficha:"Tus respuestas",guiones:"Tus guiones",gracias:"Para seguir"};
   pg.innerHTML=h+`<div class="after" id="after"><div class="turn${o.flat?" flat":""}"><div class="tl">${o.turn||TURN[o.plan]||(o.input?"Tu respuesta":"Tu turno")}</div>${a2}</div></div>`;$("#folio").textContent=o.folio||"";$$("#tabs [data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===(o.tab||"home")));
-  if(o.input){const f=$("#f");f.onsubmit=async e=>{e.preventDefault();const v=$("#inp").value.trim();if(!v)return;await react(RE[nIdx%RE.length]);o.input.fn(v)};$("#exb").onclick=()=>{$("#inp").value=$("#inp").dataset.ex;$("#inp").focus()}}
+  if(o.input){const f=$("#f");f.onsubmit=async e=>{e.preventDefault();const v=$("#inp").value.trim();if(!v)return;{const em=/^q\d$/.test(o.plan||"")?({1:"corazon",3:"pulgar",5:"celebra"})[nIdx]:RE[nIdx%RE.length];if(em)await react(em)}o.input.fn(v)};$("#exb").onclick=()=>{$("#inp").value=$("#inp").dataset.ex;$("#inp").focus()}}
   if(o.links)$$("#page [data-l]").forEach(b=>b.onclick=()=>o.links[+b.dataset.l][1]());
   if(o.rows)$$("#page .row").forEach((r,i)=>r.onclick=()=>o.rows[i]&&o.rows[i]());
   /* las palabras aparecen a medida que ella las dice; los controles, cuando termina */
@@ -887,6 +888,6 @@ placeMask();addEventListener("resize",placeMask);setTimeout(placeMask,400);setTi
 (async()=>{
   if(REAL){try{await cargar()}catch(e){sinAcceso(e);return}}
   notas();placeMask();
-  $("#avatar").dataset.cur="idle";cargaManifiesto().then(()=>{cargaVideos();setTimeout(()=>{lastG=0;go("saludo",true)},500)});setTimeout(inicio,900);
+  $("#avatar").dataset.cur="idle";Promise.resolve().then(()=>{cargaVideos();lista("saludo",10000).then(()=>{lastG=0;go("saludo",true)})});setTimeout(inicio,900);
 })();
 </script></body></html>
