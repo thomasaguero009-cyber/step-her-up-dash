@@ -569,6 +569,17 @@
   .ret-leyenda label{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
   .ret-leyenda i{ width:14px; height:4px; border-radius:2px; display:inline-block; }
   .ret-lectura{ font-size:13px; color:var(--text-dim); min-height:20px; }
+  .modal-card.asi-card{ max-width:900px; text-align:left; max-height:92vh; overflow-y:auto; }
+  .asi-nueva{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:6px 0 10px; }
+  .asi-nueva .modal-input{ width:auto; flex:1 1 180px; margin:0; }
+  .asi-nueva select.modal-input{ flex:0 0 auto; }
+  .asi-acc{ display:flex; flex-wrap:wrap; gap:4px 10px; }
+  .asi-acc button{ background:none; border:0; padding:0; color:var(--text); font:inherit; font-size:12px; text-decoration:underline; cursor:pointer; }
+  .asi-est{ font-size:11px; padding:2px 8px; border-radius:10px; border:1px solid var(--border); white-space:nowrap; }
+  .asi-est.ok{ color:#7fd9a0; border-color:rgba(127,217,160,.5); }
+  .asi-est.pronto{ color:#f2c46d; border-color:rgba(242,196,109,.5); }
+  .asi-est.mal{ color:#ff8fa3; border-color:rgba(255,143,163,.5); }
+  .asi-link{ font-size:12px; word-break:break-all; padding:8px 10px; border:1px dashed var(--border); border-radius:8px; margin:0 0 10px; }
   #retGrafico svg{ width:100%; height:auto; display:block; touch-action:none; background:#000; border-radius:12px; border:1px solid var(--border); }
   #retTabla{ overflow-x:auto; }
   .ret-tabla{ width:100%; border-collapse:collapse; font-size:13px; }
@@ -1459,6 +1470,7 @@
       <button type="button" class="ghost-link-btn" id="adminGoUtm" style="text-align:left; border-radius:12px;">Generador de UTM</button>
       <button type="button" class="ghost-link-btn" id="adminGoEstrategias" style="text-align:left; border-radius:12px;">Estrategias de alumnas</button>
       <button type="button" class="ghost-link-btn" id="adminGoRetencion" style="text-align:left; border-radius:12px;">Retención del video (VSL)</button>
+      <button type="button" class="ghost-link-btn" id="adminGoAsistente" style="text-align:left; border-radius:12px;">Asistente IA · alumnas</button>
       <div class="modal-actions">
         <button type="button" class="ghost-link-btn" id="adminMenuClose">Cerrar</button>
       </div>
@@ -1484,6 +1496,31 @@
       <div id="retTabla"></div>
       <div class="modal-actions">
         <button type="button" class="ghost-link-btn" id="retCerrar">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="asiOverlay">
+    <div class="modal-card asi-card">
+      <div class="modal-title">Asistente IA · alumnas</div>
+      <p class="modal-sub">Quién tiene acceso, hasta cuándo, y cuánto lo usa. Cada alumna entra con su enlace o con su código corto.</p>
+      <div class="asi-nueva">
+        <input type="text" id="asiNombre" class="modal-input" placeholder="Nombre de la alumna" autocomplete="off">
+        <select id="asiDias" class="modal-input" aria-label="Duración del acceso">
+          <option value="30">30 días</option>
+          <option value="60">60 días</option>
+          <option value="90" selected>90 días</option>
+          <option value="180">6 meses</option>
+          <option value="365">1 año</option>
+          <option value="0">Sin vencimiento</option>
+        </select>
+        <button type="button" class="ghost-link-btn" id="asiCrear">Crear acceso</button>
+      </div>
+      <div id="asiNuevoLink" class="asi-link" style="display:none;"></div>
+      <div id="asiMsg" class="modal-sub"></div>
+      <div id="asiTabla"></div>
+      <div class="modal-actions">
+        <button type="button" class="ghost-link-btn" id="asiCerrar">Cerrar</button>
       </div>
     </div>
   </div>
@@ -4100,6 +4137,7 @@
   document.getElementById('adminGoUtm').addEventListener('click', () => { adminMenuOverlay.classList.remove('open'); abrirUtmBuilder(); });
   document.getElementById('adminGoEstrategias').addEventListener('click', () => { adminMenuOverlay.classList.remove('open'); entrarAEstrategias(); });
   document.getElementById('adminGoRetencion').addEventListener('click', () => { adminMenuOverlay.classList.remove('open'); abrirRetencion(); });
+  document.getElementById('adminGoAsistente').addEventListener('click', () => { adminMenuOverlay.classList.remove('open'); abrirAsistenteAdmin(); });
 
   // ===== Retención del video de la VSL (Admin). Lee los conteos que guarda el Worker (un aviso por persona al salir de la página).
   const retOverlay = document.getElementById('retOverlay');
@@ -4152,6 +4190,98 @@
     retOverlay.classList.add('open');
     cargarRetencion();
   }
+
+  // ----- Admin · Asistente IA: alumnas, vencimiento y uso -----
+  const asiOverlay = document.getElementById('asiOverlay');
+  const ASI_PAGINA = 'https://dash.stepherup.com/asistente/';
+  let asiLista = [];
+  function asiClave(){ try { return sessionStorage.getItem('shu_estr_key') || ''; } catch(e){ return ''; } }
+  async function asiApi(ruta, cuerpo){
+    const res = await fetch(WORKER_URL + '/asistente/admin/' + ruta, {
+      method: cuerpo ? 'POST' : 'GET',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': asiClave() },
+      body: cuerpo ? JSON.stringify(cuerpo) : undefined
+    });
+    const d = await res.json().catch(() => ({}));
+    if(res.status === 401) throw new Error('El servidor no aceptó la contraseña de Admin. Sal de Admin y vuelve a entrar.');
+    if(!res.ok || !d.ok) throw new Error('No se pudo (' + (d.error || res.status) + ').');
+    return d;
+  }
+  function asiFecha(iso){
+    if(!iso) return '—';
+    const f = new Date(iso); if(isNaN(f)) return '—';
+    return f.toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function asiDiasRestan(iso){ return iso ? Math.ceil((Date.parse(iso) - Date.now()) / 86400000) : null; }
+  function asiEstado(a){
+    if(!a.activa) return '<span class="asi-est mal">Revocado</span>';
+    const d = asiDiasRestan(a.vence);
+    if(d === null) return '<span class="asi-est ok">Sin vencimiento</span>';
+    if(d < 0) return '<span class="asi-est mal">Venció</span>';
+    if(d <= 7) return '<span class="asi-est pronto">Vence en ' + d + (d === 1 ? ' día' : ' días') + '</span>';
+    return '<span class="asi-est ok">Activo · ' + d + ' días</span>';
+  }
+  function asiEsc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  async function abrirAsistenteAdmin(){
+    asiOverlay.classList.add('open');
+    document.getElementById('asiNuevoLink').style.display = 'none';
+    await cargarAsistenteAdmin();
+  }
+  async function cargarAsistenteAdmin(){
+    const msg = document.getElementById('asiMsg');
+    msg.textContent = 'Cargando…';
+    try {
+      const d = await asiApi('lista');
+      asiLista = (d.alumnas || []).sort((a, b) => String(b.creada || '').localeCompare(String(a.creada || '')));
+      msg.textContent = asiLista.length ? '' : 'Todavía no hay alumnas con acceso.';
+      pintarAsistenteAdmin();
+    } catch(err){ msg.textContent = err.message; document.getElementById('asiTabla').innerHTML = ''; }
+  }
+  function pintarAsistenteAdmin(){
+    if(!asiLista.length){ document.getElementById('asiTabla').innerHTML = ''; return; }
+    document.getElementById('asiTabla').innerHTML = '<div style="overflow-x:auto"><table class="ret-tabla"><thead><tr><th>Alumna</th><th>Estado</th><th>Vence</th><th>Último uso</th><th>Creaciones</th><th>Código</th><th></th></tr></thead><tbody>' +
+      asiLista.map((a, i) => '<tr><td>' + asiEsc(a.nombre) + '<br><small>Creada ' + asiFecha(a.creada) + (a.ficha ? ' · ficha ' + a.ficha + '/7' : ' · sin ficha') + '</small></td><td>' + asiEstado(a) + '</td><td>' + asiFecha(a.vence) + '</td><td>' + (a.ultimo_uso ? asiFecha(a.ultimo_uso) : 'Nunca') + '</td><td>' + (a.creaciones || 0) + '</td><td>' + asiEsc(a.codigo || '—') + '</td>' +
+      '<td><div class="asi-acc"><button data-i="' + i + '" data-a="d30">+30 días</button><button data-i="' + i + '" data-a="d90">+90 días</button><button data-i="' + i + '" data-a="enlace">Copiar enlace</button><button data-i="' + i + '" data-a="codigo">Copiar código</button><button data-i="' + i + '" data-a="' + (a.activa ? 'revocar' : 'activar') + '">' + (a.activa ? 'Revocar' : 'Reactivar') + '</button></div></td></tr>').join('') + '</tbody></table></div>';
+  }
+  async function asiCopiar(texto, aviso){
+    const msg = document.getElementById('asiMsg');
+    try { await navigator.clipboard.writeText(texto); msg.textContent = aviso; } catch(e){ msg.textContent = 'No se pudo copiar. Copia esto a mano: ' + texto; }
+  }
+  document.getElementById('asiTabla').addEventListener('click', async (e) => {
+    const b = e.target.closest('button[data-a]'); if(!b) return;
+    const a = asiLista[+b.dataset.i]; if(!a) return;
+    const msg = document.getElementById('asiMsg');
+    try {
+      if(b.dataset.a === 'enlace') return asiCopiar(ASI_PAGINA + '?t=' + a.token, 'Enlace de ' + a.nombre + ' copiado.');
+      if(b.dataset.a === 'codigo') return asiCopiar(a.codigo || '', 'Código de ' + a.nombre + ' copiado.');
+      if(b.dataset.a === 'd30' || b.dataset.a === 'd90'){
+        await asiApi('extender', { token: a.token, dias: b.dataset.a === 'd30' ? 30 : 90 });
+      } else if(b.dataset.a === 'revocar'){
+        if(!confirm('¿Quitarle el acceso a ' + a.nombre + '? Su enlace dejará de funcionar.')) return;
+        await asiApi('revocar', { token: a.token, activar: false });
+      } else if(b.dataset.a === 'activar'){
+        await asiApi('revocar', { token: a.token, activar: true });
+      }
+      await cargarAsistenteAdmin();
+    } catch(err){ msg.textContent = err.message; }
+  });
+  document.getElementById('asiCrear').addEventListener('click', async () => {
+    const nombre = document.getElementById('asiNombre').value.trim(), msg = document.getElementById('asiMsg');
+    if(nombre.length < 2){ msg.textContent = 'Escribe el nombre de la alumna.'; return; }
+    msg.textContent = 'Creando…';
+    try {
+      const d = await asiApi('alumna', { nombre, dias: parseInt(document.getElementById('asiDias').value, 10) || 0 });
+      document.getElementById('asiNombre').value = '';
+      const box = document.getElementById('asiNuevoLink');
+      box.style.display = 'block';
+      box.innerHTML = 'Listo, <b>' + asiEsc(d.nombre) + '</b> ya tiene acceso' + (d.vence ? ' hasta el ' + asiFecha(d.vence) : '') + '.<br>Enlace: ' + asiEsc(ASI_PAGINA + '?t=' + d.token) + '<br>Código: <b>' + asiEsc(d.codigo || '') + '</b>';
+      asiCopiar(ASI_PAGINA + '?t=' + d.token, 'Enlace copiado.');
+      await cargarAsistenteAdmin();
+      document.getElementById('asiMsg').textContent = 'Enlace copiado. Ya puedes mandárselo.';
+    } catch(err){ msg.textContent = err.message; }
+  });
+  document.getElementById('asiCerrar').addEventListener('click', () => asiOverlay.classList.remove('open'));
+  asiOverlay.addEventListener('click', (e) => { if(e.target === asiOverlay) asiOverlay.classList.remove('open'); });
   document.getElementById('retCerrar').addEventListener('click', () => retOverlay.classList.remove('open'));
   retOverlay.addEventListener('click', (e) => { if(e.target === retOverlay) retOverlay.classList.remove('open'); });
   document.getElementById('retDias').addEventListener('change', cargarRetencion);
