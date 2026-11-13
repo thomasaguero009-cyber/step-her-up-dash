@@ -340,12 +340,14 @@ const Q=[
  {k:"diferente",t:"¿Qué te hace diferente de otras en tu nicho?"},
  {k:"resultados",t:"¿Qué resultados reales has logrado con clientas? Solo los que puedes demostrar."},
  {k:"meta",t:"¿Qué quieres lograr este mes? Dímelo en una frase corta, por ejemplo: conseguir mis primeras cinco clientas."},
+ {k:"objecion",t:"¿Cuál es la objeción que más escuchas de tu clienta antes de comprar? Por ejemplo «no tengo tiempo» o «está caro»."},
+ {k:"oferta",t:"¿Cómo se llama tu programa o servicio, en qué formato es, qué incluye y qué palabra quieres que te escriban por mensaje?"},
  {k:"pais",t:"¿En qué país vendes? Así adapto los precios y los ejemplos a tu mercado."},
  {k:"situacion",t:"Cuéntame tu situación de hoy: cuántas seguidoras tienes, cuánto tiempo tienes para grabar y si hay algo que te frena, por ejemplo miedo a la cámara."}
 ];
-const ETI={nombre:"Nombre",negocio:"Tu negocio",clienta:"Tu clienta",frases:"Lo que dice tu clienta",diferente:"Lo que te diferencia",resultados:"Tus resultados",meta:"Tu meta del mes · una frase corta",situacion:"Tu situación actual",pais:"Tu país"};
+const ETI={nombre:"Nombre",negocio:"Tu negocio",clienta:"Tu clienta",frases:"Lo que dice tu clienta",diferente:"Lo que te diferencia",resultados:"Tus resultados",meta:"Tu meta del mes · una frase corta",situacion:"Tu situación actual",pais:"Tu país",objecion:"La objeción de tu clienta",oferta:"Tu oferta"};
 const QK={};Q.forEach(q=>QK[q.k]=q);
-const BAS=["negocio","clienta","meta"],AFI=["pais","situacion","frases","diferente","resultados"];
+const BAS=["negocio","clienta","meta"],AFI=["pais","situacion","objecion","oferta","frases","diferente","resultados"];
 const faltan=l=>l.filter(k=>!S.resp[k]);
 /* La meta es una frase corta; el contexto (seguidoras, tiempo, miedos) va en "Tu situación actual". Si escribe de más, se separa. */
 const necesitaSeparar=v=>{v=(v||"").trim();return v.length>90||/[.!?]\s+\S/.test(v)};
@@ -381,7 +383,7 @@ async function cargar(){const j=await api("/asistente/yo");CUPO=j.cupo||null;AVE
 const SECS=["Contenido","Marca personal","Anuncios","Ventas","Oferta y negocio","Planificación","Identidad y propósito"];
 const SUG={
  "":[["Contenido","Dame ideas para grabar esta semana","semana"],["Ventas","Me dijeron que está caro, ¿qué contesto?"],["Anuncios","Quiero hacer mi primer anuncio en Meta"],["Oferta y negocio","Ayúdame a definir cuánto cobrar"]],
- "Contenido":[["Ganchos","Quiero ganchos para mi próximo video","ganchos"],["Guion","Quiero un guion listo para grabar","guion"],["Caption","Quiero un caption para mi publicación","caption"],["Historias","Quiero una secuencia de historias","historias"]],
+ "Contenido":[["Ganchos","Quiero ganchos para mi próximo video","ganchos"],["Guion","Quiero un guion listo para grabar","guion"],["Guion de venta","Quiero un guion para vender mi programa","guionVenta"],["Carrusel de venta","Quiero un carrusel para vender mi programa","carruselVenta"],["Caption","Quiero un caption para mi publicación","caption"],["Historias","Quiero una secuencia de historias","historias"]],
  "Marca personal":[["Perfil","¿Cómo mejoro mi biografía de Instagram?"],["Autoridad","¿Cómo me posiciono como experta en mi nicho?"],["Presencia","¿Qué muestro de mí para que me recuerden?"],["Alcance","¿Cómo hago para que más gente me conozca?"]],
  "Anuncios":[["Primer anuncio","Quiero hacer mi primer anuncio en Meta"],["Inversión","¿Cuánto debo invertir al empezar?"],["Oferta","¿Qué anuncio me conviene según mi oferta?"],["Resultados","Mi anuncio no convierte, ¿qué reviso?"]],
  "Ventas":[["Objeciones","Una clienta me dice que está caro"],["Mensajes","¿Cómo respondo cuando me escriben por precio?"],["Llamadas","¿Cómo cierro una llamada de venta?"],["Seguimiento","Me leen y no contestan, ¿qué hago?"]],
@@ -493,7 +495,7 @@ function enlazaVacio(){const sec=CUR?CUR.sec:"",L=SUG[sec]||SUG[""];todas("#hilo
 
 /* ----- mensajes ----- */
 const CARA='<div class="mini"><img src="cara.jpg" alt=""></div>';
-function lineasHtml(L){return L.map(l=>`<div class="linea"><span class="et">${esc(l.et)}</span><p>${esc(l.tx)}</p>${l.toma?`<p class="toma">Toma: ${esc(l.toma)}</p>`:""}</div>`).join("")}
+function lineasHtml(L,car){return L.map(l=>`<div class="linea"><span class="et">${esc(l.et)}</span><p>${esc(l.tx)}</p>${l.toma?`<p class="toma">${car?"Diseño":"Toma"}: ${esc(l.toma)}</p>`:""}</div>`).join("")}
 function msgHtml(m,i){
   if(m.r==="u")return `<div class="msg yo-msg"><div class="burbuja">${esc(m.t)}</div></div>`;
   let dentro="";
@@ -505,9 +507,9 @@ function msgHtml(m,i){
     const meta=[m.tipo,m.meta].filter(Boolean).join(" · ");
     let cuerpo="";
     if(m.tipo==="Ganchos")cuerpo=m.items.map((g,n)=>`<div class="gancho"><span class="et">${esc(g.et)}</span><p>${esc(g.tx)}</p><button data-a="usar" data-m="${i}" data-n="${n}">Hacer guion con este</button></div>`).join("");
-    else cuerpo=lineasHtml(m.lineas)+(m.pant?`<p class="nota">Texto en pantalla «${esc(m.pant)}»</p>`:"");
+    else cuerpo=lineasHtml(m.lineas,/^Carrusel/.test(m.tipo))+(m.pant?`<p class="nota">Texto en pantalla «${esc(m.pant)}»</p>`:"");
     dentro=`<p>${esc(m.intro)}</p><div class="hoja"><small>${esc(meta)}</small>${m.tit?`<h3>${esc(m.tit)}</h3>`:""}${cuerpo}
-      <div class="acciones">${m.tipo==="Guion"?`<button class="grabar" data-a="grabar" data-m="${i}">Grabar con teleprompter</button>`:""}<button data-a="corto" data-m="${i}">Más corto</button><button data-a="otra" data-m="${i}">Otra versión</button><button data-a="copiar" data-m="${i}">Copiar</button>
+      <div class="acciones">${/^Guion/.test(m.tipo)?`<button class="grabar" data-a="grabar" data-m="${i}">Grabar con teleprompter</button>`:""}<button data-a="corto" data-m="${i}">Más corto</button><button data-a="otra" data-m="${i}">Otra versión</button><button data-a="copiar" data-m="${i}">Copiar</button>
       <button class="sutil${m.fb==="1"?" on":""}" data-a="suena" data-m="${i}">Suena a mí</button><button class="sutil${m.fb==="0"?" on":""}" data-a="nosuena" data-m="${i}">No suena a mí</button></div></div>`}
   else if(m.k==="semana"){
     const P=planActual(),dias=P?P.dias:m.dias||[];
@@ -546,21 +548,24 @@ async function enviarTexto(t){
   anade({r:"u",t});chips([]);
   if(MODO){const M=MODO;
     if(M.k==="onb")return respondeOnb(M,t);
-    if(M.k==="tema"){MODO=null;return tipoConTema(M.tipo,t)}
-    if(M.k==="detalle"){MODO=null;return pieza("guion",{tema:M.tema,detalle:t===SIN_DET?"":t,gancho:M.gancho||""})}
+    if(M.k==="tema"){MODO=null;return tipoConTema(M.tipo,t,M.og)}
+    if(M.k==="detalle"){MODO=null;return pieza("guion",{tema:M.tema,detalle:t===SIN_DET?"":t,gancho:M.gancho||"",...(M.og||{})})}
+    if(M.k==="falta"){MODO=null;S.resp[M.campo]=t;save();await flush();return pieza(M.tool,M.p,M.ajuste,M.ver,M.tit)}
     if(M.k==="ajuste"){MODO=null;return reGenera(M.m,t,false)}
     if(M.k==="ajusteSemana"){MODO=null;return armarSemana(t)}}
   const tp=tipoDe(t);
   if(tp==="semana")return pedirSemana();
-  if(tp)return tipoConTema(tp,t);
+  if(tp)return tipoConTema(tp,t,tp==="guion"?optsGuion(t):null);
   return consejoTurno(t)}
 /* Solo se arma otra semana si ella lo pide de forma explícita ("armame otra semana"). Una pregunta, aunque diga "qué publico", se contesta en texto. */
 const ES_PREGUNTA=/[?¿]|^\s*(qu[eé]|c[oó]mo|cu[aá]l(es)?|por qu[eé]|puedo|debo|deber[ií]a|me conviene|ser[aá]|hay|tengo que)\b/i;
 const PIDE_SEMANA=/\b(arm[aeo]\w*|gener[aeo]\w*|cre[aeo]\w*|prepar[aeo]\w*|haz\w*|h[aá]zme|rehaz\w*|renueva\w*|dame|quiero|necesito)\b[^.!?]*\b(semana|plan semanal|plan de la semana)\b|\b(dame|quiero|necesito|arm[aeo]\w*)\b[^.!?]*\bideas?\b[^.!?]*\b(semana|grabar)\b/i;
 const pideSemana=t=>!ES_PREGUNTA.test(t)&&PIDE_SEMANA.test(t);
+/* guion de venta y carrusel: se detectan en lo que escribe */
+const optsGuion=t=>{const x=t.toLowerCase();return{...(/\bcarrusel(es)?\b/.test(x)?{formato:"carrusel"}:{}),...(/(vender|venta|ventas|mi oferta|mi programa)/.test(x)?{objetivo:"venta"}:{})}};
 function tipoDe(t){const x=t.toLowerCase();if(CUR&&CUR.sec&&CUR.sec!=="Contenido"&&!CUR.esSemana)return"";
   if(pideSemana(t))return"semana";
-  if(/\bgu[ií]on\b/.test(x))return"guion";if(/\bganchos?\b/.test(x))return"ganchos";if(/\bcaption\b|pie de foto/.test(x))return"caption";if(/\bhistorias?\b/.test(x))return"historias";return""}
+  if(/\bgu[ií]on\b|\bcarrusel(es)?\b/.test(x))return"guion";if(/\bganchos?\b/.test(x))return"ganchos";if(/\bcaption\b|pie de foto/.test(x))return"caption";if(/\bhistorias?\b/.test(x))return"historias";return""}
 function resumenPrevio(){return(CUR?CUR.msgs:[]).slice(-9).map(m=>m.r==="u"?{role:"user",content:m.t}:{role:"assistant",content:m.k==="consejo"?[m.intro,...m.pasos].join(" "):m.k==="txt"?m.t:m.intro||""}).filter(x=>x.content)}
 /* La respuesta del chat llega en streaming: el texto va apareciendo (primero la intro, luego los pasos). Si el streaming no está disponible, se usa la ruta normal. */
 async function leeStream(hist,sec,pinta){
@@ -614,41 +619,50 @@ const temasSug=()=>{const L=[],cl=corto(sinP(S.resp.clienta),60);
   L.push(frase()?`Por qué tu clienta dice «${frase()}»`:"Para quién es lo que haces y para quién no");
   L.push(S.resp.diferente?"Lo que me hace diferente a las demás":"Un día trabajando con una clienta");
   L.push("Cómo acompaño a una clienta paso a paso");return L};
-async function empiezaTipo(tipo){
+async function empiezaTipo(clave){
+  const og=clave==="guionVenta"?{objetivo:"venta"}:clave==="carruselVenta"?{formato:"carrusel",objetivo:"venta"}:null,tipo=og?"guion":clave;
   if(VISTA!=="chat"||!CUR||(CUR.msgs.length&&CUR.sec!=="Contenido")){CUR=nuevaConv("Contenido");VISTA="chat";verChat()}else if(!CUR.sec)cambiaSec("Contenido");
-  anade({r:"u",t:{ganchos:"Quiero ganchos para mi próximo video",guion:"Quiero un guion listo para grabar",caption:"Quiero un caption para mi publicación",historias:"Quiero una secuencia de historias"}[tipo]});
-  pideTema(tipo)}
-function pideTema(tipo){
-  MODO={k:"tema",tipo};pintaCaja();
+  anade({r:"u",t:{ganchos:"Quiero ganchos para mi próximo video",guion:"Quiero un guion listo para grabar",guionVenta:"Quiero un guion para vender mi programa",carruselVenta:"Quiero un carrusel para vender mi programa",caption:"Quiero un caption para mi publicación",historias:"Quiero una secuencia de historias"}[clave]});
+  pideTema(tipo,og)}
+function pideTema(tipo,og){
+  MODO={k:"tema",tipo,og};pintaCaja();
   gDice("Pues dime sobre qué tema lo trabajamos. Elige uno de estos o escríbeme el tuyo, ¿ok?");
   chips([...temasSug().map(t=>[t,()=>{enviarTexto(t)}]),["Proponme otros",async()=>{
     const r=await conPuntos(async()=>{try{return await api("/asistente/generar",{tool:"temas",ajuste:"temas distintos a los anteriores",previo:temasSug().join(" | ")})}catch(e){return{error:e.code}}});
     if(r.error||!r.temas){gDice(ERR[r.error]||"No pude proponerte otros ahora.");chips(CHIPS);return}
     chips([...r.temas.map(x=>[x.titulo,()=>enviarTexto(x.titulo)])])}]])}
-function tipoConTema(tipo,tema){
-  if(tipo==="guion"){MODO={k:"detalle",tema};pintaCaja();gDice("Esto es lo que lo hace tuyo y no de cualquiera. Una escena real de esta semana, un número verdadero o algo que te dijo una clienta. ¿Qué tienes?");chips([[SIN_DET,()=>enviarTexto(SIN_DET)]]);return}
+function tipoConTema(tipo,tema,og){
+  if(tipo==="guion"){MODO={k:"detalle",tema,og};pintaCaja();gDice("Esto es lo que lo hace tuyo y no de cualquiera. Una escena real de esta semana, un número verdadero o algo que te dijo una clienta. ¿Qué tienes?");chips([[SIN_DET,()=>enviarTexto(SIN_DET)]]);return}
   return pieza(tipo,{tema})}
 async function seguirCon(c){anade({r:"u",t:"Quiero seguir con "+c.tema});tipoConTema("guion",c.tema)}
 /* Lo que se guarda de cada pieza para poder abrirla después: las líneas, el texto en pantalla y la duración. */
 const contenidoDe=m=>({lineas:(m.items||m.lineas||[]).map(l=>({et:l.et,tx:l.tx,...(l.t?{t:l.t}:{}),...(l.toma?{toma:l.toma}:{})})),pant:m.pant||"",dur:m.dur||"",meta:m.meta||""});
+/* datos clave que ella decidió no contestar: no se le vuelven a preguntar en esta visita */
+const OMIT=[];
+const esGuion=t=>/^Guion/.test(t||"");
+const ogDeP=p=>{const o={};if(p&&p.formato)o.formato=p.formato;if(p&&p.objetivo)o.objetivo=p.objetivo;return Object.keys(o).length?o:null};
 async function pieza(tool,p,ajuste,ver,tituloPrevio){
   if(faltan(BAS).length)return fichaPrimero(()=>pieza(tool,p,ajuste));
   MODO=null;pintaCaja();
-  const params={tool,...p};
+  const params={tool,...p,...(tool==="guion"&&OMIT.length?{omitir:OMIT}:{})};
   const r=await conPuntos(async()=>{try{const r=await api("/asistente/generar",params);if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return r}catch(e){return{error:e.code||"error"}}});
   if(r.error==="ficha_incompleta"){S.resp.negocio="";S.resp.clienta="";return fichaPrimero(()=>pieza(tool,p,ajuste))}
   if(r.error){if(r.error!=="acceso_vencido")gDice(ERR[r.error]||"No pude escribirlo ahora. Inténtalo de nuevo en un momento.");chips([["Intentar de nuevo",()=>pieza(tool,p,ajuste)]]);return}
+  /* si falta un dato clave (diferencial, objeción, resultados u oferta) se pregunta UNA cosa en vez de rellenar con frases genéricas */
+  if(r.falta){const f=r.falta;MODO={k:"falta",campo:f.campo,tool,p,ajuste,ver,tit:tituloPrevio};pintaCaja();gDice(f.pregunta);
+    chips([["Sigue sin eso",()=>{if(BUSY)return;OMIT.push(f.campo);anade({r:"u",t:"Sigue sin eso"});MODO=null;pieza(tool,p,ajuste,ver,tituloPrevio)}]]);return}
   /* el título corto lo escribe el asistente; una versión nueva (más corto, otra versión) conserva el de la original */
   const titulo=tituloPrevio||r.titulo||corto(p.tema||"",50);
-  let m={r:"g",k:"hoja",tipo:TIPO[tool],tit:titulo,intro:ajuste?"Listo, lo cambié como me pediste.":INTRO[tool],ctx:{tool,titulo,p:{...p,ajuste:undefined,previo:undefined}}};
+  const car=tool==="guion"&&r.formato==="carrusel",tipoPieza=tool==="guion"?(car?"Carrusel":"Guion")+(r.objetivo==="venta"?" de venta":""):TIPO[tool];
+  let m={r:"g",k:"hoja",tipo:tipoPieza,tit:titulo,intro:ajuste?"Listo, lo cambié como me pediste.":(car?"Aquí tienes tu carrusel, lámina por lámina. Léelo en voz alta: si algo no suena a ti, lo cambiamos, ¿ok?":INTRO[tool]),ctx:{tool,titulo,p:{...p,ajuste:undefined,previo:undefined}}};
   if(tool==="ganchos")m.items=(r.items||[]).map(x=>({et:x.tipo,tx:x.texto}));
-  else if(tool==="guion"){m.lineas=(r.lineas||[]).map(x=>({et:x.etiqueta,tx:x.texto,t:x.t,toma:x.toma||""}));m.meta=((r.duracion||"")+" · reel").replace(/^ · /,"");m.pant=r.pantalla||"";m.dur=r.duracion||""}
+  else if(tool==="guion"){m.lineas=(r.lineas||[]).map(x=>({et:x.etiqueta,tx:x.texto,t:x.t,toma:x.toma||""}));m.meta=car?(r.duracion||""):((r.duracion||"")+" · reel").replace(/^ · /,"");m.pant=r.pantalla||"";m.dur=r.duracion||""}
   else if(tool==="caption")m.lineas=(r.lineas||[]).map(x=>({et:x.etiqueta,tx:x.texto}));
   else if(tool==="historias"){m.lineas=(r.historias||[]).map(x=>({et:x.n+" · "+x.tipo,tx:x.texto}));m.meta=(r.historias||[]).length+" historias · 24 h"}
   anade(m);
   /* se guarda toda versión, también "Más corto" y "Otra versión", con su contenido */
-  S.guiones.unshift({tipo:TIPO[tool],tema:p.tema||"",titulo,det:p.detalle||"",fecha:hoy(),...(ver?{ver}:{}),contenido:contenidoDe(m)});save();pintaLado();
-  chips(tool==="ganchos"?[]:[["Otro tema",()=>pideTema(tool)]])}
+  S.guiones.unshift({tipo:tipoPieza,tema:p.tema||"",titulo,det:p.detalle||"",fecha:hoy(),...(ver?{ver}:{}),contenido:contenidoDe(m)});save();pintaLado();
+  chips(tool==="ganchos"?[]:[["Otro tema",()=>pideTema(tool,ogDeP(p))]])}
 function reGenera(mi,ajuste,dice,ver){const m=CUR.msgs[mi];if(!m||!m.ctx)return;
   const previo=m.tipo==="Ganchos"?m.items.map(x=>x.tx).join(" | "):JSON.stringify(m.lineas.map(l=>({t:l.t||"",etiqueta:l.et,texto:l.tx,toma:l.toma||""})));
   if(dice!==false)anade({r:"u",t:ajuste});return pieza(m.ctx.tool,{...m.ctx.p,ajuste,previo},true,ver||"Ajustada",m.ctx.titulo||m.tit)}
@@ -720,12 +734,12 @@ function vistaCreacion(h){
   const c=g.contenido||{},meta=[g.tipo,g.ver,c.dur,g.fecha].filter(Boolean).join(" · ");
   let cuerpo="";
   if(c.dias&&c.dias.length)cuerpo=c.dias.map(d=>`<div class="dia"><span class="dn">${esc(d.dia)}</span><div><b>${esc(d.tema)}</b><p>${esc(d.pilar)} · ${esc(d.detalle)}</p></div></div>`).join("");
-  else if(c.lineas&&c.lineas.length)cuerpo=g.tipo==="Ganchos"?c.lineas.map(l=>`<div class="gancho"><span class="et">${esc(l.et)}</span><p>${esc(l.tx)}</p></div>`).join(""):lineasHtml(c.lineas)+(c.pant?`<p class="nota">Texto en pantalla «${esc(c.pant)}»</p>`:"");
+  else if(c.lineas&&c.lineas.length)cuerpo=g.tipo==="Ganchos"?c.lineas.map(l=>`<div class="gancho"><span class="et">${esc(l.et)}</span><p>${esc(l.tx)}</p></div>`).join(""):lineasHtml(c.lineas,/^Carrusel/.test(g.tipo))+(c.pant?`<p class="nota">Texto en pantalla «${esc(c.pant)}»</p>`:"");
   else cuerpo=`<p>Esta creación es de antes de que guardara el contenido completo, así que solo quedó el tema. Si quieres, la vuelvo a escribir.</p>`;
   const hay=!!textoCre(g);
   h.innerHTML=`<div class="col vista"><button class="atras" data-a="volverCre">← Mis creaciones</button><h2>${esc(tituloCre(g))}</h2>
    <div class="hoja"><small>${esc(meta)}</small>${cuerpo}
-    <div class="acciones">${g.tipo==="Guion"&&c.lineas&&c.lineas.length?`<button class="grabar" data-a="creGrabar">Grabar con teleprompter</button>`:""}${hay?`<button data-a="creCopiar">Copiar</button>`:`<button class="grabar" data-a="creRehacer">Volver a escribirla</button>`}</div></div></div>`}
+    <div class="acciones">${esGuion(g.tipo)&&c.lineas&&c.lineas.length?`<button class="grabar" data-a="creGrabar">Grabar con teleprompter</button>`:""}${hay?`<button data-a="creCopiar">Copiar</button>`:`<button class="grabar" data-a="creRehacer">Volver a escribirla</button>`}</div></div></div>`}
 
 /* ----- acciones dentro de las hojas ----- */
 $("#hilo").addEventListener("click",async e=>{
@@ -740,7 +754,7 @@ $("#hilo").addEventListener("click",async e=>{
   if(a==="grabar"&&m){abrirTP(m.lineas.map(l=>({tag:l.et,txt:l.tx})),tpDuracion(m.dur));return}
   if(a==="copiar"&&m){const t=m.tipo==="Ganchos"?m.items.map(g=>g.tx).join("\n"):m.lineas.map(l=>l.tx).join("\n");try{await navigator.clipboard.writeText(t);b.textContent="Copiado"}catch(x){b.textContent="No se pudo copiar"}return}
   if(BUSY)return;
-  if(a==="corto"&&m){reGenera(mi,m.tipo==="Guion"?"más corto, de 20 a 25 segundos":"más corto",true,"Más corto");return}
+  if(a==="corto"&&m){reGenera(mi,/^Guion/.test(m.tipo)?"más corto, de 20 a 25 segundos":"más corto",true,"Más corto");return}
   if(a==="otra"&&m){reGenera(mi,"una versión distinta a la anterior, con otro ángulo",true,"Otra versión");return}
   if(a==="usar"&&m){const g=m.items[+b.dataset.n];anade({r:"u",t:"Quiero hacer un guion con este gancho"});MODO={k:"detalle",tema:(m.ctx&&m.ctx.p&&m.ctx.p.tema)||m.tit,gancho:g.tx};pintaCaja();gDice("Ese tiene fuerza. Ahora cuéntame algo real que lo haga tuyo, una escena de esta semana o algo que te dijo una clienta. ¿Qué tienes?");chips([[SIN_DET,()=>enviarTexto(SIN_DET)]]);return}
   if((a==="suena"||a==="nosuena")&&m){m.fb=a==="suena"?"1":"0";guardaConvs();api("/asistente/opinion",{tool:m.tipo||"",ok:m.fb==="1",texto:(m.lineas||m.items||[]).map(l=>l.tx).join(" ").slice(0,700)}).catch(()=>{});
