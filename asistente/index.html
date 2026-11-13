@@ -520,11 +520,15 @@ async function enviarTexto(t){
     if(M.k==="ajuste"){MODO=null;return reGenera(M.m,t,false)}
     if(M.k==="ajusteSemana"){MODO=null;return armarSemana(t)}}
   const tp=tipoDe(t);
-  if(tp==="semana")return armarSemana();
+  if(tp==="semana")return pedirSemana();
   if(tp)return tipoConTema(tp,t);
   return consejoTurno(t)}
+/* Solo se arma otra semana si ella lo pide de forma explícita ("armame otra semana"). Una pregunta, aunque diga "qué publico", se contesta en texto. */
+const ES_PREGUNTA=/[?¿]|^\s*(qu[eé]|c[oó]mo|cu[aá]l(es)?|por qu[eé]|puedo|debo|deber[ií]a|me conviene|ser[aá]|hay|tengo que)\b/i;
+const PIDE_SEMANA=/\b(arm[aeo]\w*|gener[aeo]\w*|cre[aeo]\w*|prepar[aeo]\w*|haz\w*|h[aá]zme|rehaz\w*|renueva\w*|dame|quiero|necesito)\b[^.!?]*\b(semana|plan semanal|plan de la semana)\b|\b(dame|quiero|necesito|arm[aeo]\w*)\b[^.!?]*\bideas?\b[^.!?]*\b(semana|grabar)\b/i;
+const pideSemana=t=>!ES_PREGUNTA.test(t)&&PIDE_SEMANA.test(t);
 function tipoDe(t){const x=t.toLowerCase();if(CUR&&CUR.sec&&CUR.sec!=="Contenido"&&!CUR.esSemana)return"";
-  if(/ideas?.*(semana|grabar)|plan.*semana|qu[eé] (publico|grabo|subo)/.test(x))return"semana";
+  if(pideSemana(t))return"semana";
   if(/\bgu[ií]on\b/.test(x))return"guion";if(/\bganchos?\b/.test(x))return"ganchos";if(/\bcaption\b|pie de foto/.test(x))return"caption";if(/\bhistorias?\b/.test(x))return"historias";return""}
 function resumenPrevio(){return(CUR?CUR.msgs:[]).slice(-9).map(m=>m.r==="u"?{role:"user",content:m.t}:{role:"assistant",content:m.k==="consejo"?[m.intro,...m.pasos].join(" "):m.k==="txt"?m.t:m.intro||""}).filter(x=>x.content)}
 async function consejoTurno(t){
@@ -576,6 +580,11 @@ function reGenera(mi,ajuste,dice){const m=CUR.msgs[mi];if(!m||!m.ctx)return;
   if(dice!==false)anade({r:"u",t:ajuste});return pieza(m.ctx.tool,{...m.ctx.p,ajuste,previo},true)}
 
 /* ----- tu semana ----- */
+/* Nunca se pisa una semana que ya existe sin preguntar. */
+function pedirSemana(ajuste){
+  if(!planActual())return armarSemana(ajuste);
+  gDice("Ya tienes tu semana armada. Si armo otra, reemplazo la que tienes y se borra lo que marcaste como grabado. ¿La reemplazo?");
+  chips([["Sí, arma otra",()=>{anade({r:"u",t:"Sí, arma otra semana"});armarSemana(ajuste)}],["No, déjala así",()=>{anade({r:"u",t:"No, déjala así"});gDice("Listo, tu semana queda como está.");chips([])}]])}
 async function armarSemana(ajuste){
   if(faltan(BAS).length)return fichaPrimero(()=>armarSemana(ajuste));
   const params={tool:"ideas"};if(ajuste){params.ajuste=ajuste;params.previo=JSON.stringify((planActual()||{dias:[]}).dias.map(d=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle})))}
@@ -636,7 +645,7 @@ $("#hilo").addEventListener("click",async e=>{
   if(a==="hecho"){const n=+b.dataset.n;S.plan.dias[n].hecho=b.checked;save();const sm=b.closest(".hoja");b.closest(".dia").classList.toggle("ok",b.checked);sm.querySelector("small").textContent=`Tu semana · ${S.plan.dias.filter(d=>d.hecho).length} de ${S.plan.dias.length} grabadas`;return}
   if(a==="dia"){const d=S.plan.dias[+b.dataset.n];if(!d)return;CUR=nuevaConv("Contenido");VISTA="chat";verChat();anade({r:"u",t:"Quiero hacer el guion de «"+corto(d.tema,60)+"»"});tipoConTema("guion",d.tema);return}
   if(a==="cambiaDia"){MODO=null;gDice("Pues dime qué día quieres cambiar y cómo lo quieres, por ejemplo el martes con algo más personal.");MODO={k:"ajusteSemana"};return}
-  if(a==="nuevaSem"){anade({r:"u",t:"Quiero armar otra semana"});armarSemana("una semana totalmente distinta a la anterior");return}
+  if(a==="nuevaSem"){anade({r:"u",t:"Quiero armar otra semana"});pedirSemana("una semana totalmente distinta a la anterior");return}
 });
 /* ----- caja de escribir ----- */
 const txt=$("#txt");
