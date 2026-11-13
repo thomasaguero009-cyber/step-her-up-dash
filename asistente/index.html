@@ -328,12 +328,20 @@ const Q=[
  {k:"frases",t:"¿Qué frases dice tu clienta cuando tiene el problema que resuelves?"},
  {k:"diferente",t:"¿Qué te hace diferente de otras en tu nicho?"},
  {k:"resultados",t:"¿Qué resultados reales has logrado con clientas? Solo los que puedes demostrar."},
- {k:"meta",t:"¿Qué quieres lograr este mes? Más mensajes, más ventas o más seguidoras."}
+ {k:"meta",t:"¿Qué quieres lograr este mes? Dímelo en una frase corta, por ejemplo: conseguir mis primeras cinco clientas."},
+ {k:"situacion",t:"Cuéntame tu situación de hoy: cuántas seguidoras tienes, cuánto tiempo tienes para grabar y si hay algo que te frena, por ejemplo miedo a la cámara."}
 ];
-const ETI={nombre:"Nombre",negocio:"Tu negocio",clienta:"Tu clienta",frases:"Lo que dice tu clienta",diferente:"Lo que te diferencia",resultados:"Tus resultados",meta:"Tu meta del mes"};
+const ETI={nombre:"Nombre",negocio:"Tu negocio",clienta:"Tu clienta",frases:"Lo que dice tu clienta",diferente:"Lo que te diferencia",resultados:"Tus resultados",meta:"Tu meta del mes · una frase corta",situacion:"Tu situación actual"};
 const QK={};Q.forEach(q=>QK[q.k]=q);
-const BAS=["negocio","clienta","meta"],AFI=["frases","diferente","resultados"];
+const BAS=["negocio","clienta","meta"],AFI=["situacion","frases","diferente","resultados"];
 const faltan=l=>l.filter(k=>!S.resp[k]);
+/* La meta es una frase corta; el contexto (seguidoras, tiempo, miedos) va en "Tu situación actual". Si escribe de más, se separa. */
+const necesitaSeparar=v=>{v=(v||"").trim();return v.length>90||/[.!?]\s+\S/.test(v)};
+async function separaMeta(texto){
+  try{const r=await api("/asistente/ficha/separar",{texto});if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return{meta:r.meta||texto,situacion:r.situacion||""}}
+  catch(e){return{meta:texto,situacion:""}}}
+function aplicaMeta(r){S.resp.meta=r.meta;if(r.situacion){const a=(S.resp.situacion||"").trim();S.resp.situacion=a&&!a.includes(r.situacion)?a+" "+r.situacion:r.situacion}}
+let SEP_HECHO=false;
 let syncT=0,syncP=Promise.resolve();
 const sync=()=>{syncP=api("/asistente/sync",{resp:S.resp,creaciones:S.guiones,...(S.plan?{plan:S.plan}:{})}).catch(()=>{});return syncP};
 const save=()=>{clearTimeout(syncT);syncT=setTimeout(sync,600)};
@@ -612,20 +620,26 @@ function empiezaOnb(lista){
   gDice(L===BAS?`Hola, ${nombre()}. Pues vamos a dejar lista tu primera idea para grabar esta semana, ¿ok? Solo necesito que me cuentes tres cosas de tu negocio.`:"Pues afinemos tu ficha para que todo suene todavía más a ti, ¿ok?");
   MODO={k:"onb",lista:L};pintaCaja();setTimeout(()=>gDice(QK[L[i]].t),500)}
 async function respondeOnb(M,t){
-  const k=faltan(M.lista)[0];S.resp[k]=t;save();pintaLado();
+  const k=faltan(M.lista)[0];
+  if(k==="meta"&&necesitaSeparar(t))aplicaMeta(await conPuntos(()=>separaMeta(t)));else S.resp[k]=t;
+  save();pintaLado();
   const sig=faltan(M.lista)[0];
   if(sig){await sleep(350);gDice(QK[sig].t);return}
   MODO=null;pintaCaja();
   if(M.lista===BAS&&M.despues){await flush();gDice(`Gracias, ${nombre()}. Ya con eso seguimos.`);return M.despues()}
   if(M.lista===BAS){await flush();gDice(`Gracias, ${nombre()}. Con eso ya te armo tu semana, dame un segundo.`);await armarSemana();
-    if(faltan(AFI).length){gDice("Cuando quieras afinamos tu ficha con tres preguntas más, para que todo suene todavía más a ti.");chips([["Afinemos mi ficha",()=>empiezaOnb(AFI)]])}}
+    if(faltan(AFI).length){gDice("Cuando quieras afinamos tu ficha con unas preguntas más, para que todo suene todavía más a ti.");chips([["Afinemos mi ficha",()=>empiezaOnb(AFI)]])}}
   else{await flush();gDice(`Gracias, ${nombre()}. Ya sé mucho más de ti y lo guardé en tu ficha.`)}}
 
 /* ----- vistas ----- */
 function vistaFicha(h){
   h.innerHTML=`<div class="col vista"><h2>Lo que sé<br><i>de ti.</i></h2><p>Con esto cada idea y cada guion sale con tu voz. Puedes corregirlo cuando quieras.</p>
    ${Q.filter(q=>q.k!=="nombre").map(q=>`<div class="fi${S.resp[q.k]?"":" falta"}"><label>${esc(ETI[q.k])}</label><textarea data-k="${q.k}" placeholder="Todavía sin responder">${esc(S.resp[q.k]||"")}</textarea></div>`).join("")}</div>`;
-  todas("#hilo textarea").forEach(t=>t.onchange=()=>{const v=t.value.trim();if(v)S.resp[t.dataset.k]=v;else delete S.resp[t.dataset.k];t.closest(".fi").classList.toggle("falta",!v);save()})}
+  todas("#hilo textarea").forEach(t=>t.onchange=async()=>{const k=t.dataset.k,v=t.value.trim();
+    if(k==="meta"&&necesitaSeparar(v)){t.disabled=true;aplicaMeta(await separaMeta(v));save();if(VISTA==="ficha")vistaFicha($("#hilo"));return}
+    if(v)S.resp[k]=v;else delete S.resp[k];t.closest(".fi").classList.toggle("falta",!v);save()});
+  /* fichas anteriores con la meta larga: se separan una sola vez al abrir Mi ficha */
+  if(!SEP_HECHO&&necesitaSeparar(S.resp.meta)){SEP_HECHO=true;separaMeta(S.resp.meta).then(r=>{if(r.meta!==S.resp.meta||r.situacion){aplicaMeta(r);save();if(VISTA==="ficha")vistaFicha($("#hilo"))}})}}
 function vistaCreaciones(h){
   h.innerHTML=`<div class="col vista"><h2>Lo que ya<br><i>tienes listo.</i></h2>${S.guiones.length?"":`<p>Todavía no creaste nada. Cuéntame qué necesitas y empezamos.</p>`}
    <div style="margin-top:18px">${S.guiones.map((g,i)=>`<div class="cre"><span class="n">${String(S.guiones.length-i).padStart(2,"0")}</span><div><b>${esc(g.tema)}</b><small>${esc(g.tipo||"Guion")}${g.det?" · Tu detalle "+esc(g.det):""}</small></div><span class="f">${esc(g.fecha||"")}</span></div>`).join("")}</div></div>`}
