@@ -3634,7 +3634,7 @@
     const pa = mes === 0 ? anio - 1 : anio, pm = mes === 0 ? 11 : mes - 1;
     let tot = null;
     try {
-      const r = await fetch(WORKER_URL + '/leads-summary?start=' + new Date(pa, pm, 1).getTime() + '&end=' + new Date(pa, pm + 1, 1).getTime());
+      const r = await fetch(WORKER_URL + '/leads-summary?start=' + inicioMesPR(pa, pm) + '&end=' + inicioMesPR(pa, pm + 1));
       const d = await r.json(); if(d && d.ok) tot = d.totales;
     } catch(e){}
     const [sh, cash] = await Promise.all([leerShows(pa, pm), cashRealDelMes(pa, pm)]);
@@ -3643,7 +3643,15 @@
     const cierres = Math.max(tot.cierres || 0, sh ? sh.filter(x => x.resultado === 'Cierre').length : 0);
     const cierresTot = cierres + (tot.cierresWebinar || 0);
     const cashPrev = cash == null ? (tot.ventas || 0) + (tot.ventasWebinar || 0) : cash;
-    const previos = { ghlLlamadas: tot.llamadas || 0, ghlAgendadas: tot.agendadas || 0, ghlShows: shows, ghlCierres: cierres, ghlVentas: cashPrev, ghlAov: cierresTot > 0 ? cashPrev / cierresTot : 0 };
+    // Mismas fuentes que las tarjetas de este mes: llamadas y agendadas de Métricas (Tracker) si ese mes tiene filas,
+    // y cierres = llamadas + webinar. Antes el mes pasado salía de GHL y sin el webinar, y el "llevas X%" no cuadraba.
+    let llamPrev = tot.llamadas || 0, agPrev = tot.agendadas || 0;
+    try {
+      const filasPrev = (await obtenerFilasTracker()).filter(f => f.fecha.getFullYear() === pa && f.fecha.getMonth() === pm);
+      if(filasPrev.length){ llamPrev = filasPrev.reduce((s, f) => s + f.llamadas, 0); agPrev = filasPrev.reduce((s, f) => s + f.agendadas, 0); }
+    } catch(e){}
+    if(pedido !== prevMesPedido) return;
+    const previos = { ghlLlamadas: llamPrev, ghlAgendadas: agPrev, ghlShows: shows, ghlCierres: cierresTot, ghlVentas: cashPrev, ghlAov: cierresTot > 0 ? cashPrev / cierresTot : 0 };
     const hoy = new Date(), esActual = anio === hoy.getFullYear() && mes === hoy.getMonth();
     const num = t => { const v = parseFloat(String(t || '').replace(/[^0-9,\-]/g, '').replace(/\./g, '').replace(',', '.')); return isNaN(v) ? null : v; };
     Object.keys(previos).forEach(id => {
@@ -6335,6 +6343,11 @@
     }));
   }
 
+  // Inicio de mes en hora de Puerto Rico (UTC-4, sin horario de verano), para que el mes sea el mismo para todos
+  // (antes salía de la hora de quien mira: desde Argentina, noviembre empezaba el 31-oct a las 23 h de PR y el
+  // Worker tomaba el ajuste del webinar de octubre). Date.UTC acepta mes 12 o -1 y corre el año solo.
+  function inicioMesPR(anio, mes0){ return Date.UTC(anio, mes0, 1, 4); }
+
   function mesElegidoAYyyyMm(){
     const partes = mesElegido.split(' ');
     return { anio: parseInt(partes[1], 10), mes: MESES_ES.indexOf(partes[0]) };
@@ -6383,6 +6396,24 @@
       if(f.monto > 0) sc.cobros[dia]++;
       sc.agendas[dia] += f.agendas; sc.shows[dia] += f.shows; sc.noShows[dia] += f.noShows; sc.cierres[dia] += f.cierres;
     });
+
+    // Cash y cobros por closer: de la pestaña Ventas (lo cobrado de verdad), no de Ranking (lo que cargan a mano).
+    // Así aparece toda closer con ventas en el mes aunque no haya cargado nada (ej.: Gianie, venta del 12-nov).
+    try {
+      const filasVentasCl = await leerVentasMes(anio, mes);
+      if(filasVentasCl && filasVentasCl.length){
+        seriesClosers.forEach(sc => { sc.cash.fill(0); sc.cobros.fill(0); });
+        filasVentasCl.forEach(v => {
+          const nombre = String(v.closer || '').trim(); if(!nombre) return;
+          const f = parseFechaSheet(v.fecha); if(!f || f.getFullYear() !== anio || f.getMonth() !== mes) return;
+          const clave = [...seriesClosers.keys()].find(k => mismaPersona(k, nombre)) || nombre;
+          if(!seriesClosers.has(clave)) seriesClosers.set(clave, { cash: new Array(dias).fill(0), cobros: new Array(dias).fill(0), agendas: new Array(dias).fill(0), shows: new Array(dias).fill(0), noShows: new Array(dias).fill(0), cierres: new Array(dias).fill(0) });
+          const sc = seriesClosers.get(clave), dia = f.getDate() - 1;
+          sc.cash[dia] += v.cash || 0; if(v.cash > 0) sc.cobros[dia]++;
+          huboDatosClosers = true;
+        });
+      }
+    } catch(e){}
 
     let totGastoAds = 0, huboDatosAds = false, totImp = 0, totClics = 0, totLeadsMeta = 0, totResultados = 0;
     const porCampana = new Map(), porConjunto = new Map(), porAnuncio = new Map();
@@ -6464,10 +6495,8 @@
     // Cierres de GHL, así que se calculan con esos mismos totales de GHL
     // (ver cargarYPintarGHL) — antes salían del Sheet manual del Tracker,
     // mezclando dos fuentes distintas en la misma tarjeta.
-    document.getElementById('mateTicket').textContent = huboDatos ? money(totVentas, totCierres) : '–';
-    // Revenue por SHOW (reunión de la closer), no por llamada del setter
-    // — son embudos distintos, y lo que de verdad vale plata es el show.
-    document.getElementById('mateRevenueShow').textContent = huboDatos ? money(totVentas, totShows) : '–';
+    // Ticket y Revenue por show se pintan más abajo, con la pestaña Ventas (cash y ventas) y los shows de GHL:
+    // las columnas Ventas, Cierres y Shows de Métricas las dejan en 0 las setters.
     document.getElementById('statusMatematica').textContent = statusTxt;
 
     // ===== Performance por setter / Llamadas por fuente — una tarjeta
@@ -6498,6 +6527,13 @@
     const hayVentasTab = (ventasTab || []).length > 0;
     const ventasRoas = hayVentasTab ? ventasTab.reduce((a, v) => a + (v.cash || 0), 0) : totVentas;
     const ventasAdsRoas = hayVentasTab ? ventasTab.filter(v => /ads/i.test(v.source || '')).reduce((a, v) => a + (v.cash || 0), 0) : totVentasAds;
+    // Ventas del mes = clientas distintas en la pestaña Ventas (una clienta que paga en cuotas cuenta una vez por mes).
+    const clientaClave = v => String(v.clienta || '').trim().toLowerCase();
+    const ventasMesN = hayVentasTab ? new Set(ventasTab.map(clientaClave).filter(Boolean)).size : totCierres;
+    const ventasAdsN = hayVentasTab ? new Set(ventasTab.filter(v => /ads/i.test(v.source || '')).map(clientaClave).filter(Boolean)).size : totCierresAds;
+    document.getElementById('mateTicket').textContent = (hayVentasTab || huboDatos) ? money(ventasRoas, ventasMesN) : '–';
+    cashMesRevenue = { anio, mes, cash: ventasRoas };
+    pintarRevenueShow();
     document.getElementById('adsGasto').textContent = huboDatosAds ? '$' + Math.round(totGastoAds).toLocaleString('es-AR') : '–';
     document.getElementById('adsRoasAds').textContent = huboDatosAds ? roas(ventasAdsRoas, totGastoAds) : '–';
     document.getElementById('adsRoasGeneral').textContent = huboDatosAds ? roas(ventasRoas, totGastoAds) : '–';
@@ -6520,8 +6556,18 @@
       cashFuente[claseFuente(v.source)] += v.cash || 0;
     });
     ventasMesActualV2 = ventasTab || [];
-    adsTabDatos = { cashPorDia, cashFuente, totResultados, porNivel: { campana: porCampana, conjunto: porConjunto, anuncio: porAnuncio }, porCampana, totImp, totClics, totLeadsMeta, huboDatosAds, totGastoAds, totVentas: ventasRoas, totCierres, totVentasAds: ventasAdsRoas, totCierresAds, gastoPorDia, dias, diasAMostrar, anio, mes };
+    adsTabDatos = { cashPorDia, cashFuente, totResultados, porNivel: { campana: porCampana, conjunto: porConjunto, anuncio: porAnuncio }, porCampana, totImp, totClics, totLeadsMeta, huboDatosAds, totGastoAds, totVentas: ventasRoas, totCierres: ventasMesN, totVentasAds: ventasAdsRoas, totCierresAds: ventasAdsN, gastoPorDia, dias, diasAMostrar, anio, mes };
     renderAdsTab();
+  }
+
+  // Revenue por show = cash del mes (pestaña Ventas) ÷ shows (GHL o pestaña Shows, el mayor). Se llama cuando llega cualquiera de los dos.
+  let cashMesRevenue = null;
+  function pintarRevenueShow(){
+    const el = document.getElementById('mateRevenueShow'); if(!el) return;
+    const { anio, mes } = mesElegidoAYyyyMm();
+    let shows = 0; try { shows = ghlTotales ? ghlTotales.shows : 0; } catch(e){ return; }   // ghlTotales se declara más abajo
+    const ok = cashMesRevenue && cashMesRevenue.anio === anio && cashMesRevenue.mes === mes && shows > 0;
+    el.textContent = ok ? '$' + Math.round(cashMesRevenue.cash / shows).toLocaleString('es-AR') : '–';
   }
 
   let adsTabDatos = null, adsNivel = 'campana';
@@ -6969,8 +7015,8 @@
   async function cargarYPintarLeads(silencioso = false){
     const pedido = ++leadsPedido;
     const { anio, mes } = mesElegidoAYyyyMm();
-    const start = new Date(anio, mes, 1).getTime();
-    const end = new Date(anio, mes + 1, 1).getTime();
+    const start = inicioMesPR(anio, mes);
+    const end = inicioMesPR(anio, mes + 1);
     const statusEl = document.getElementById('statusLeads');
     if(!silencioso){ leadsData = null; renderLeads(); }
     statusEl.textContent = silencioso ? 'Actualizando desde GHL…' : 'Cargando leads desde GHL…';
@@ -7364,8 +7410,8 @@
   async function cargarYPintarGHL(silencioso = false){
     const pedido = ++ghlPedidoActual;
     const { anio, mes } = mesElegidoAYyyyMm();
-    const start = new Date(anio, mes, 1).getTime();
-    const end = new Date(anio, mes + 1, 1).getTime();
+    const start = inicioMesPR(anio, mes);
+    const end = inicioMesPR(anio, mes + 1);
     const statusEl = document.getElementById('statusGhl');
     const grid = document.getElementById('ghlFuentesGrid');
     if(silencioso){
@@ -7438,6 +7484,7 @@
       fijarValorNumero('mateCierre', pctGhl(data.totales.cierres, data.totales.shows));
       fijarValorNumero('mateConversion', pctGhl(data.totales.cierres, data.totales.shows));
       ghlTotales = data.totales;
+      pintarRevenueShow();
       utmResumen = data.utm || null;
       renderCampanas();
       pintarConversionFunnel();
@@ -7518,8 +7565,8 @@
     // Se piden 6 meses (hasta el elegido) en una sola llamada: el Worker
     // recorre lo mismo igual, y así sirve para el gráfico diario de abajo
     // y para las barras de facturación del panel general.
-    const start = new Date(anio, mes - (MESES_FACTURACION - 1), 1).getTime();
-    const end = new Date(anio, mes + 1, 1).getTime();
+    const start = inicioMesPR(anio, mes - (MESES_FACTURACION - 1));
+    const end = inicioMesPR(anio, mes + 1);
     const statusEl = document.getElementById('statusFunnel');
     if(!silencioso){
       statusEl.textContent = 'Conectando con GHL…';
