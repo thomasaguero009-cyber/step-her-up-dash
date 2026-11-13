@@ -361,6 +361,7 @@ const sinP=v=>(v||"").replace(/[.]+$/,"");
 const FECHA_L=iso=>new Date(iso).toLocaleDateString("es",{day:"numeric",month:"long"});
 const diasPara=iso=>iso?Math.ceil((Date.parse(iso)-Date.now())/86400000):null;
 const hoy=()=>new Date().toLocaleDateString("es");
+const lunesDeHoy=()=>{const d=new Date();d.setDate(d.getDate()-((d.getDay()||7)-1));return d.toISOString()};
 function semanaId(d){d=d||new Date();const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);const y=t.getUTCFullYear();return y+"-W"+String(Math.ceil(((t-Date.UTC(y,0,1))/86400000+1)/7)).padStart(2,"0")}
 const planActual=()=>S.plan&&S.plan.dias&&S.plan.dias.length&&S.plan.sem===semanaId()?S.plan:null;
 function guardaPlan(raw){const ant=planActual()?S.plan.dias:[];S.plan={sem:semanaId(),dias:raw.map((d,i)=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle,hecho:!!(ant[i]&&ant[i].tema===d.tema&&ant[i].hecho)}))};save()}
@@ -397,7 +398,7 @@ function verPortal(){
     portal(`<h1>Hola, ${esc(nombre())}.<i>Vamos a empezar.</i></h1><p>Pues vamos a dejar lista tu primera idea para grabar esta semana, ¿ok? Solo necesito que me cuentes tres cosas de tu negocio.</p><div class="p-botones"><button class="entrar" id="bEmp">Empezar</button></div>`);
     $("#bEmp").onclick=empiezaOnb;return}
   portal(`<h1>Hola, ${esc(nombre())}.<i>¿En qué trabajamos hoy?</i></h1><p>Pues aquí tienes todo lo que enseño en Step Her Up, aplicado a tu negocio. Tu contenido, tus ventas, tus anuncios, tu oferta. Tú me dices qué necesitas, ¿ok?</p>
-   <div class="p-botones"><button class="entrar" id="bEmp">Empezar</button>${ult?`<button class="seguir" id="bSeg">Seguir con «${esc(corto(ult.tema,34))}»</button>`:""}</div>
+   <div class="p-botones"><button class="entrar" id="bEmp">Empezar</button>${ult?`<button class="seguir" id="bSeg">Seguir con «${esc(corto(ult.titulo||ult.tema,34))}»</button>`:""}</div>
    <div class="p-secciones"><small>O entra directo a una sección</small><button data-s="semana">Tu semana</button>${SECS.map(s=>`<button data-s="${esc(s)}">${esc(s)}</button>`).join("")}</div>`);
   $("#bEmp").onclick=()=>abreSec("");
   const sg=$("#bSeg");if(sg)sg.onclick=()=>{abreSec("Contenido");seguirCon(ult)};
@@ -423,7 +424,7 @@ function vencido(){
   const f=AVENCE?FECHA_L(AVENCE):"";
   portal(`<h1>${esc(nombre()?nombre()+",":"")}<i>tu acceso terminó${f?" el "+esc(f):""}.</i></h1><p>${S.guiones.length?"Lo que ya creaste sigue aquí para que lo veas y lo copies. Para seguir creando conmigo, escríbele a Step Her Up.":"Para seguir creando conmigo, escríbele a Step Her Up y te lo renuevan."}</p>
    <div class="p-botones"><a class="entrar" href="${CONTACTO}" target="_blank" rel="noopener">Escribir a Step Her Up</a></div>
-   ${S.guiones.length?`<div class="p-lista">${S.guiones.map(g=>`<div>${esc(g.tema)}<small>${esc(g.tipo||"Guion")}${g.det?" · "+esc(g.det):""}${g.fecha?" · "+esc(g.fecha):""}</small></div>`).join("")}</div>`:""}`)}
+   ${S.guiones.length?`<div class="p-lista">${S.guiones.map(g=>`<div>${esc(g.titulo||g.tema)}<small>${esc(g.tipo||"Guion")}${g.det?" · "+esc(g.det):""}${g.fecha?" · "+esc(g.fecha):""}</small></div>`).join("")}</div>`:""}`)}
 
 /* ================= CHAT ================= */
 let CONVS=[],CUR=null,VISTA="chat",MODO=null,BUSY=false,CRE_SEL=-1;
@@ -579,25 +580,27 @@ function tipoConTema(tipo,tema){
 async function seguirCon(c){anade({r:"u",t:"Quiero seguir con "+c.tema});tipoConTema("guion",c.tema)}
 /* Lo que se guarda de cada pieza para poder abrirla después: las líneas, el texto en pantalla y la duración. */
 const contenidoDe=m=>({lineas:(m.items||m.lineas||[]).map(l=>({et:l.et,tx:l.tx,...(l.t?{t:l.t}:{})})),pant:m.pant||"",dur:m.dur||"",meta:m.meta||""});
-async function pieza(tool,p,ajuste,ver){
+async function pieza(tool,p,ajuste,ver,tituloPrevio){
   if(faltan(BAS).length)return fichaPrimero(()=>pieza(tool,p,ajuste));
   MODO=null;pintaCaja();
   const params={tool,...p};
   const r=await conPuntos(async()=>{try{const r=await api("/asistente/generar",params);if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return r}catch(e){return{error:e.code||"error"}}});
   if(r.error==="ficha_incompleta"){S.resp.negocio="";S.resp.clienta="";return fichaPrimero(()=>pieza(tool,p,ajuste))}
   if(r.error){if(r.error!=="acceso_vencido")gDice(ERR[r.error]||"No pude escribirlo ahora. Inténtalo de nuevo en un momento.");chips([["Intentar de nuevo",()=>pieza(tool,p,ajuste)]]);return}
-  let m={r:"g",k:"hoja",tipo:TIPO[tool],tit:p.tema||"",intro:ajuste?"Listo, lo cambié como me pediste.":INTRO[tool],ctx:{tool,p:{...p,ajuste:undefined,previo:undefined}}};
+  /* el título corto lo escribe el asistente; una versión nueva (más corto, otra versión) conserva el de la original */
+  const titulo=tituloPrevio||r.titulo||corto(p.tema||"",50);
+  let m={r:"g",k:"hoja",tipo:TIPO[tool],tit:titulo,intro:ajuste?"Listo, lo cambié como me pediste.":INTRO[tool],ctx:{tool,titulo,p:{...p,ajuste:undefined,previo:undefined}}};
   if(tool==="ganchos")m.items=(r.items||[]).map(x=>({et:x.tipo,tx:x.texto}));
   else if(tool==="guion"){m.lineas=(r.lineas||[]).map(x=>({et:x.etiqueta,tx:x.texto,t:x.t}));m.meta=((r.duracion||"")+" · reel").replace(/^ · /,"");m.pant=r.pantalla||"";m.dur=r.duracion||""}
   else if(tool==="caption")m.lineas=(r.lineas||[]).map(x=>({et:x.etiqueta,tx:x.texto}));
   else if(tool==="historias"){m.lineas=(r.historias||[]).map(x=>({et:x.n+" · "+x.tipo,tx:x.texto}));m.meta=(r.historias||[]).length+" historias · 24 h"}
   anade(m);
   /* se guarda toda versión, también "Más corto" y "Otra versión", con su contenido */
-  S.guiones.unshift({tipo:TIPO[tool],tema:p.tema||"",det:p.detalle||"",fecha:hoy(),...(ver?{ver}:{}),contenido:contenidoDe(m)});save();pintaLado();
+  S.guiones.unshift({tipo:TIPO[tool],tema:p.tema||"",titulo,det:p.detalle||"",fecha:hoy(),...(ver?{ver}:{}),contenido:contenidoDe(m)});save();pintaLado();
   chips(tool==="ganchos"?[]:[["Otro tema",()=>pideTema(tool)]])}
 function reGenera(mi,ajuste,dice,ver){const m=CUR.msgs[mi];if(!m||!m.ctx)return;
   const previo=m.tipo==="Ganchos"?m.items.map(x=>x.tx).join(" | "):JSON.stringify(m.lineas.map(l=>({t:l.t||"",etiqueta:l.et,texto:l.tx})));
-  if(dice!==false)anade({r:"u",t:ajuste});return pieza(m.ctx.tool,{...m.ctx.p,ajuste,previo},true,ver||"Ajustada")}
+  if(dice!==false)anade({r:"u",t:ajuste});return pieza(m.ctx.tool,{...m.ctx.p,ajuste,previo},true,ver||"Ajustada",m.ctx.titulo||m.tit)}
 
 /* ----- tu semana ----- */
 /* Nunca se pisa una semana que ya existe sin preguntar. */
@@ -610,7 +613,7 @@ async function armarSemana(ajuste){
   const params={tool:"ideas"};if(ajuste){params.ajuste=ajuste;params.previo=JSON.stringify((planActual()||{dias:[]}).dias.map(d=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle})))}
   const r=await conPuntos(async()=>{try{const r=await api("/asistente/generar",params);if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return r}catch(e){return{error:e.code||"error"}}});
   if(r.error){if(r.error!=="acceso_vencido")gDice(ERR[r.error]||"No pude armarla ahora. Inténtalo de nuevo en un momento.");chips([["Intentar de nuevo",()=>armarSemana(ajuste)]]);return}
-  guardaPlan(r.dias);if(!ajuste){S.guiones.unshift({tipo:"Ideas",tema:"Ideas de la semana",det:"",fecha:hoy(),contenido:{dias:S.plan.dias.map(d=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle}))}});save()}
+  guardaPlan(r.dias);if(!ajuste){S.guiones.unshift({tipo:"Ideas",tema:"Ideas de la semana",titulo:"Ideas de la semana del "+FECHA_L(lunesDeHoy()),det:"",fecha:hoy(),contenido:{dias:S.plan.dias.map(d=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle}))}});save()}
   const mf=metaFrase();
   anade({r:"g",k:"semana",intro:ajuste?"Listo, así queda tu semana con el cambio.":(mf?`Así queda tu semana, armada con lo que me contaste de tu negocio y pensada para tu meta: «${mf}». Todavía no uso tendencias en vivo, ¿ok?`:"Así queda tu semana, armada con lo que me contaste de tu negocio. Todavía no uso tendencias en vivo, ¿ok?"),dias:S.plan.dias});
   pintaLado();chips([])}
@@ -688,7 +691,7 @@ $("#hilo").addEventListener("click",async e=>{
   if(BUSY)return;
   if(a==="corto"&&m){reGenera(mi,m.tipo==="Guion"?"más corto, de 20 a 25 segundos":"más corto",true,"Más corto");return}
   if(a==="otra"&&m){reGenera(mi,"una versión distinta a la anterior, con otro ángulo",true,"Otra versión");return}
-  if(a==="usar"&&m){const g=m.items[+b.dataset.n];anade({r:"u",t:"Quiero hacer un guion con este gancho"});MODO={k:"detalle",tema:m.tit,gancho:g.tx};pintaCaja();gDice("Ese tiene fuerza. Ahora cuéntame algo real que lo haga tuyo, una escena de esta semana o algo que te dijo una clienta. ¿Qué tienes?");chips([[SIN_DET,()=>enviarTexto(SIN_DET)]]);return}
+  if(a==="usar"&&m){const g=m.items[+b.dataset.n];anade({r:"u",t:"Quiero hacer un guion con este gancho"});MODO={k:"detalle",tema:(m.ctx&&m.ctx.p&&m.ctx.p.tema)||m.tit,gancho:g.tx};pintaCaja();gDice("Ese tiene fuerza. Ahora cuéntame algo real que lo haga tuyo, una escena de esta semana o algo que te dijo una clienta. ¿Qué tienes?");chips([[SIN_DET,()=>enviarTexto(SIN_DET)]]);return}
   if((a==="suena"||a==="nosuena")&&m){m.fb=a==="suena"?"1":"0";guardaConvs();api("/asistente/opinion",{tool:m.tipo||"",ok:m.fb==="1",texto:(m.lineas||m.items||[]).map(l=>l.tx).join(" ").slice(0,700)}).catch(()=>{});
     todas(`#hilo [data-m="${mi}"].sutil`).forEach(x=>x.classList.toggle("on",x===b));
     if(a==="nosuena"){MODO={k:"ajuste",m:mi};pintaCaja();gDice("Gracias por decírmelo. ¿Qué no te sonó a ti? Escríbemelo y lo ajusto.")}return}
