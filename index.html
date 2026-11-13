@@ -6405,6 +6405,17 @@
     // Si el mes elegido es el mes en curso, el gráfico corta en el día
     // de hoy — no tiene sentido dibujar en 0 los días que todavía no
     // pasaron. En un mes ya cerrado se ve completo, como antes.
+    // Ventas por día y proyección: salen de la pestaña Ventas del Tracker (lo cobrado de verdad). La columna Ventas de Métricas
+    // la dejan en 0 las setters (no cierran ellas), así que con esa la proyección daba siempre $0.
+    try {
+      const filasVentas = await leerVentasMes(anio, mes);
+      if(filasVentas && filasVentas.length){
+        ventas.fill(0);
+        filasVentas.forEach(v => { const f = parseFechaSheet(v.fecha); if(f && f.getFullYear() === anio && f.getMonth() === mes) ventas[f.getDate() - 1] += v.cash || 0; });
+        huboDatos = true;
+      }
+    } catch(e){}
+
     const hoy = new Date();
     const esMesEnCurso = anio === hoy.getFullYear() && mes === hoy.getMonth();
     const diasAMostrar = esMesEnCurso ? hoy.getDate() : dias;
