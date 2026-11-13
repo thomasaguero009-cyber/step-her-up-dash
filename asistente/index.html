@@ -317,6 +317,11 @@ const SKOOL="https://www.skool.com/step-her-up";
 let DESDE_GUARDADO=false;
 try{if(QS.has("salir"))localStorage.removeItem("shu-token");if(TOKEN)localStorage.setItem("shu-token",TOKEN);else if(!QS.has("salir")){TOKEN=localStorage.getItem("shu-token")||"";DESDE_GUARDADO=!!TOKEN}}catch(e){}
 let AVENCE=null,VENCIDA=false,CUPO=null;
+try{const pc=document.createElement("link");pc.rel="preconnect";pc.href=new URL(API).origin;document.head.appendChild(pc)}catch(e){}
+/* el nombre de la visita anterior se recuerda para saludar al instante, antes de que responda el servidor */
+const NOM_KEY=()=>"shu-nom-"+(TOKEN||"x").slice(0,12);
+const nombreCache=()=>{try{return(localStorage.getItem(NOM_KEY())||"").replace(/(^|\s)\p{L}/gu,c=>c.toUpperCase())}catch(e){return""}};
+const guardaNombre=()=>{try{if(S.resp.nombre)localStorage.setItem(NOM_KEY(),S.resp.nombre)}catch(e){}};
 async function api(ruta,cuerpo){
   const r=await fetch(API+ruta,{method:cuerpo?"POST":"GET",headers:{"Content-Type":"application/json","X-Token":TOKEN},body:cuerpo?JSON.stringify(cuerpo):undefined});
   const j=await r.json().catch(()=>({}));
@@ -368,7 +373,7 @@ const planActual=()=>S.plan&&S.plan.dias&&S.plan.dias.length&&S.plan.sem===seman
 function guardaPlan(raw){const ant=planActual()?S.plan.dias:[];S.plan={sem:semanaId(),dias:raw.map((d,i)=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle,hecho:!!(ant[i]&&ant[i].tema===d.tema&&ant[i].hecho)}))};save()}
 const frase=()=>{const f=S.resp.frases||"";const m=f.match(/[«"“]([^»"”]+)[»"”]/);return sinP(m?m[1]:corto(f,60))};
 
-async function cargar(){const j=await api("/asistente/yo");CUPO=j.cupo||null;AVENCE=j.vence||null;VENCIDA=!!j.vencida;S.resp=j.resp||{};if(!S.resp.nombre&&j.nombre)S.resp.nombre=j.nombre;S.plan=j.plan||null;S.guiones=(j.creaciones||[]).map(c=>({...c}))}
+async function cargar(){const j=await api("/asistente/yo");CUPO=j.cupo||null;AVENCE=j.vence||null;VENCIDA=!!j.vencida;S.resp=j.resp||{};if(!S.resp.nombre&&j.nombre)S.resp.nombre=j.nombre;guardaNombre();S.plan=j.plan||null;S.guiones=(j.creaciones||[]).map(c=>({...c}))}
 
 /* ===== secciones (agrupan los cursos de la Skool) ===== */
 const SECS=["Contenido","Marca personal","Anuncios","Ventas","Oferta y negocio","Planificación","Identidad y propósito"];
@@ -391,7 +396,12 @@ function saludar(){try{vS.currentTime=0}catch(e){}vS.classList.remove("fuera");v
 vS.addEventListener("ended",aReposo);
 function accesoTxt(){const d=diasPara(AVENCE);const a=AVENCE?(d!==null&&d>=0&&d<=7?`Tu acceso llega hasta el ${FECHA_L(AVENCE)}`:`Acceso hasta el ${FECHA_L(AVENCE)}`):"";return{t:[nombre(),a].filter(Boolean).join(" · "),pronto:d!==null&&d>=0&&d<=7}}
 function pintaBarra(){const a=accesoTxt(),e=$("#pAcceso");e.textContent=a.t;e.classList.toggle("pronto",a.pronto)}
-function portal(html,saluda){$("#app").hidden=true;$("#portal").hidden=false;document.body.classList.remove("menu");$("#pTexto").innerHTML=html;$("#portal").scrollTop=0;pintaBarra();if(saluda!==false)saludar()}
+let SALUDO_INICIAL=false;
+function portal(html,saluda){$("#app").hidden=true;$("#portal").hidden=false;document.body.classList.remove("menu");$("#pTexto").innerHTML=html;$("#portal").scrollTop=0;pintaBarra();if(saluda!==false){if(SALUDO_INICIAL)SALUDO_INICIAL=false;else saludar()}}
+/* mientras responde el servidor: saludo e indicador de inmediato (nunca una pantalla en blanco) */
+function cargandoPortal(){const n=nombreCache();
+  portal(`<h1>Hola${n?", "+esc(n):""}.<i>Ya casi estamos.</i></h1><p id="pCarga">Estoy abriendo tu espacio<span class="puntos" aria-hidden="true" style="margin-left:8px;vertical-align:middle"><i></i><i></i><i></i></span></p>`);
+  SALUDO_INICIAL=true}
 function verPortal(){
   if(VENCIDA){vencido();return}
   const faltaBas=faltan(BAS).length,ult=S.guiones[0];
@@ -765,8 +775,9 @@ async function arranca(){
   cargaConvs();verPortal()}
 (async()=>{
   if(!TOKEN){entrada();return}
-  portal("",false);
-  await arranca();
+  cargandoPortal();
+  const lento=setTimeout(()=>{const e=document.getElementById("pCarga");if(e)e.innerHTML='Está tardando más de lo normal. <button class="seguir" id="bReint">Reintentar</button>';const b=document.getElementById("bReint");if(b)b.onclick=()=>location.reload()},12000);
+  try{await arranca()}finally{clearTimeout(lento);SALUDO_INICIAL=false}
 })();
 </script>
 </body>
