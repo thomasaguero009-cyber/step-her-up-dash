@@ -333,11 +333,12 @@ const Q=[
  {k:"diferente",t:"¿Qué te hace diferente de otras en tu nicho?"},
  {k:"resultados",t:"¿Qué resultados reales has logrado con clientas? Solo los que puedes demostrar."},
  {k:"meta",t:"¿Qué quieres lograr este mes? Dímelo en una frase corta, por ejemplo: conseguir mis primeras cinco clientas."},
+ {k:"pais",t:"¿En qué país vendes? Así adapto los precios y los ejemplos a tu mercado."},
  {k:"situacion",t:"Cuéntame tu situación de hoy: cuántas seguidoras tienes, cuánto tiempo tienes para grabar y si hay algo que te frena, por ejemplo miedo a la cámara."}
 ];
-const ETI={nombre:"Nombre",negocio:"Tu negocio",clienta:"Tu clienta",frases:"Lo que dice tu clienta",diferente:"Lo que te diferencia",resultados:"Tus resultados",meta:"Tu meta del mes · una frase corta",situacion:"Tu situación actual"};
+const ETI={nombre:"Nombre",negocio:"Tu negocio",clienta:"Tu clienta",frases:"Lo que dice tu clienta",diferente:"Lo que te diferencia",resultados:"Tus resultados",meta:"Tu meta del mes · una frase corta",situacion:"Tu situación actual",pais:"Tu país"};
 const QK={};Q.forEach(q=>QK[q.k]=q);
-const BAS=["negocio","clienta","meta"],AFI=["situacion","frases","diferente","resultados"];
+const BAS=["negocio","clienta","meta"],AFI=["pais","situacion","frases","diferente","resultados"];
 const faltan=l=>l.filter(k=>!S.resp[k]);
 /* La meta es una frase corta; el contexto (seguidoras, tiempo, miedos) va en "Tu situación actual". Si escribe de más, se separa. */
 const necesitaSeparar=v=>{v=(v||"").trim();return v.length>90||/[.!?]\s+\S/.test(v)};
