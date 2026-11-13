@@ -571,18 +571,21 @@ function tipoDe(t){const x=t.toLowerCase();if(CUR&&CUR.sec&&CUR.sec!=="Contenido
 function resumenPrevio(){return(CUR?CUR.msgs:[]).slice(-9).map(m=>m.r==="u"?{role:"user",content:m.t}:{role:"assistant",content:m.k==="consejo"?[m.intro,...m.pasos].join(" "):m.k==="txt"?m.t:m.intro||""}).filter(x=>x.content)}
 /* La respuesta del chat llega en streaming: el texto va apareciendo (primero la intro, luego los pasos). Si el streaming no está disponible, se usa la ruta normal. */
 async function leeStream(hist,sec,pinta){
-  const resp=await fetch(API+"/asistente/consejo-stream",{method:"POST",headers:{"Content-Type":"application/json","X-Token":TOKEN},body:JSON.stringify({seccion:sec,mensajes:hist})});
+  /* si el servidor se queda callado más de 45 s, se corta y se prueba la ruta normal (el Worker ya tiene sus propios topes y reintentos) */
+  const ctl=new AbortController();let idle=setTimeout(()=>ctl.abort(),45000);const vivo=()=>{clearTimeout(idle);idle=setTimeout(()=>ctl.abort(),45000)};
+  let resp;try{resp=await fetch(API+"/asistente/consejo-stream",{method:"POST",signal:ctl.signal,headers:{"Content-Type":"application/json","X-Token":TOKEN},body:JSON.stringify({seccion:sec,mensajes:hist})})}catch(e){clearTimeout(idle);throw e}
   if(!resp.ok||!(resp.headers.get("content-type")||"").includes("text/event-stream")){
     const j=await resp.json().catch(()=>({}));const e=new Error(j.error||"error");e.code=j.error||"error";
     e.fallback=resp.status>=500||resp.status===404||!j.error; /* servidor sin la ruta o caído: se prueba la ruta normal; límites y vencimiento se muestran tal cual */
     if(e.code==="acceso_vencido"){AVENCE=AVENCE||j.vence||null;VENCIDA=true;vencido()}
     throw e}
   const lector=resp.body.getReader(),dec=new TextDecoder();let buf="",final=null;
-  for(;;){const {done,value}=await lector.read();if(done)break;buf+=dec.decode(value,{stream:true}).replace(/\r\n/g,"\n");
+  for(;;){let rd;try{rd=await lector.read()}catch(e){clearTimeout(idle);const e2=new Error("sin_respuesta");e2.code="sin_respuesta";e2.fallback=true;throw e2}const {done,value}=rd;if(done)break;vivo();buf+=dec.decode(value,{stream:true}).replace(/\r\n/g,"\n");
     let i;while((i=buf.indexOf("\n\n"))>=0){const b=buf.slice(0,i);buf=buf.slice(i+2);
       const ev=(/event: (.*)/.exec(b)||[])[1],dd=(/data: (.*)/.exec(b)||[])[1];if(!dd)continue;let d;try{d=JSON.parse(dd)}catch(e){continue}
       if(ev==="parcial")pinta(d);else if(ev==="final")final=d;
       else if(ev==="error"){const e=new Error(d.error||"error");e.code=d.error||"error";e.fallback=false;throw e}}}
+  clearTimeout(idle);
   if(!final){const e=new Error("sin_final");e.code="sin_final";e.fallback=true;throw e}
   return final}
 async function consejoRespuesta(hist,sec){
