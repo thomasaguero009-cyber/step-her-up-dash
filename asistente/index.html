@@ -348,7 +348,11 @@ const save=()=>{clearTimeout(syncT);syncT=setTimeout(sync,600)};
 const flush=async()=>{if(syncT){clearTimeout(syncT);syncT=0;await sync()}else await syncP};
 const cap=v=>{v=(v||"").trim();return v?v[0].toUpperCase()+v.slice(1):v};
 const nombre=()=>(S.resp.nombre||"").replace(/(^|\s)\p{L}/gu,c=>c.toUpperCase());
-const corto=(v,n)=>{v=(v||"").replace(/\s+/g," ").trim();return v.length>n?v.slice(0,n-1).replace(/[\s,.;:]+$/,"")+"…":v};
+/* Acorta sin partir una palabra a la mitad (solo para etiquetas y botones; las tarjetas muestran el texto completo). */
+const corto=(v,n)=>{v=(v||"").replace(/\s+/g," ").trim();if(v.length<=n)return v;const c=v.slice(0,n),i=c.lastIndexOf(" ");return(i>n*.5?c.slice(0,i):c).replace(/[\s,.;:]+$/,"")+"…"};
+/* La meta en el saludo va completa; si es larga se usa su primera idea, y si aun así no cabe, no se cita. Nunca cortada con "…". */
+function metaFrase(){const m=sinP((S.resp.meta||"").replace(/\s+/g," ").trim());if(!m)return"";if(m.length<=110)return m;
+  const p=sinP(m.split(/(?<=[.!?;])\s+|,\s+|\s+(?:pero|aunque|y a la vez)\s+/)[0]||"");return p&&p.length<=110?p:""}
 const sinP=v=>(v||"").replace(/[.]+$/,"");
 const FECHA_L=iso=>new Date(iso).toLocaleDateString("es",{day:"numeric",month:"long"});
 const diasPara=iso=>iso?Math.ceil((Date.parse(iso)-Date.now())/86400000):null;
@@ -483,7 +487,7 @@ function msgHtml(m,i){
     let cuerpo="";
     if(m.tipo==="Ganchos")cuerpo=m.items.map((g,n)=>`<div class="gancho"><span class="et">${esc(g.et)}</span><p>${esc(g.tx)}</p><button data-a="usar" data-m="${i}" data-n="${n}">Hacer guion con este</button></div>`).join("");
     else cuerpo=lineasHtml(m.lineas)+(m.pant?`<p class="nota">Texto en pantalla «${esc(m.pant)}»</p>`:"");
-    dentro=`<p>${esc(m.intro)}</p><div class="hoja"><small>${esc(meta)}</small>${m.tit?`<h3>${esc(corto(m.tit,90))}</h3>`:""}${cuerpo}
+    dentro=`<p>${esc(m.intro)}</p><div class="hoja"><small>${esc(meta)}</small>${m.tit?`<h3>${esc(m.tit)}</h3>`:""}${cuerpo}
       <div class="acciones">${m.tipo==="Guion"?`<button class="grabar" data-a="grabar" data-m="${i}">Grabar con teleprompter</button>`:""}<button data-a="corto" data-m="${i}">Más corto</button><button data-a="otra" data-m="${i}">Otra versión</button><button data-a="copiar" data-m="${i}">Copiar</button>
       <button class="sutil${m.fb==="1"?" on":""}" data-a="suena" data-m="${i}">Suena a mí</button><button class="sutil${m.fb==="0"?" on":""}" data-a="nosuena" data-m="${i}">No suena a mí</button></div></div>`}
   else if(m.k==="semana"){
@@ -599,7 +603,8 @@ async function armarSemana(ajuste){
   const r=await conPuntos(async()=>{try{const r=await api("/asistente/generar",params);if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return r}catch(e){return{error:e.code||"error"}}});
   if(r.error){if(r.error!=="acceso_vencido")gDice(ERR[r.error]||"No pude armarla ahora. Inténtalo de nuevo en un momento.");chips([["Intentar de nuevo",()=>armarSemana(ajuste)]]);return}
   guardaPlan(r.dias);if(!ajuste){S.guiones.unshift({tipo:"Ideas",tema:"Ideas de la semana",det:"",fecha:hoy()});save()}
-  anade({r:"g",k:"semana",intro:ajuste?"Listo, así queda tu semana con el cambio.":`Así queda tu semana, armada con lo que me contaste de tu negocio. Tu meta es «${corto(sinP(S.resp.meta),70)}». Todavía no uso tendencias en vivo, ¿ok?`,dias:S.plan.dias});
+  const mf=metaFrase();
+  anade({r:"g",k:"semana",intro:ajuste?"Listo, así queda tu semana con el cambio.":(mf?`Así queda tu semana, armada con lo que me contaste de tu negocio y pensada para tu meta: «${mf}». Todavía no uso tendencias en vivo, ¿ok?`:"Así queda tu semana, armada con lo que me contaste de tu negocio. Todavía no uso tendencias en vivo, ¿ok?"),dias:S.plan.dias});
   pintaLado();chips([])}
 function abreSemana(){
   CUR=nuevaConv("");CUR.esSemana=true;CUR.tit="Tu semana";VISTA="chat";MODO=null;chips([]);verChat();
