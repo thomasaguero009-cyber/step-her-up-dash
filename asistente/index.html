@@ -108,6 +108,7 @@ a{color:inherit}
 .msg{display:flex;gap:12px;margin-top:22px;animation:entra .45s ease both}
 @keyframes entra{from{opacity:0;transform:translateY(8px)}}
 .msg.yo-msg{justify-content:flex-end}
+.msg.sin-anim{animation:none}
 .burbuja{background:var(--sup2);border-radius:20px 20px 6px 20px;padding:12px 16px;max-width:78%;font-size:15.5px;white-space:pre-wrap;overflow-wrap:anywhere}
 .msg .mini{width:34px;height:34px;border-radius:50%;overflow:hidden;flex:none;border:1px solid rgba(233,211,160,.45);background:#3a0f20}
 .msg .mini img{width:100%;height:100%;display:block;object-fit:cover}
@@ -512,13 +513,13 @@ function msgHtml(m,i){
     dentro=`<p>${esc(m.intro)}</p><div class="hoja"><small>Tu semana · ${dias.filter(d=>d.hecho).length} de ${dias.length} grabadas</small>${dias.map((d,n)=>`<div class="dia${d.hecho?" ok":""}"><span class="dn">${esc(d.dia)}</span><div><b>${esc(d.tema)}</b><p>${esc(d.pilar)} · ${esc(d.detalle)}</p></div><div class="ac"><label><input type="checkbox" data-a="hecho" data-n="${n}"${d.hecho?" checked":""}>Grabado</label><button data-a="dia" data-n="${n}">Hacer guion</button></div></div>`).join("")}
       <div class="acciones"><button data-a="cambiaDia">Cambiar una idea</button><button data-a="nuevaSem">Armar otra semana</button></div></div>`}
   return `<div class="msg">${CARA}<div class="dice"><div class="quien">Gianie</div>${dentro}</div></div>`}
-function anade(m){
+function anade(m,sinAnim){
   if(!CUR)CUR=nuevaConv("");
   if(!CONVS.includes(CUR))CONVS.unshift(CUR);
   if(!CUR.tit&&m.r==="u")CUR.tit=corto(m.t,40);
   CUR.msgs.push(m);guardaConvs();
   const h=$("#hilo");if(VISTA!=="chat"||!$("#col")){VISTA="chat";pintaHilo();pintaLado();pintaTitulo()}
-  else{$("#col").insertAdjacentHTML("beforeend",msgHtml(m,CUR.msgs.length-1))}
+  else{$("#col").insertAdjacentHTML("beforeend",msgHtml(m,CUR.msgs.length-1));if(sinAnim){const u=$("#col").lastElementChild;if(u)u.classList.add("sin-anim")}}
   h.scrollTo({top:h.scrollHeight,behavior:"smooth"})}
 const gDice=t=>anade({r:"g",k:"txt",t});
 async function conPuntos(fn){
@@ -560,12 +561,50 @@ function tipoDe(t){const x=t.toLowerCase();if(CUR&&CUR.sec&&CUR.sec!=="Contenido
   if(pideSemana(t))return"semana";
   if(/\bgu[ií]on\b/.test(x))return"guion";if(/\bganchos?\b/.test(x))return"ganchos";if(/\bcaption\b|pie de foto/.test(x))return"caption";if(/\bhistorias?\b/.test(x))return"historias";return""}
 function resumenPrevio(){return(CUR?CUR.msgs:[]).slice(-9).map(m=>m.r==="u"?{role:"user",content:m.t}:{role:"assistant",content:m.k==="consejo"?[m.intro,...m.pasos].join(" "):m.k==="txt"?m.t:m.intro||""}).filter(x=>x.content)}
+/* La respuesta del chat llega en streaming: el texto va apareciendo (primero la intro, luego los pasos). Si el streaming no está disponible, se usa la ruta normal. */
+async function leeStream(hist,sec,pinta){
+  const resp=await fetch(API+"/asistente/consejo-stream",{method:"POST",headers:{"Content-Type":"application/json","X-Token":TOKEN},body:JSON.stringify({seccion:sec,mensajes:hist})});
+  if(!resp.ok||!(resp.headers.get("content-type")||"").includes("text/event-stream")){
+    const j=await resp.json().catch(()=>({}));const e=new Error(j.error||"error");e.code=j.error||"error";
+    e.fallback=resp.status>=500||resp.status===404||!j.error; /* servidor sin la ruta o caído: se prueba la ruta normal; límites y vencimiento se muestran tal cual */
+    if(e.code==="acceso_vencido"){AVENCE=AVENCE||j.vence||null;VENCIDA=true;vencido()}
+    throw e}
+  const lector=resp.body.getReader(),dec=new TextDecoder();let buf="",final=null;
+  for(;;){const {done,value}=await lector.read();if(done)break;buf+=dec.decode(value,{stream:true}).replace(/\r\n/g,"\n");
+    let i;while((i=buf.indexOf("\n\n"))>=0){const b=buf.slice(0,i);buf=buf.slice(i+2);
+      const ev=(/event: (.*)/.exec(b)||[])[1],dd=(/data: (.*)/.exec(b)||[])[1];if(!dd)continue;let d;try{d=JSON.parse(dd)}catch(e){continue}
+      if(ev==="parcial")pinta(d);else if(ev==="final")final=d;
+      else if(ev==="error"){const e=new Error(d.error||"error");e.code=d.error||"error";e.fallback=false;throw e}}}
+  if(!final){const e=new Error("sin_final");e.code="sin_final";e.fallback=true;throw e}
+  return final}
+async function consejoRespuesta(hist,sec){
+  BUSY=true;$("#enviar").disabled=true;
+  const col=$("#col"),id="str"+Date.now();let el=null;
+  const quitaPts=()=>{const e=document.getElementById(id+"p");if(e)e.remove()};
+  if(col){col.insertAdjacentHTML("beforeend",`<div class="msg" id="${id}p">${CARA}<div class="dice"><div class="quien">Gianie</div><div class="puntos"><i></i><i></i><i></i></div></div></div>`);$("#hilo").scrollTo({top:1e9,behavior:"smooth"})}
+  const pinta=p=>{const c=document.getElementById("col");if(!c)return;
+    if(!el){quitaPts();c.insertAdjacentHTML("beforeend",`<div class="msg" id="${id}">${CARA}<div class="dice"><div class="quien">Gianie</div><p class="s-intro"></p><div class="hoja s-hoja" hidden><ol class="pasos"></ol><p class="s-cierre"></p></div></div></div>`);el=document.getElementById(id)}
+    const con=p.pasos&&p.pasos.length&&!p.fuera;
+    el.querySelector(".s-intro").textContent=con?p.intro:[p.intro,p.cierre].filter(Boolean).join(" ");
+    el.querySelector(".s-hoja").hidden=!con;
+    el.querySelector(".pasos").innerHTML=con?p.pasos.map(x=>`<li>${esc(x)}</li>`).join(""):"";
+    el.querySelector(".s-cierre").textContent=con?p.cierre:"";
+    const h=$("#hilo");if(h.scrollHeight-h.scrollTop-h.clientHeight<160)h.scrollTop=h.scrollHeight};
+  try{
+    let r=null;
+    try{r=await leeStream(hist,sec,pinta)}catch(e){if(e.code&&e.fallback===false)return{error:e.code};if(e.code&&e.fallback!==true&&e.code!=="error")return{error:e.code};r=null}
+    if(!r){const e0=document.getElementById(id);if(e0)e0.remove();el=null
+      try{r=await api("/asistente/consejo",{seccion:sec,mensajes:hist})}catch(e){return{error:e.code||"error"}}}
+    if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}
+    return r
+  }finally{quitaPts();const e=document.getElementById(id);if(e)e.remove();BUSY=false;$("#enviar").disabled=false}}
 async function consejoTurno(t){
-  const hist=resumenPrevio();
-  const r=await conPuntos(async()=>{try{const r=await api("/asistente/consejo",{seccion:CUR&&!CUR.esSemana?CUR.sec:"",mensajes:hist});if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return r}catch(e){return{error:e.code||"error"}}});
+  const hist=resumenPrevio(),sec=CUR&&!CUR.esSemana?CUR.sec:"",destino=CUR;
+  const r=await consejoRespuesta(hist,sec);
   if(r.error){if(r.error!=="acceso_vencido")gDice(ERR[r.error]||"No pude contestarte ahora. Inténtalo de nuevo en un momento.");return}
   if(!r.pasos||!r.pasos.length){gDice([r.intro,r.cierre].filter(Boolean).join(" "));return}
-  anade({r:"g",k:"consejo",intro:r.intro,tit:r.titulo,pasos:r.pasos,cierre:r.cierre,curso:r.curso||"",sec:CUR&&CUR.sec||""})}
+  const m={r:"g",k:"consejo",intro:r.intro,tit:r.titulo,pasos:r.pasos,cierre:r.cierre,curso:r.curso||"",sec:destino&&destino.sec||""};
+  if(CUR===destino)anade(m,true);else if(destino){destino.msgs.push(m);guardaConvs()}}
 
 /* ----- piezas de contenido ----- */
 const INTRO={ganchos:"Pues mira, te dejé cinco aperturas. Quédate con la que sonaría natural en tu boca, ¿ok?",guion:"Pues te lo dejé listo para grabar. Léelo en voz alta y si algo no suena a ti lo cambiamos, ¿ok?",caption:"Aquí tienes el caption con tu tono. Si lo quieres más corto o más cálido me dices.",historias:"Te armé la secuencia de historias para 24 horas. Dime si la quieres más corta o más cercana."};
