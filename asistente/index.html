@@ -125,6 +125,7 @@ a{color:inherit}
 .hoja p{font-size:16px;line-height:1.55;margin-top:8px}
 .hoja .et{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#8a6a2e;margin-bottom:1px}
 .hoja .linea{margin-top:12px}.hoja .linea p{margin-top:0}
+.hoja .linea .toma{font-size:13.5px;font-style:italic;color:#7a6a58;margin-top:2px}
 .hoja .nota{font-size:13.5px;color:#7a6a58;margin-top:14px}
 .pasos{margin:10px 0 0;padding-left:22px;font-size:16px;line-height:1.5}
 .pasos li{margin-top:8px;padding-left:4px}
@@ -492,7 +493,7 @@ function enlazaVacio(){const sec=CUR?CUR.sec:"",L=SUG[sec]||SUG[""];todas("#hilo
 
 /* ----- mensajes ----- */
 const CARA='<div class="mini"><img src="cara.jpg" alt=""></div>';
-function lineasHtml(L){return L.map(l=>`<div class="linea"><span class="et">${esc(l.et)}</span><p>${esc(l.tx)}</p></div>`).join("")}
+function lineasHtml(L){return L.map(l=>`<div class="linea"><span class="et">${esc(l.et)}</span><p>${esc(l.tx)}</p>${l.toma?`<p class="toma">Toma: ${esc(l.toma)}</p>`:""}</div>`).join("")}
 function msgHtml(m,i){
   if(m.r==="u")return `<div class="msg yo-msg"><div class="burbuja">${esc(m.t)}</div></div>`;
   let dentro="";
@@ -629,7 +630,7 @@ function tipoConTema(tipo,tema){
   return pieza(tipo,{tema})}
 async function seguirCon(c){anade({r:"u",t:"Quiero seguir con "+c.tema});tipoConTema("guion",c.tema)}
 /* Lo que se guarda de cada pieza para poder abrirla después: las líneas, el texto en pantalla y la duración. */
-const contenidoDe=m=>({lineas:(m.items||m.lineas||[]).map(l=>({et:l.et,tx:l.tx,...(l.t?{t:l.t}:{})})),pant:m.pant||"",dur:m.dur||"",meta:m.meta||""});
+const contenidoDe=m=>({lineas:(m.items||m.lineas||[]).map(l=>({et:l.et,tx:l.tx,...(l.t?{t:l.t}:{}),...(l.toma?{toma:l.toma}:{})})),pant:m.pant||"",dur:m.dur||"",meta:m.meta||""});
 async function pieza(tool,p,ajuste,ver,tituloPrevio){
   if(faltan(BAS).length)return fichaPrimero(()=>pieza(tool,p,ajuste));
   MODO=null;pintaCaja();
@@ -641,7 +642,7 @@ async function pieza(tool,p,ajuste,ver,tituloPrevio){
   const titulo=tituloPrevio||r.titulo||corto(p.tema||"",50);
   let m={r:"g",k:"hoja",tipo:TIPO[tool],tit:titulo,intro:ajuste?"Listo, lo cambié como me pediste.":INTRO[tool],ctx:{tool,titulo,p:{...p,ajuste:undefined,previo:undefined}}};
   if(tool==="ganchos")m.items=(r.items||[]).map(x=>({et:x.tipo,tx:x.texto}));
-  else if(tool==="guion"){m.lineas=(r.lineas||[]).map(x=>({et:x.etiqueta,tx:x.texto,t:x.t}));m.meta=((r.duracion||"")+" · reel").replace(/^ · /,"");m.pant=r.pantalla||"";m.dur=r.duracion||""}
+  else if(tool==="guion"){m.lineas=(r.lineas||[]).map(x=>({et:x.etiqueta,tx:x.texto,t:x.t,toma:x.toma||""}));m.meta=((r.duracion||"")+" · reel").replace(/^ · /,"");m.pant=r.pantalla||"";m.dur=r.duracion||""}
   else if(tool==="caption")m.lineas=(r.lineas||[]).map(x=>({et:x.etiqueta,tx:x.texto}));
   else if(tool==="historias"){m.lineas=(r.historias||[]).map(x=>({et:x.n+" · "+x.tipo,tx:x.texto}));m.meta=(r.historias||[]).length+" historias · 24 h"}
   anade(m);
@@ -649,7 +650,7 @@ async function pieza(tool,p,ajuste,ver,tituloPrevio){
   S.guiones.unshift({tipo:TIPO[tool],tema:p.tema||"",titulo,det:p.detalle||"",fecha:hoy(),...(ver?{ver}:{}),contenido:contenidoDe(m)});save();pintaLado();
   chips(tool==="ganchos"?[]:[["Otro tema",()=>pideTema(tool)]])}
 function reGenera(mi,ajuste,dice,ver){const m=CUR.msgs[mi];if(!m||!m.ctx)return;
-  const previo=m.tipo==="Ganchos"?m.items.map(x=>x.tx).join(" | "):JSON.stringify(m.lineas.map(l=>({t:l.t||"",etiqueta:l.et,texto:l.tx})));
+  const previo=m.tipo==="Ganchos"?m.items.map(x=>x.tx).join(" | "):JSON.stringify(m.lineas.map(l=>({t:l.t||"",etiqueta:l.et,texto:l.tx,toma:l.toma||""})));
   if(dice!==false)anade({r:"u",t:ajuste});return pieza(m.ctx.tool,{...m.ctx.p,ajuste,previo},true,ver||"Ajustada",m.ctx.titulo||m.tit)}
 
 /* ----- tu semana ----- */
