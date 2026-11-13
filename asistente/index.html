@@ -444,7 +444,9 @@ function vencido(){
 /* ================= CHAT ================= */
 let CONVS=[],CUR=null,VISTA="chat",MODO=null,BUSY=false,CRE_SEL=-1;
 const CV_KEY=()=>"shu-cv2-"+(TOKEN||"x").slice(0,12);
-function cargaConvs(){try{CONVS=JSON.parse(localStorage.getItem(CV_KEY())||"[]")}catch(e){CONVS=[]}}
+function cargaConvs(){try{CONVS=JSON.parse(localStorage.getItem(CV_KEY())||"[]")}catch(e){CONVS=[]}
+  /* si ya había varias entradas de "Tu semana" repetidas, queda solo la más reciente */
+  CONVS=CONVS.filter((c,i,a)=>!c.esSemana||a.findIndex(x=>x.esSemana)===i)}
 function guardaConvs(){try{localStorage.setItem(CV_KEY(),JSON.stringify(CONVS.filter(c=>c.msgs.length).slice(0,14)))}catch(e){}}
 const nuevaConv=(sec)=>({id:Date.now()+"-"+Math.floor(Math.random()*1e4),sec:sec||"",msgs:[],t:Date.now()});
 
@@ -682,11 +684,19 @@ async function armarSemana(ajuste){
   const mf=metaFrase();
   anade({r:"g",k:"semana",intro:ajuste?"Listo, así queda tu semana con el cambio.":(mf?`Así queda tu semana, armada con lo que me contaste de tu negocio y pensada para tu meta: «${mf}». Todavía no uso tendencias en vivo, ¿ok?`:"Así queda tu semana, armada con lo que me contaste de tu negocio. Todavía no uso tendencias en vivo, ¿ok?"),dias:S.plan.dias});
   pintaLado();chips([])}
+/* Abrir "Tu semana" solo MUESTRA lo que ya hay: no llama al servidor, no gasta créditos y no crea otra entrada en Recientes.
+   El plan solo se arma o se rehace si ella lo pide de forma explícita (botón "Armar mi semana" o escribirlo). */
 function abreSemana(){
-  CUR=nuevaConv("");CUR.esSemana=true;CUR.tit="Tu semana";VISTA="chat";MODO=null;chips([]);verChat();
-  if(planActual()){anade({r:"g",k:"semana",intro:"Esta es tu semana. Marca lo que ya grabaste y elige un día para armar el guion, ¿ok?",dias:S.plan.dias})}
-  else if(faltan(BAS).length){gDice("Todavía no tienes tu semana. Para armarla necesito conocer tu negocio, así que te hago tres preguntas aquí mismo, ¿ok?");fichaPrimero(()=>armarSemana(),true)}
-  else{gDice(S.plan?"Es una semana nueva. Si quieres, armo tu plan con lo que me contaste de tu negocio.":"Todavía no tienes tu semana. Si quieres, la armo con lo que me contaste de tu negocio.");chips([["Armar mi semana",()=>{if(!BUSY)armarSemana()}]])}}
+  let c=CONVS.find(x=>x.esSemana);
+  if(!c){c=nuevaConv("");c.esSemana=true;c.tit="Tu semana"}
+  CUR=c;VISTA="chat";MODO=null;chips([]);
+  c.msgs=c.msgs.filter(m=>!m.sem); /* se quita lo que esta pantalla puso antes, para que el plan salga actualizado y una sola vez */
+  verChat();
+  const gSem=t=>anade({r:"g",k:"txt",t,sem:true});
+  if(planActual()){anade({r:"g",k:"semana",sem:true,intro:"Esta es tu semana. Marca lo que ya grabaste y elige un día para armar el guion, ¿ok?",dias:S.plan.dias})}
+  else if(faltan(BAS).length){gSem("Todavía no tienes tu semana. Para armarla necesito conocer tu negocio, así que te hago tres preguntas aquí mismo, ¿ok?");
+    fichaPrimero(()=>{gDice("Listo. ¿Armo tu semana ahora?");chips([["Armar mi semana",()=>{if(!BUSY)armarSemana()}]])},true)}
+  else{gSem(S.plan?"Es una semana nueva. Si quieres, armo tu plan con lo que me contaste de tu negocio.":"Todavía no tienes tu semana. Si quieres, la armo con lo que me contaste de tu negocio.");chips([["Armar mi semana",()=>{if(!BUSY)armarSemana()}]])}}
 
 /* ----- ficha: 3 preguntas y entrega ----- */
 /* si falta lo básico de la ficha, se pregunta ahí mismo, en la misma conversación, y después sigue con lo que estaba pidiendo */
