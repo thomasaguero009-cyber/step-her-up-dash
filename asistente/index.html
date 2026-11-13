@@ -181,6 +181,10 @@ a{color:inherit}
 .cre .n{font:italic 400 24px "Bodoni Moda",serif;color:var(--oro)}
 .cre b{display:block;font-weight:600;font-size:15.5px}.cre small{display:block;color:var(--suave);font-size:13px}
 .cre .f{font-size:12.5px;color:var(--tenue)}
+button.cre{width:100%;text-align:left;border-radius:0}
+button.cre:hover b{color:var(--champan)}
+.cre .ver{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:99px;border:1px solid var(--linea);font-size:11.5px;color:var(--champan)}
+.atras{font-size:13.5px;color:var(--champan);padding:6px 0;margin-top:14px;border-bottom:1px solid rgba(233,211,160,.35);display:inline-block}
 
 /* teleprompter */
 #tp{position:fixed;inset:0;z-index:300;background:#000;color:#fff;font-family:Inter,system-ui,sans-serif}
@@ -362,7 +366,7 @@ const planActual=()=>S.plan&&S.plan.dias&&S.plan.dias.length&&S.plan.sem===seman
 function guardaPlan(raw){const ant=planActual()?S.plan.dias:[];S.plan={sem:semanaId(),dias:raw.map((d,i)=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle,hecho:!!(ant[i]&&ant[i].tema===d.tema&&ant[i].hecho)}))};save()}
 const frase=()=>{const f=S.resp.frases||"";const m=f.match(/[«"“]([^»"”]+)[»"”]/);return sinP(m?m[1]:corto(f,60))};
 
-async function cargar(){const j=await api("/asistente/yo");CUPO=j.cupo||null;AVENCE=j.vence||null;VENCIDA=!!j.vencida;S.resp=j.resp||{};if(!S.resp.nombre&&j.nombre)S.resp.nombre=j.nombre;S.plan=j.plan||null;S.guiones=(j.creaciones||[]).map(c=>({tipo:c.tipo,tema:c.tema,det:c.det,fecha:c.fecha}))}
+async function cargar(){const j=await api("/asistente/yo");CUPO=j.cupo||null;AVENCE=j.vence||null;VENCIDA=!!j.vencida;S.resp=j.resp||{};if(!S.resp.nombre&&j.nombre)S.resp.nombre=j.nombre;S.plan=j.plan||null;S.guiones=(j.creaciones||[]).map(c=>({...c}))}
 
 /* ===== secciones (agrupan los cursos de la Skool) ===== */
 const SECS=["Contenido","Marca personal","Anuncios","Ventas","Oferta y negocio","Planificación","Identidad y propósito"];
@@ -422,7 +426,7 @@ function vencido(){
    ${S.guiones.length?`<div class="p-lista">${S.guiones.map(g=>`<div>${esc(g.tema)}<small>${esc(g.tipo||"Guion")}${g.det?" · "+esc(g.det):""}${g.fecha?" · "+esc(g.fecha):""}</small></div>`).join("")}</div>`:""}`)}
 
 /* ================= CHAT ================= */
-let CONVS=[],CUR=null,VISTA="chat",MODO=null,BUSY=false;
+let CONVS=[],CUR=null,VISTA="chat",MODO=null,BUSY=false,CRE_SEL=-1;
 const CV_KEY=()=>"shu-cv2-"+(TOKEN||"x").slice(0,12);
 function cargaConvs(){try{CONVS=JSON.parse(localStorage.getItem(CV_KEY())||"[]")}catch(e){CONVS=[]}}
 function guardaConvs(){try{localStorage.setItem(CV_KEY(),JSON.stringify(CONVS.filter(c=>c.msgs.length).slice(0,14)))}catch(e){}}
@@ -443,7 +447,7 @@ function pintaLado(){
    <div class="pie">
     <button class="item" data-a="portal">Inicio</button>
     <button class="item${VISTA==="ficha"?" activa":""}" data-a="ficha">Mi ficha</button>
-    <button class="item${VISTA==="creaciones"?" activa":""}" data-a="creaciones">Mis creaciones</button>
+    <button class="item${VISTA==="creaciones"||VISTA==="creacion"?" activa":""}" data-a="creaciones">Mis creaciones</button>
     <div class="yo"><span class="inicial">${esc((nombre()||"?")[0])}</span><div><b>${esc(nombre())}</b><small class="${a.pronto?"pronto":""}">${esc(AVENCE?(a.pronto?`Tu acceso llega hasta el ${FECHA_L(AVENCE)}`:`Acceso hasta el ${FECHA_L(AVENCE)}`):"Acceso activo")}</small></div></div>
    </div>`;
 }
@@ -451,7 +455,7 @@ function pintaAviso(){const e=$("#aviso");let t="";if(CUPO){const q=Math.max(0,C
   const d=diasPara(AVENCE);if(d!==null&&d>=0&&d<=7)t+=(t?" · ":"")+`Tu acceso llega hasta el ${FECHA_L(AVENCE)}`;e.textContent=t;e.classList.toggle("pronto",d!==null&&d>=0&&d<=7)}
 function verChat(){$("#portal").hidden=true;$("#app").hidden=false;try{vS.pause();vR.pause()}catch(e){}document.body.classList.remove("menu");pintaTodo()}
 function pintaTodo(){pintaLado();pintaAviso();pintaTitulo();pintaHilo();pintaCaja()}
-function pintaTitulo(){let t="Nueva conversación";if(VISTA==="ficha")t="Mi ficha";else if(VISTA==="creaciones")t="Mis creaciones";else if(CUR){t=CUR.esSemana?"Tu semana":CUR.sec||"Nueva conversación"}$("#titulo").textContent=t}
+function pintaTitulo(){let t="Nueva conversación";if(VISTA==="ficha")t="Mi ficha";else if(VISTA==="creaciones"||VISTA==="creacion")t="Mis creaciones";else if(CUR){t=CUR.esSemana?"Tu semana":CUR.sec||"Nueva conversación"}$("#titulo").textContent=t}
 function pintaCaja(){const sec=VISTA==="chat"&&CUR?CUR.sec:"";$("#pSecT").textContent=CUR&&CUR.esSemana?"Tu semana":sec||"Elige sección";$("#abajo").hidden=VISTA!=="chat";
   $("#txt").placeholder=MODO&&MODO.k==="onb"?"Escribe tu respuesta":MODO&&MODO.k==="detalle"?"Lo que te pasó, lo que te dijeron…":MODO&&MODO.k==="tema"?"Escribe tu tema":"Escríbele a tu guía"}
 
@@ -459,6 +463,7 @@ function pintaHilo(){
   const h=$("#hilo");
   if(VISTA==="ficha"){vistaFicha(h);return}
   if(VISTA==="creaciones"){vistaCreaciones(h);return}
+  if(VISTA==="creacion"){vistaCreacion(h);return}
   if(!CUR||!CUR.msgs.length){h.innerHTML=vacioHtml();enlazaVacio();pintaChips();return}
   h.innerHTML=`<div class="col" id="col">${CUR.msgs.map((m,i)=>msgHtml(m,i)).join("")}</div>`;h.scrollTop=h.scrollHeight;pintaChips()}
 function vacioHtml(){
@@ -572,7 +577,9 @@ function tipoConTema(tipo,tema){
   if(tipo==="guion"){MODO={k:"detalle",tema};pintaCaja();gDice("Esto es lo que lo hace tuyo y no de cualquiera. Una escena real de esta semana, un número verdadero o algo que te dijo una clienta. ¿Qué tienes?");chips([[SIN_DET,()=>enviarTexto(SIN_DET)]]);return}
   return pieza(tipo,{tema})}
 async function seguirCon(c){anade({r:"u",t:"Quiero seguir con "+c.tema});tipoConTema("guion",c.tema)}
-async function pieza(tool,p,ajuste,previoMsg){
+/* Lo que se guarda de cada pieza para poder abrirla después: las líneas, el texto en pantalla y la duración. */
+const contenidoDe=m=>({lineas:(m.items||m.lineas||[]).map(l=>({et:l.et,tx:l.tx,...(l.t?{t:l.t}:{})})),pant:m.pant||"",dur:m.dur||"",meta:m.meta||""});
+async function pieza(tool,p,ajuste,ver){
   if(faltan(BAS).length)return fichaPrimero(()=>pieza(tool,p,ajuste));
   MODO=null;pintaCaja();
   const params={tool,...p};
@@ -585,11 +592,12 @@ async function pieza(tool,p,ajuste,previoMsg){
   else if(tool==="caption")m.lineas=(r.lineas||[]).map(x=>({et:x.etiqueta,tx:x.texto}));
   else if(tool==="historias"){m.lineas=(r.historias||[]).map(x=>({et:x.n+" · "+x.tipo,tx:x.texto}));m.meta=(r.historias||[]).length+" historias · 24 h"}
   anade(m);
-  if(!ajuste){S.guiones.unshift({tipo:TIPO[tool],tema:p.tema||"",det:p.detalle||"",fecha:hoy()});save();pintaLado()}
+  /* se guarda toda versión, también "Más corto" y "Otra versión", con su contenido */
+  S.guiones.unshift({tipo:TIPO[tool],tema:p.tema||"",det:p.detalle||"",fecha:hoy(),...(ver?{ver}:{}),contenido:contenidoDe(m)});save();pintaLado();
   chips(tool==="ganchos"?[]:[["Otro tema",()=>pideTema(tool)]])}
-function reGenera(mi,ajuste,dice){const m=CUR.msgs[mi];if(!m||!m.ctx)return;
+function reGenera(mi,ajuste,dice,ver){const m=CUR.msgs[mi];if(!m||!m.ctx)return;
   const previo=m.tipo==="Ganchos"?m.items.map(x=>x.tx).join(" | "):JSON.stringify(m.lineas.map(l=>({t:l.t||"",etiqueta:l.et,texto:l.tx})));
-  if(dice!==false)anade({r:"u",t:ajuste});return pieza(m.ctx.tool,{...m.ctx.p,ajuste,previo},true)}
+  if(dice!==false)anade({r:"u",t:ajuste});return pieza(m.ctx.tool,{...m.ctx.p,ajuste,previo},true,ver||"Ajustada")}
 
 /* ----- tu semana ----- */
 /* Nunca se pisa una semana que ya existe sin preguntar. */
@@ -602,7 +610,7 @@ async function armarSemana(ajuste){
   const params={tool:"ideas"};if(ajuste){params.ajuste=ajuste;params.previo=JSON.stringify((planActual()||{dias:[]}).dias.map(d=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle})))}
   const r=await conPuntos(async()=>{try{const r=await api("/asistente/generar",params);if(CUPO&&typeof r.restan==="number"){CUPO.usadas=CUPO.limite-r.restan;pintaAviso()}return r}catch(e){return{error:e.code||"error"}}});
   if(r.error){if(r.error!=="acceso_vencido")gDice(ERR[r.error]||"No pude armarla ahora. Inténtalo de nuevo en un momento.");chips([["Intentar de nuevo",()=>armarSemana(ajuste)]]);return}
-  guardaPlan(r.dias);if(!ajuste){S.guiones.unshift({tipo:"Ideas",tema:"Ideas de la semana",det:"",fecha:hoy()});save()}
+  guardaPlan(r.dias);if(!ajuste){S.guiones.unshift({tipo:"Ideas",tema:"Ideas de la semana",det:"",fecha:hoy(),contenido:{dias:S.plan.dias.map(d=>({dia:d.dia,pilar:d.pilar,tema:d.tema,detalle:d.detalle}))}});save()}
   const mf=metaFrase();
   anade({r:"g",k:"semana",intro:ajuste?"Listo, así queda tu semana con el cambio.":(mf?`Así queda tu semana, armada con lo que me contaste de tu negocio y pensada para tu meta: «${mf}». Todavía no uso tendencias en vivo, ¿ok?`:"Así queda tu semana, armada con lo que me contaste de tu negocio. Todavía no uso tendencias en vivo, ¿ok?"),dias:S.plan.dias});
   pintaLado();chips([])}
@@ -645,18 +653,41 @@ function vistaFicha(h){
     if(v)S.resp[k]=v;else delete S.resp[k];t.closest(".fi").classList.toggle("falta",!v);save()});
   /* fichas anteriores con la meta larga: se separan una sola vez al abrir Mi ficha */
   if(!SEP_HECHO&&necesitaSeparar(S.resp.meta)){SEP_HECHO=true;separaMeta(S.resp.meta).then(r=>{if(r.meta!==S.resp.meta||r.situacion){aplicaMeta(r);save();if(VISTA==="ficha")vistaFicha($("#hilo"))}})}}
+const tituloCre=g=>g.titulo||g.tema;
 function vistaCreaciones(h){
-  h.innerHTML=`<div class="col vista"><h2>Lo que ya<br><i>tienes listo.</i></h2>${S.guiones.length?"":`<p>Todavía no creaste nada. Cuéntame qué necesitas y empezamos.</p>`}
-   <div style="margin-top:18px">${S.guiones.map((g,i)=>`<div class="cre"><span class="n">${String(S.guiones.length-i).padStart(2,"0")}</span><div><b>${esc(g.tema)}</b><small>${esc(g.tipo||"Guion")}${g.det?" · Tu detalle "+esc(g.det):""}</small></div><span class="f">${esc(g.fecha||"")}</span></div>`).join("")}</div></div>`}
+  h.innerHTML=`<div class="col vista"><h2>Lo que ya<br><i>tienes listo.</i></h2>${S.guiones.length?`<p>Toca una para abrirla completa, copiarla o grabarla.</p>`:`<p>Todavía no creaste nada. Cuéntame qué necesitas y empezamos.</p>`}
+   <div style="margin-top:18px">${S.guiones.map((g,i)=>`<button class="cre" data-a="verCre" data-i="${i}"><span class="n">${String(S.guiones.length-i).padStart(2,"0")}</span><div><b>${esc(tituloCre(g))}</b><small>${esc(g.tipo||"Guion")}${g.ver?`<span class="ver">${esc(g.ver)}</span>`:""}${g.det?" · Tu detalle "+esc(g.det):""}</small></div><span class="f">${esc(g.fecha||"")}</span></button>`).join("")}</div></div>`}
+/* una creación abierta: el contenido completo, con Copiar y Teleprompter */
+function textoCre(g){const c=g.contenido||{};
+  if(c.dias&&c.dias.length)return c.dias.map(d=>`${d.dia}: ${d.tema}. ${d.pilar} · ${d.detalle}`).join("\n");
+  return (c.lineas||[]).map(l=>l.tx).join("\n")}
+function vistaCreacion(h){
+  const g=S.guiones[CRE_SEL];if(!g){VISTA="creaciones";vistaCreaciones(h);return}
+  const c=g.contenido||{},meta=[g.tipo,g.ver,c.dur,g.fecha].filter(Boolean).join(" · ");
+  let cuerpo="";
+  if(c.dias&&c.dias.length)cuerpo=c.dias.map(d=>`<div class="dia"><span class="dn">${esc(d.dia)}</span><div><b>${esc(d.tema)}</b><p>${esc(d.pilar)} · ${esc(d.detalle)}</p></div></div>`).join("");
+  else if(c.lineas&&c.lineas.length)cuerpo=g.tipo==="Ganchos"?c.lineas.map(l=>`<div class="gancho"><span class="et">${esc(l.et)}</span><p>${esc(l.tx)}</p></div>`).join(""):lineasHtml(c.lineas)+(c.pant?`<p class="nota">Texto en pantalla «${esc(c.pant)}»</p>`:"");
+  else cuerpo=`<p>Esta creación es de antes de que guardara el contenido completo, así que solo quedó el tema. Si quieres, la vuelvo a escribir.</p>`;
+  const hay=!!textoCre(g);
+  h.innerHTML=`<div class="col vista"><button class="atras" data-a="volverCre">← Mis creaciones</button><h2>${esc(tituloCre(g))}</h2>
+   <div class="hoja"><small>${esc(meta)}</small>${cuerpo}
+    <div class="acciones">${g.tipo==="Guion"&&c.lineas&&c.lineas.length?`<button class="grabar" data-a="creGrabar">Grabar con teleprompter</button>`:""}${hay?`<button data-a="creCopiar">Copiar</button>`:`<button class="grabar" data-a="creRehacer">Volver a escribirla</button>`}</div></div></div>`}
 
 /* ----- acciones dentro de las hojas ----- */
 $("#hilo").addEventListener("click",async e=>{
-  const b=e.target.closest("[data-a]");if(!b||!CUR)return;const a=b.dataset.a,mi=+b.dataset.m,m=CUR.msgs[mi];
+  const b=e.target.closest("[data-a]");if(!b)return;
+  /* Mis creaciones: abrir una, copiarla, grabarla con el teleprompter o volver a escribirla */
+  if(b.dataset.a==="verCre"){CRE_SEL=+b.dataset.i;VISTA="creacion";pintaTodo();$("#hilo").scrollTop=0;return}
+  if(b.dataset.a==="volverCre"){VISTA="creaciones";pintaTodo();return}
+  if(b.dataset.a==="creCopiar"){const g=S.guiones[CRE_SEL];if(!g)return;try{await navigator.clipboard.writeText(textoCre(g));b.textContent="Copiado"}catch(x){b.textContent="No se pudo copiar"}return}
+  if(b.dataset.a==="creGrabar"){const g=S.guiones[CRE_SEL];if(g&&g.contenido&&g.contenido.lineas)abrirTP(g.contenido.lineas.map(l=>({tag:l.et,txt:l.tx})),tpDuracion(g.contenido.dur));return}
+  if(b.dataset.a==="creRehacer"){const g=S.guiones[CRE_SEL];if(!g)return;CUR=nuevaConv("Contenido");VISTA="chat";MODO=null;verChat();anade({r:"u",t:"Quiero volver a hacer «"+corto(g.tema,60)+"»"});const t=Object.keys(TIPO).find(k=>TIPO[k]===g.tipo)||"guion";tipoConTema(t,g.tema);return}
+  if(!CUR)return;const a=b.dataset.a,mi=+b.dataset.m,m=CUR.msgs[mi];
   if(a==="grabar"&&m){abrirTP(m.lineas.map(l=>({tag:l.et,txt:l.tx})),tpDuracion(m.dur));return}
   if(a==="copiar"&&m){const t=m.tipo==="Ganchos"?m.items.map(g=>g.tx).join("\n"):m.lineas.map(l=>l.tx).join("\n");try{await navigator.clipboard.writeText(t);b.textContent="Copiado"}catch(x){b.textContent="No se pudo copiar"}return}
   if(BUSY)return;
-  if(a==="corto"&&m){reGenera(mi,m.tipo==="Guion"?"más corto, de 20 a 25 segundos":"más corto");return}
-  if(a==="otra"&&m){reGenera(mi,"una versión distinta a la anterior, con otro ángulo");return}
+  if(a==="corto"&&m){reGenera(mi,m.tipo==="Guion"?"más corto, de 20 a 25 segundos":"más corto",true,"Más corto");return}
+  if(a==="otra"&&m){reGenera(mi,"una versión distinta a la anterior, con otro ángulo",true,"Otra versión");return}
   if(a==="usar"&&m){const g=m.items[+b.dataset.n];anade({r:"u",t:"Quiero hacer un guion con este gancho"});MODO={k:"detalle",tema:m.tit,gancho:g.tx};pintaCaja();gDice("Ese tiene fuerza. Ahora cuéntame algo real que lo haga tuyo, una escena de esta semana o algo que te dijo una clienta. ¿Qué tienes?");chips([[SIN_DET,()=>enviarTexto(SIN_DET)]]);return}
   if((a==="suena"||a==="nosuena")&&m){m.fb=a==="suena"?"1":"0";guardaConvs();api("/asistente/opinion",{tool:m.tipo||"",ok:m.fb==="1",texto:(m.lineas||m.items||[]).map(l=>l.tx).join(" ").slice(0,700)}).catch(()=>{});
     todas(`#hilo [data-m="${mi}"].sutil`).forEach(x=>x.classList.toggle("on",x===b));
