@@ -6743,7 +6743,7 @@
   function donutEq(items, centro, subcentro){
     const R = 52, C = 2 * Math.PI * R, tot = items.reduce((a, x) => a + x.valor, 0);
     let acc = 0;
-    const arcos = tot > 0 ? items.filter(x => x.valor > 0).map(x => { const l = x.valor / tot * C; const s = `<circle cx="70" cy="70" r="${R}" fill="none" stroke="${x.color}" stroke-width="18" stroke-dasharray="${(l - 2).toFixed(2)} ${(C - l + 2).toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}" transform="rotate(-90 70 70)"><title>${escapeHtml(x.nombre)}: ${escapeHtml(x.texto)}</title></circle>`; acc += l; return s; }).join('') : '';
+    const arcos = tot > 0 ? items.filter(x => x.valor > 0).map(x => { const l = x.valor / tot * C; const s = `<circle cx="70" cy="70" r="${R}" fill="none" stroke="${x.color}" stroke-width="18" stroke-dasharray="${Math.max(l - 2, 0.8).toFixed(2)} ${(C - Math.max(l - 2, 0.8)).toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}" transform="rotate(-90 70 70)"><title>${escapeHtml(x.nombre)}: ${escapeHtml(x.texto)}</title></circle>`; acc += l; return s; }).join('') : '';
     return `<svg viewBox="0 0 140 140" width="170" height="170"><circle cx="70" cy="70" r="${R}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="18"/>${arcos}<text x="70" y="68" text-anchor="middle" fill="#f7ece9" font-size="19" font-weight="700" font-family="Inter,system-ui">${escapeHtml(centro)}</text><text x="70" y="86" text-anchor="middle" fill="rgba(247,236,233,.65)" font-size="10" font-family="Inter,system-ui">${escapeHtml(subcentro)}</text></svg>`;
   }
   function anilloEq(pct, color, etiqueta){
@@ -7895,7 +7895,16 @@
         </div>
         <div class="chart-status" id="statusLeads2">Conectando con GHL…</div>
       </div>
+      <div class="chart-panel" style="margin-bottom:44px; padding:18px 20px;">
+        <p class="vz-titulo" style="margin-top:0;">¿De dónde vienen tus leads?</p>
+        <div class="vz-grid">
+          <div id="origenDonut"></div>
+          <div id="origenBarras"></div>
+        </div>
+        <div class="chart-status" id="origenNota" style="margin-top:14px; text-align:left;"></div>
+      </div>
 `;
+    v2.firstElementChild.nextElementSibling.nextElementSibling.style.marginBottom = '18px';
     panelLeads.appendChild(v2);
     document.getElementById('leadsLeyenda').innerHTML = SERIES_FUNNEL.map(m => `<span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${m.color};margin-right:6px;"></i>${m.texto}</span>`).join('');
     const panelSel = document.getElementById('leadsPanel');
@@ -7989,6 +7998,46 @@
       eje: (i) => (i % paso === 0 || i === diasSel.length - 1) ? (diasSel.length <= 8 ? DIAS_SEMANA[diasSel[i].getDay()].slice(0, 3) + ' ' + diasSel[i].getDate() : String(diasSel[i].getDate())) : '',
     });
     document.getElementById('statusLeads2').textContent = 'Datos en vivo desde GHL · ' + etiquetaSel + ' comparado con ' + prevTxt;
+    try { pintarOrigenLeads(diasSel, diasPrev, prevTxt); } catch(e){ console.warn('Origen de leads', e); }
+  }
+  // ¿De dónde vienen los leads? Cuenta por origen (el que GHL guarda en cada contacto) dentro del rango elegido.
+  const COLOR_ORIGEN = { Instagram: '#f0a8be', Facebook: '#5b8def', Calendar: '#a78bfa', Manual: '#ffd166', Otro: '#8d7b86' };
+  const COLORES_ORIGEN_EXTRA = ['#5fd39a', '#fb923c', '#38bdf8', '#e879f9'];
+  const NOMBRE_ORIGEN = { Otro: 'Otro / sin origen', Calendar: 'Calendario (agendó directo)', Manual: 'Manual (cargado a mano)' };
+  function origenesDeDias(lista){
+    const out = {};
+    lista.forEach(d => {
+      const k = isoDe2(d);
+      const fila = (leadsData && leadsData.dias && leadsData.dias[k]) || Object.values(leadsExtra).map(e => e && e.dias && e.dias[k]).find(Boolean);
+      if(fila && fila.porOrigen) for(const [o, n] of Object.entries(fila.porOrigen)) out[o] = (out[o] || 0) + n;
+    });
+    return out;
+  }
+  function pintarOrigenLeads(diasSel, diasPrev, prevTxt){
+    const donut = document.getElementById('origenDonut'), barras = document.getElementById('origenBarras'), nota = document.getElementById('origenNota');
+    if(!donut || !barras) return;
+    const cur = origenesDeDias(diasSel), prev = origenesDeDias(diasPrev);
+    const total = Object.values(cur).reduce((a, b) => a + b, 0);
+    if(!total){ donut.innerHTML = ''; barras.innerHTML = '<div class="utm-vacio">Sin leads en este rango.</div>'; nota.textContent = ''; return; }
+    let extra = 0;
+    const filas = Object.entries(cur).sort((a, b) => b[1] - a[1]).map(([o, n]) => ({ o, n, color: COLOR_ORIGEN[o] || COLORES_ORIGEN_EXTRA[extra++ % COLORES_ORIGEN_EXTRA.length] }));
+    const items = filas.map(f => ({ nombre: NOMBRE_ORIGEN[f.o] || f.o, valor: f.n, color: f.color, texto: f.n + ' leads' }));
+    donut.innerHTML = `<div class="vz-donut">${donutEq(items, total.toLocaleString('es-AR'), 'leads')}</div>`;
+    const max = filas[0].n;
+    barras.innerHTML = filas.map(f => {
+      const antes = prev[f.o] || 0;
+      let vs;
+      if(f.n === antes) vs = `= igual que ${prevTxt}`;
+      else vs = `<span style="color:${f.n > antes ? '#7fe0a8' : '#ff9b9b'}">${f.n > antes ? '▲' : '▼'} ${antes > 0 ? Math.round(Math.abs(f.n / antes - 1) * 100) + '%' : 'nuevo'}</span> vs ${prevTxt}`;
+      return `<div style="margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; gap:10px; font-size:13.5px; margin-bottom:5px;"><span style="color:var(--cream); font-weight:600;"><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${f.color};margin-right:8px;"></i>${escapeHtml(NOMBRE_ORIGEN[f.o] || f.o)}</span><span style="font-variant-numeric:tabular-nums;"><b>${f.n.toLocaleString('es-AR')}</b> · ${Math.round(f.n / total * 100)}%</span></div>
+        <div class="vz-barra" style="height:12px;"><i style="width:${(f.n / max * 100).toFixed(1)}%; background:${f.color}; border-right:0;"></i></div>
+        <div class="leads2-tri">${vs}</div></div>`;
+    }).join('');
+    const top = filas[0], sin = cur.Otro || 0;
+    nota.textContent = `Más leads vienen de ${NOMBRE_ORIGEN[top.o] || top.o} (${Math.round(top.n / total * 100)}%).`
+      + (sin && top.o !== 'Otro' ? ` ${Math.round(sin / total * 100)}% no trae origen en GHL.` : '')
+      + ' Este origen no separa anuncio de orgánico dentro de Instagram: para eso mirá Marketing → Campañas (UTM).';
   }
 
   // ===== Gráficos v2 (Ads y Orgánico) =====
