@@ -7076,12 +7076,26 @@
   // el nombre que le toca. Para agregar uno: copiar el código completo y escribir al lado el nombre que se quiere ver.
   const NOMBRES_META = {
     // '120253475700070248': 'Webinar · Instagram',
+    // Campaña "SHU | Funnel nuevo | Nov 2026" (conjunto 100k noviembre)
+    '120253946279790248': 'AD UNO',
+    '120253946279810248': 'AD DOS',
+    '120253946522530248': 'AD TRES',
+    '120253946665660248': 'AD CUATRO',
+    '120253946715940248': 'AD CINCO',
+    '120253946751710248': 'AD SEIS',
   };
+  // Botón que abre el anuncio en el Administrador de anuncios de Meta (vista de tabla, no la de edición). Solo para IDs de Meta (número largo).
+  const META_CUENTA = { act: '1145720454196838', business: '197930401405712' };
+  function botonVerAnuncio(id){
+    if(!/^\d{12,}$/.test(id || '')) return '';
+    const url = `https://adsmanager.facebook.com/adsmanager/manage/ads?act=${META_CUENTA.act}&business_id=${META_CUENTA.business}&selected_ad_ids=${id}`;
+    return ` <a class="chart-chip" href="${url}" target="_blank" rel="noopener" style="margin-left:8px; padding:3px 10px; font-size:11.5px; font-weight:600; text-decoration:none; white-space:nowrap;">Ver anuncio ↗</a>`;
+  }
   function utmNombreLindo(slug){
     if(!slug) return '';
     if(NOMBRES_META[slug]) return NOMBRES_META[slug];
     // un código numérico largo es un ID de Meta: se muestra corto y marcado, con el ID completo al pasar el mouse
-    if(/^\d{12,}$/.test(slug)) return 'Meta · …' + slug.slice(-6);
+    if(/^\d{12,}$/.test(slug)) return 'Meta · …' + slug.slice(-9);
     const t = slug.replace(/-/g, ' ');
     return t.charAt(0).toUpperCase() + t.slice(1);
   }
@@ -7109,7 +7123,7 @@
     const n = x => x == null ? '–' : x.toLocaleString('es-AR');
     const mejor = filas.find(f => f.k && f.agendadas > 0);
     body.innerHTML = filas.map(f => `<tr class="${f === mejor ? 'utm-top' : ''}">
-      <td class="${f.k ? '' : 'utm-sin'}" ${f.k && /^\d{12,}$/.test(f.k) ? 'title="ID de Meta: ' + escapeHtml(f.k) + '"' : ''}>${f.k ? escapeHtml(utmNombreLindo(f.k)) : 'Sin UTM (sin rastrear)'}</td>
+      <td class="${f.k ? '' : 'utm-sin'}" ${f.k && /^\d{12,}$/.test(f.k) ? 'title="ID de Meta: ' + escapeHtml(f.k) + '"' : ''}>${f.k ? escapeHtml(utmNombreLindo(f.k)) : 'Sin UTM (sin rastrear)'}${utmDimension === 'cont' ? botonVerAnuncio(f.k) : ''}</td>
       <td>${n(f.leads)}</td><td>${n(f.agendadas)}</td><td>${n(f.shows)}</td><td>${n(f.cierres)}</td>
       <td>$${Math.round(f.ventas).toLocaleString('es-AR')}</td>
       <td>${f.leads ? (f.agendadas / f.leads * 100).toFixed(1) + '%' : '–'}</td></tr>`).join('');
