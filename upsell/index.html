@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEm0lEQVR42sWXy2+VVRTFf/t85765vX2X0paWggTii6YJGOThIwwMxsQHziQmEhPjH8HMoUxMTIwjSJwYE4MkhsQBWAgSQVAk2KDUFkpLaal93Nt7+51ztoPeEMCg0ErZw++Rs/Y+a+29tgACKMDOwuo9iPkgBO1FyFff/R+hKDPGyFk0fHp8aujL6nOR/WCO0BtlC+OfR2L2KkpQ5VGEEUEQvIaDpanGfa9y1gvA9pqOg6ko8U45eA+IgHkUABQCoGkTRRUfH+qbvrpXdhQ63zBivnIanIBlGULBWTE2aHgzWp2q/UyEDl3IXFimEAFV2qxCT1Bd3sPBBFUUeowIOR5TiJBbEtlUFV2iYszikAveOQr1ddTU1eKdR0SWDwAiuNjRsLKZ+uZGnIsXXQG7SBIRvCdfW8DNxwQfEJFFXYddLI1DCORq8sSVeTSE5amAiIAI1iYIGkhn0hhj8MERJSwaO3hIYj4wAA2Byvw83jk0KO3dayg0NFAulljV1cnI4DWMWQCXSCUfmJT2QeWWzKRZvX4tdU1NpLMZWtpX8faH7xF8IFfIc31giNLsLDdHRrkxNIx3bqHdLRlAtWcmkkkaWppp6+6itrGehpZmmlpX4pyjua2VTC7LxOgYLo4Zv34D7/3SK2AigyC4ELh5fZSBa/1UcACsbVrH1MQkAIc+/oQrtwaIgCQJ8lGBTC6LtRZFCf7+JJXthU69N2NjDD52FGdm8HgaGptZ++QG1m96is7162hd3U4qk6alox0NgfHRG5RmZhm9Osxg/+/0n7/AlYu/MTExRoQlV5MnspYQfNX63AeAMYY4jpmbLVLb2MDml3ew87VX6Fi3hnh+nrHhEUb+vMr4yA2uDw2x5aWdOOc4+/1J2rq6aFq1klVdHTS3tRLZBEOX/+D44W85/d0xpiYmya7IYRMJwh2yvQ1AVamUy9Q3NbFt9y42bXuO+bkyF06f4ZdTPzI8MEipXEQJWJJMM8lbe94ljmMOf/0FeQo4YgyGbGYF7d1dbHp+C89s3UwikeDM8ZP0HTnK5M0J0tnMPwEYY9jY+ywbezcxNjzCub5TDA8OApDJZEmmUpjIAIIxwvTkFC++vhsfO/qOHCVfVyAEheqdV8oVyuUSArR3d9O7cyuNrS38evonLp09f7tXyI7aLnXO0b1xPZlcjv6fLzAzOUUmt3CoVnvAnc3FGENxeoYtu17AO8eZYyfI5fN3l7bKJWABTKlETX0dG3qepjg9y5VL/VhrsapKZCOGLl+hPDdHMpWipr4ODeG+UlJAjGFutoj3HjHmXm6hqrf/TyQTJNN1eOc4d+IH0tksURShqlUZ6oJvTmcyqCrhvzSsiokMpWKJ4D3GRPAv7VdVUb8wstOZzF2zw9774QPP8SiiND1D0EAUmYcyMUuehqqKtZa/Jm4BEFm7aGdkVCk+LkumStEInDMiWl0aWKa9IBgRrZ7NAVkYW8sGAAiCiAgHosHK1KWOZH5tOrI9TtVXDY88wtUspE1k4+AO9U0PfRTtB3Ox8sQ3JlXstGJ6RBB9RGlHIhKJMbGGg6Xppn3vM4I87vX8b7ecN6X/5FkIAAAAAElFTkSuQmCC">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAlS0lEQVR42u2deZRc1X3nP/e+V3t1VW/al9aGVgsQAgmEkNjBgGNgwAlgOxOvSewsjo9znPjMkDjJxMmcEydjT2J7zsSGjM2JsR0bwmJ2rQgktKB9QVJrb6nX6trfe/fOH+9V9SIJ0N7Vul+OaLrpVlW/+rxf/e5vFVwYiaVgLQMP0JUv3pqYPEqF9Eyt9Tyl9VyBmKoF49G6WQiR1v73CoxqSVqA0Fr3IES70BzS6PekEJuFEBukI3a8ltvX9kFsnDfwLhDIbuULt9RNmqGkvkfDrRoWChghhfSvBBqtK/9lVMsSwb+FABF8prRCwwkBbwl4TSrx/Ou9+3dWfmYp2OcbbHEhQL69YUq6pNX9Ej6ttF5iC2kDeFr7EPu/BMJ/fHGBbi6ji2ypKx+Dd1oEWAKBJfyX1tXKlUIsV/BkRMhfvtK1t+d8g33OED0M1tMBoEtj48brsPX7IB61hGzRgOffpS4gBEgD7uUHugYVuCa2JSTC56IV9E9E2fvnZYXDhwazdCmAFg+DfBq8pbREVVp/WSC+bgvZ5GqNQlessIHYaDDcSIRlC4GrVYdGf0v2iO8uo7UYQK3O1lpbZ/NDj4NcBnob6JvqJt5LTPzUFtYnNcRdVNUaG5iNBhvBflxoD+UJZNIW8k4V0fdPDKcPvFDu2dmfsQtuoQN/x50/Zkw8ng9/yxLyDzQaTytXICwDsNGZW23tWULaAoGn1Xfy8fLX3zl6NF9h7YIBXXmAGxMT5liW9aQtxTVlrbx+/rGR0dmeKBWgw0JartLrPc/79Krcwa1nCrU4Y5jTLQ+GhPi/IOpd7bkCYZuXw+j8ga1dW1g26G5H68+u6mn9xZlA/aGAng+hd8BZnGp5xJLiJ75nrz1xlj64kdEHWGtPIiwhwFP60ZWZ1qcqDJ7zoXAp2G+CW4FZaa20H4IxMBtdqCSNrLgglhQPTQind71V6tm0FOzWIEpyVkBXTH1/mI2/bHSRoBaBta5CvaLU8+4HQS3fL2GyDNzFyZb77T7LLEwUw+hicq1BKK2VLcVPFidb7l8G7sPvY4jl6eLMT4O3JNkyS1o8oTRK97trjIwupqXWgNIoafHEkmTLrKfBe/w07MrTHRSXtrREtdRPSSFSCq2Nm2F0KX1qhdZSiJSW+qmlLS3R0wU1rFP5zU+AN4H6b4el9RuO1q4AE5ozGgJQ44alNdYt6vp/K/U8fyp/Wpyq0Oim1KS7LCledLUyMBsxxEJ6ri2k7Sl994rM/l8PLmjq70aI2aDvZloEob6ttdYYN8No6ElqrTVCfftupkVmD2oKsQa7GqPSdX8cFtZjLsoLajOMjIbUIVGhvbCwRuUjXve/lXpW93c9RD9LrRc1TRhjOWKrEDKl0SZEZzSE276E1lplvJCes7rj4NGAVSUD6ywBbbniSyFp1Sv8BIq5bkZD1VArtApJq95yxZcAHTDclyhZ1NSUtJzkDinEGIXxn42GvJRECKX1US+Unbm6oyMLIJf6frSW5cTHbSnHer51NjAbDfnDoYdWtpRjZTnx8cBKW/LmijMtxBcqPdhGRjVUbqqFEF8AuBmUAFhSN+4KLe1t/aIexn82qqVOc08od/by3sO7pe+M2PeFhLS139hqYDaqoeIl7YWEtJW076smVgT6Dl3tYTQyqq2+Wx0w7A+ISY5pVlZoh0A2aXMgNKo9KYGQGtUhPWemVERmCyEatQnVGVGjqXD/YNioiMyWWPoaiRT6A1pbjIyGcse4RAosfY3UWsy9AEMgjYwuRQBvrhToGSZUZzQchp8K9AyJYLTWpr3KqMbbtPxQx2iJ1s26Ov3UyKhm49GgdbMMJucbGdV8ylAIkZbanAiNhg/U2oy7NRpWrodJpBgNKxmgjQzQRkYGaCMjA7SRkQHayABtZGSANuLDBkclwjQDGaCHR4OQoJQv4JTLBmoDdI1fXCkp5PMsuG0pUz8yi2KhYKA2QNe2q1Eo57jp3juYu3A+xVIBKc0lN0DXdK2uJBKPEY3H0WhTOWOApqaX/goE9U2NRGIxcz0M0MOgRhdBLJEg3VjPoNncRgbo2rPQlrBINdYTjkTN9TBA13wfMpZtEY5ESDc1IJGYeZgG6NoFWmnscJi6+jSWJRHmchugqeGEilaKcDhMKBKmrqEeS1poY6EN0LUqpRSxRJx4MoFt20jLXG4DdE2fCTV2OISUkkgshmXbxkIboGvW50B5ikSqDsu2iSUT2KGQAdoAXbuzqTQa2w4FdR3Cr+MwQBuga9aH9hTJdAqAaDxOLBFHKWUKlAzQtelyaKWIRCMAhMIhQuEwylhoA3QtHwqj8Vi18s5U2hmga9lAo7Sirr4egEgsSqwugfI8s8rGAF3DFziIPVuWTSgURmttypMM0LUb50ik6qoW2yRWDNA1r7ogymGHQiRTKZRnVtkYoGu5GrrfQTAcDaOVMj60Abp2VYlyVPxoIwN0zRpogaCuob7P/Wio9xMr5uoYoGv2AvdzL8KRsGmUNUBT0zXRdihU/dwOGZfDAD3EgX2/9itpSerq09WvpRsbfAttTLQBekiO+CoUTw+2BiEk4aCWw49yRBBBfPp0k5aMDNCXJK/tui5T5szA8zxcxzktjP1hl9I67V9pWRa53qypxjNAX4qZdYJiIc9VixbwV0/+C55SlIolLMsa0H4VjoRJpFLVr6UaG04JvGXbnOg8xj2PPcw9jz1MtrfXZBUN0FzUOue6VJqnvvt93LLDk2++TCKdJJ/NYdl230yOkE001udyRGJR3+XQA12Mjo7jfP5Pv8Znv/FVVj7/MtFYDK1MmakBmotbGppK1fONT30RIeDJ1S8xumU8vd09fqtVMDWpf1awfwhPWhaO45DP5vizf/qf/NHf/QV//tjnaTt0mHA4bFq1DNAXH2hpWdi2zR997BES6RQ/ePVXXDF3NpnOLizLwg7ZRKLRAYkVaVlI26KQyxGORvj7n/6QR/7wi/z5o59ny9p3SDc24HmeucAG6EszpiAaj9N26DB/9lufY9SEcXz3hae56saFdHW1k0iliCbiA1yOUDhMpqOL8VMm888v/oxbHriX7/75X/HcUz+loakZ13HNhTVAXzp5rku6sYHVL7/CP37tv9M0eiT/+MxPuOH2W+k41jbgoBgKhegqtLPg9qV879X/YNb8q/nZ93/Ev/7tt2lobMZzDcznKqslWv8X5jJwxjHo/n/QEE/Wse6NlUyacQWzr72aWx+4j1gyyVWLFmAHB8Vsphcbm7964l+oq0+z6vmX+cvP/iHJVB1C9PncYtBjGJ3Ba3NTukWbbF/wMYBpQCJP9/nM1T9KoYNoh/81hVbat7BC8IPXfsU1SxadIjriIQOLveblN/jyRx/C9VxCdsg/QgqBlBIhBUJIpCWrX0MI/1A56LnpIKKita7+9+Us+3JbESGlqAKqlMZzPTzPxXM9lOehlArS05W+E1GNFdshG2lZRKJRpCWJxmKEImHCkQiJVB2RaAQrFGLdG6uYt/h6lFJ9YbwgsqGUD/+ezdu467ceREpJMV+gp7Mb5brksjlKBX/JUDFfwHVcysUiruPiOA5aqwHPTVoWlmVh2RaWbWNZVnBz+sMilVLGQg9XS1zI5Sk6eUBgYRGJxkim6kg11JNubqShuYmGEc2kGuqpq0+RSNWRSKVIplPEkwmS6TpC4TDJdAppWcQTCUKRMHbIHlCEdC5yXRe37OCUy+SzOZxymWxPhnxvlp7OLrrbO8h09dB9ooOu9nY6jh2nu72D7o5Oejq6yPVmcVQZgLAVIRaPDWgyMBZ6mMDslMtcueg6ltx3N2NbJtA8djTNo0eRbmoglkiccyVcJW6slfb94Q+ASHn+O4Go2NrAqtq2jW3bROOxAYVNH3gjOA6Zrm5OHDnG4X2tvLdlO9vWbmDL2vUU85fP9i37smpa1dB9op1INIIdDiGEwHUdUg0NxJMJP5N3ji+8kB/uICctWb0JzuUxS8UiuUyWTGcXXSc66Ghr49iBQ3Qeb6dYLF52CZrLy+XI5ymWC35pJ5KQFSISjRKvqyPVkCbV2EB9UyP1zU00jmymYUQzdfVp6psbSdTVkaxPEU8kiCbi2KEQ8WRigH99qsPf6az5YIjLpTJaKVzHoZDL4boe2Z4eCrk8mc5uspkMPR2+y9F5/ASdx9vpPhG4Gp1d5Hp6KRYKOF4ZhUIiCdthorHLy+W4rKIcQsogUiCqkQGlFMrz8II/yvUPhgrlHwiDRlfL9rOCoUjEP/zZtg+0lITCYeKJOJF4jO72Th764n/lgc99qppN7L9zRSlFqVjkm5/7I9oOHSEciVAqFMj15lDKwymVKebzeJ5HMZf3fWrH9Q+TuuKmCKTwn5O0+g6DlQiJ/27U9/uZKAfDdUWE4lRJZcu2sWx7UOhOVONi/UNjyvPI9+bQWtPd3lHNGFrSorvQyfWLb+H2hz7u7/c+pathEUskuOMT9/PHDz5KNBTz482yL+5cDdNZFhHbJhoXQYyavrmmOnhO/Z+bUqBMYuUvMDp1rFnpAV/rP6NOWrJ6I0RiMRynzBWz5vCd5/+d+uZGtq/bxItP/YyrFi2o1jgXcnl+9a8/Ztb8q5kyawZ1dSlWvfgK6cYGpJRYoT5L27++uu85nfy8zHhek/o+51Vt/SEXQlAqFonG4/z1v32PhhHNvP3qMj57x71sXrOuGvkAsEI2P/jm3/P473wJz/X45Fe/xN2P/Bc6T5xA2tYpbyAjA/TFXQykNaVCkW/+6H8z/aqP8LPv/ZA/uf+T5Lt7+0bnBr5HMV8gXpfkF088wTc++UVKhSLf+P4/cMXcOeQz2QF1H0YG6EswiNGiq7udP/2nb3HTfXfxD1/9b/yP3/sqdjhE2I7glh0GZNI1eI5LY3oEv/73n/OV+x9DSou/+/d/JRwJ4zqOqd0wQF+iw4dlcbzjCJ/906/y0O/9Dl998FM88Q//i1RjA0IIFBqnVO6brYs/Xlcphee6NI5oZs1Lr/OFW3+D5tGj+Jsf/4Ce3m4DtAH6UvQUSrK9GR781Kd55A+/yG/fcCev/sezNDWPQHkeWmksaZHNZAYkTpxSCafsIKTEdVz/8PjORh5bcCvT5s7mK3/7Tbq7Ot83hm1kgD5/JaNSIi1/eWbjiBFce/NN/P6dD7Jj/SaaR41CecoP1wXht8H1zYVcnlKx4Cc6hMBzPdJNjZw4fJRPX38HU2bP4MY7b6dUKGCHQkFcWRqrjYlDn9Vogv51yJXkiwpCeK7j+MmXoCov25Phzz77OSSSqBWn83i7H3qzLaS08DwX5fk/17/izrJtnFwBJ0iUeJlehJS0tR3mDz7+m6Tq6skXcjilMtKSQTWdjWVbp0wMmbJRUw89sHg+WO7jz9dwfXBdt5o+DoXDRGJRkukUqcZ60g0NpJsbqyny+uZG4skkdfUpQpEI6cYGbNvGCtkk0ynGTppYjSm7ZYejBw6Rz+Zwy2WcoKDIKZXo7c6Q7cnQ0XacXKaXrhMd9HR0kunq9lPbmV5KhSJOuS+17afcQ9hB/FpIeVJY0QA9rFPeoJTGdRycUhnXcVAoQnaYRKqOxhHNjJ44jtEtExg7aSLjJrcwatxYGkeNoL65kWQ6dd7KRD+s/PLR3moNR9uhIxze18rR/Qc40nqQtoOH6TrRQS7Ti+uWEUjsUCgoaw359d+a6juNAbqWAQY8z6NcKlEultBowuEIjSObGTtpIpNnz2Dq7JlMnj2dcZNbaB4zmli/plZOk1hRJ2Xp+jpJRL/PBSeXkVZrK3RlAh4DPq+6P5UU+AeokMvTfuQYh/btZ9/2XezduoO923dxZP8Buo63Uy6X/JFkQSNCJdY9XAEfFkBXDmxCgOd6lIslyqUSAMl0inGTW5h+1RxmzZ/H9Kvm0DJjGk2jRp4+/a1U8HYt/Ijb4N4+HaDYH8qBZA6IVVd+tlILcvIuln73xIBakkH11jqo4UD3+51PfWDsOHac/Tt3s2vTFrat28jud7dwZP9Bsj2Z6py9cNQHXGv6/c4G6EtkhX0LprUf7y0WiijlkayrY8IVU5h97TyuvvF65lw3j/FTJxMKn+wqeJ4HlVJO0be6WPcDqAL1pYw2qApsp7nJ+mD3f5dThf2cUpmD7+1jy9vvsGnVW2x5ez2H3ttPPpfFkhbReAw7HEb0fzwD9IW3xFJKlNaUi0WKhSK2ZTFy/FjmXHcN196ymHk33cDkWdOrndb9a5QrL7gQol+V2sAb5P27TDwK+QKF3izZTIZcJktPcKjr7ujEc11KxRKZzq5gOZDmN7/8eRpHjgBg69r1vPCTn5NM1wGC+qYGwtEokWiUdFND9WMiVUeiLkk8mSDcb1DN+z0vrXUVcjEgClLZwGWdVH+9d9sO1i9fzdrXV7Bt3UbajxyrLgutTEqtNbiHPNAViLXWlIpFSoUioXCYCVdMYf6SRdxw161cecMCGkc2n8L6EtQH84EWzJ+x4dHV3k770TbaDh6h7eBhjh8+wvHDR+loO05PRyfZnl7y2RzFfB6nXMZ1XD9KorwBs6H9j4qfbljFjKvnAvDMD3/Mn3zmk6RFI572gtG6fc2u0vIPdNFYlGg8TiLlNx7UNzczYuxoRo0fy8hxYxnTMp6R48bQMKK5ujbuVK5TZeOWkH75qUZXW8QGX4P2o21sWPEmq158hQ0r3uTIvgN4nkc0Hq+OBK4Ft8Qeytk4hMAplSjmC1i2zcQrpnDtLTex+J7bmbvwOtJNDQPflpWu9uYNDtENfrErvXf7d+yideceDu7Zx9HWg3QcP0G2u6fqwlSAs4IRXtXyTssiHIn4o75OGn/g34SFXI5CNtdvgn+YBntEv3Ff+iSfXGuNU3YoFTrpOt7e13ig/O8XSOxwiERdknRjA81jRjNuSgsTr5jK5JnTmTh9KmMmjieRqsOyrUH14HpAbbgOvialoHnMKO74xP3c8Yn76TrRwcaVb7L8P19i3RsrOdp6ADREE3FCodCQbhywh+LhTnke+WwW5SlGjh/LrQ/eyJKP3cWV119H0+iRQTjLIdebrc6Qq0QTTjWGtuPYcfbt2M2uTZvZuWEz+7bv4tiBQ2S6uimV/KHllrT6YrqhEHWRSN+5bBBwg2unT2khg/R2/zl12Z4eXNepjk14v5tZSgnhfsNnKndM8Jiu43L88FGO7D/I+uWrUSgs6XfRNI4cwfipk5g6ZyYz5l3JFVfOYcK0ycTi8QG54UqUo/+hULkeqYY0tzxwH7c8cB/HDhxi3RsrWfbMC2xYuYbO4+2EQiGiQTf5ULPa9lAJswkhKJdKlAoFEskk825axJL77uLaWxYzZuIEpCUpl0r0dHZhWxZWKIQQ8qQ9JgBH9h9g+/pNbF6zju3rNtK66z26TgQhLAShcNhPmMSjxJLxvhe13+FKnYeBiVornHK5+nm+n7X+MB3k1RvpNNcsFPZDcdUEUfC8Txw5ypH9raz+9asIBPG6JKPGj2Xq7JnMWTifuddfy7SPzCLVUD8AcM/z0IDjOBQKBTzXoy6d4s5PPMAtD9xL6849rP71ayx/9kV2v7sVp1QmGo9jh0NDBmz7UrsVWmtK+QKu6zJm4ngW3r6UxffeybS5s4nGYjilMr3d3UHfnO1PE5LSP5UHIHe2nWD7+k28s2wVm1a/zf4du+lu70BphW2HCEcjxBJx4nWJqpWtdID0933P97uN8hS93ZlBoJ6nHSv9ozGDFAqH/UNdMKbM8zyO7D/A/p27efnnvyIciTBy7BimX/UR5t10A/Nuup5pc2cTiUaxgmE4lXcWx3Eo5Asoz2Pk+HE8/Luf4aOPPsTWtet541cvsO71FXS0nSAcCVcnrV5Kd8S+VAvdlafIZ3NIy2La3Nks+dhdXHvzYprHjPYbSfMFyqUSthVC2j7EsWScWCJOuVRi77adbFi5hrWvLmfbOxs5ceQorusSCoWJRCPUNdT7JQ/q0vXb+SHFEv1HDuiL1UrmDXykcCRCJOb3Lyql6Dh+gmXPvMBrv3yWWDzB+CmTuPrGhSy4bSlzb7iOUePH+ombbBbP9dBoyqUS+WwWlGbuwmv5yIL5HN67n9UvvsaK517iwO49COEbm8rjDGugpZR4nkcukyUaj3HN0kUs/djdzL52HvFkEqdcscYhLNsiFFycWNKHeNemLax7fSVrX1/B7ne30tPVhZQW0ViURF0dQoo+gIfIjOX+FjTT2f2+S4MuPOTegEmoFXdFeR4H9+xjz5bt/Pz/PMmIsaOZu2A+1995C/NuuoExE8eDFOQyvXiOg6cU+d4snutSP6KZj3/mUZZ+/KNsWPEmy555gZ0bN+O5HtF4zA+zXkSw7YsKcm+WRCrJjR+9jcX33MmU2TOxQ7YPck9PMDXIIhQJk0wlUZ5i/87drFu2krdfXc57W7aRzfT6VjgWpb6psXqgGXIdz8L3f7P9XI6hNC53MODhWIRoIobW0Nvdw+u/fI5Xf/EsjaNGMue6eSy66zauXryQkePG4Ll+taHrurilMoVsDiEl199xC1cvvp7t6zay7JkX2LpuA8V84aKCbV8MkPPZHIlUksX33MGiu29jwrTJQRd0zq9Ms61gcEuSUCRMx7E2lj/zAm++9Do7N7xLb3dPteqtvqnRH0Ko1ftGCoaK8rlcv3FdbnWCE0NuxEPfecK2bUL1aQRQzOdZ9cIrrHzuJZrHjOKqRQtZdPdtzLluHqmGegq5PPmMi+M65DJFPE8xY96VTLtyNnve3caK537NlrfXU8jliMTjflLrAoJtX6iohVaKQi5PLBFn4R03c8OdtzBucgtaafKZrB8es21/SEsqiVMqs3nNWt58+XU2rXqb9mNtWJYkGov7CysDP7gWIO6r0RgY1sv29CArWUqG+DiHwHpblkUynUIAuUwvr/3iWd745XOMmzqJBbcuYeEdNzNh6mTCxMj1ZHCdIoVcDs/zmDh9Ko9O+132bt/FyudfYvu6jbiOSyQWPckdG5JAVxIYpUKBUDjMVYsWsPCOm32QtSYXgGyH/FkWlUlDy5/7NW+9sox923fiOg7RWDCosAJxDe8cKeYLAw6FtdZ9MgBu2yYZvC7HDhzmZ9/7IS/8+Glmzb+aRXffxuxr55GsT5Pr7cXLFSgV/HHA4ya38PDvfYa9W3ew6sVXeW/LdtAQikaqYdKhBXSQjfObQjVT58xkwa1LmTh9CgIRrDvzM2uxYC7cob37WfvaCjasXENH2/Hqgp1oPO77xDW/OMcPz2W6uumrudAnVdHVKtzhSJhoLIrneWxY+SbrV7zJ+CmTWHDbEuYvvZHGUSOC+db+zD3luoyfMpkHv/Db7Nm0lTWvLOPwvv3VJoXz5YbY56PqTbkeZcdl1PgxXLNkEVPnzMQOhSjk8v5koWg0GGwo2blxM2+/tpwd6zeRz+aJBt0g1bLNYbYBqnJjaqXIZ7N+BnAYlGlqravvnPFkEoC2Q4f5+fd/xKu/eJarFy1kwW1LGD1xPHbZIdfrg+25HpNmTWd0ywS2v7OR9ctX093eWY2bn6u1ts91yEq5WCJRl2TekmuYOe9KP05cLOG6HtGYD7JWmi1vr2ftayvYt31nNaSTTKeGiTU+tYEWiGqm0HM9f06zFMNyG1hfQidKMV9g2bMv8Pary5k1/yquu20J46dO9jvhe3sp5gso12PmNVcxdtJENq9Zx44N7+KUy4TC4XPqkbTPFmbXdRFCMGXWDGZfN4/65ia0UhQLBd8iJxJordjy1ju8s2wVh97bDwIi0SgiKqpTP4erNP7y+t6uHhi0t0UP59mAnodlWSRSdShPsWHlGra8/Q7T5s7m2psXM37qJKSU5HoylHJ+d/vVN13P2EkTeXfNWo62HsKy+rrrLwrQTtkh3dTAjKvnMqZlApZlUcrnCUejxGJxhBRsX7+JjavWcGT/AaS0iMRjNVOCeB4byXEcpzph3z8Uystj6GWQqYwnE2it2bHhXXa/u5Ups2cEyZoJQbImS7lYJNVYz4LblrB/xx52v7uFfC5/Uk37BQFaSknL9Km0zJhGLJGgVCwSjkRIpuqwQyH27djF5jXrONJ6ACkl0XjcP8kqdVmORqgkU0qFIsVc3q8GvIy6sSvuSCweR2vNni3b2bd9F5NnTWduUD2plSLfm8MpO4ydNJG6dIo9W7fTfrTtwgEthMB1XNKjGpkwbTJa+ZVk8bokkWiUtkNH2P7ORg7vO4AQ/tZUNJcnyIEPKKUk35vtK1bSGnEZb90FiMRiEIC9f+cepsyewcxrriJRl8R1HQr5HJZtM2XOTErFIt3tndi2/aHf1c/a5QhH/Un2uUwv765ey6H39uJ5inAkfFIx+eUqIf1Ru5UsoVs2wxh1P7C1UuzatIUDu95jyuwZtMy8gnAsSrmUwXPdU9a2XxCgQ+EQyvPYtXELB97bS7lYIhQJY53BnTTsX7g+Qw1APpulmM9XS2Yv++vTD2zP89j2ziYO7NnL5JnTaR4zyvef1QWPcvgvxIkjbRzYs5d8b5ZQyCYciQQjqcwLNdBNk37JaL+VEWZK3clgCyGIxPxw35a166lvamTitCl+iPMMb377TE6ulm2T6eqm60Q74GeLzLT59/GhLekv/ik7OI6L8jysUMjMoTsN2JWtuJnObrav34Rl22ccvpNn9cDy7OOEl+PeFgTkenrMQPMPue6jsiLvbK6XPJcHN/qAiytEMPwxWBWntHE5zqAp4mxufjMf+gK+KJXF9PlcDqX05RvCNAPPh4+8YKJ/b1d3db2bkQG6ZjOFWik8x8F1HBMFMkDX/lhfNyid9MOaxuUwQNcy0ICnFE7Zn9SvqO0CfwO0UTUaVC6WhnHhqAH6sjHRSitymd4hO9zQAG10BjwLFIpsppfe7p5qJ7iRAbrm3Y5SoWiugwG69l0Ojfa7ngcsCzIyQNewuo63k+3JIM3lNkAPh9BduVSimM8HayGMDNDDoPvbsmyTKcTs+q7xGl9NJBxl/fLVdB5vJxyOmAIls9at9peClopFpLQIhUOmhtxY6NovI610OhuYDdDDqiHU6OIcCo3ZMBo2tkMKTFeQ0bAJkQqpte4xRBsNh3i/1rpHIkR7sNjXuB5GNetqBBt32yWaY8F+RgO0Ua0mr7TwCxmPSY3YiSmbMRoGk9c0YqcUQm8250KjYVF9LvRmiSfWK5QWpq7DqHYPhFKhNJ5YLyWlbVrrTuF3b5oMgFGtSQmE0Fp3Skrb5LLs0XbgbctfCGn8aKOaOxBafif928uyR9tl4Ey/LMzAOqMarZYRAcMQ+M1Suf/paOUKhGWiHUY1Fn+2HK1cqdz/BJCPg1zee3g3mjcDt8P40Ua14m4oy0+ivLm89/Dux0HKNwIrrbX+gTBjfYyowWCd1j8AeAOkqKyEXNTUlLSc5A4pxBjl+9ImjGc0lKUkQiitj3qh7MzVHR3ZavnoUrBWd3T0IvSPLCGEcTuMasTdEAj9o9UdHb1LwfJ9avrqohc1TRhjOWKrEDKl/f9nXBCjoXoY1FqrjBfSc1Z3HDwasKoqboXyrfTBI0qIv7aFkBrtmetmNDSts/ZsIaQS4q9Xdxw8ElhnNWilOuJxEG8xLZRLlzdI5EzPj/EZX9poaLkaCKFQOxI94XkL2eP8pR9q1oPncuhtIF5kTwktvyKESYUbDdFUtxACLb/yIntK2wZNwLT6f+c2/4BoLy917x4fSTeHhbzeQ7vGShsNEevshoW0Ha2+uzLT+p2lYD8P3vtOTloG3uMgrXq+5ihvky2ErQf9kJHRJYDZs4WwHeVtsur52uMgl52CS3m6Yullra1FocQjSuuMxITyjC6t3xzEnDNCiUeWtbYWT9eUctqw3MNgPQ3e4mTL/bYt/sPTWgUbQkwoz+jitlf5FXXSdfUDK7Otv6ywearvt073F1X86RXlnm3jw+ldlhQP9bsjDNRGFynejJZCSE/pR1f2tv7sVH7zhwIaoNWPT9srSj3vTgig1n6NqTaW2uhCuxnCXy/tw5xpfWop2MvAfb+fsz7oL24FNR9Cb5V6NlWgFr5P7Znoh9GFOgBKhCWFEBWY50PozQ+A+UMBDXC0n6UeH0lvtoW4SwoZVyhXIAzURuczC+jawrKFoNvV+rFVmdanl4L9YWA+Y1+4YvJvTEyYY1nWk7YU15S18vwlwMZaG52biwHosJCWq/R6z/M+vSp3cOuHcTPO2EKf5FM7mbbmxtj/sxyZsoW8XgiEQrtBPbXxrY3OcEeY9iwhLUtI6Wr1nXyi/NhbnYePnCnMZx2teBzkXwZx6ZvqJt4rpPiWJeRHPK0J3BDLgG30YUCWSNsSAk+rLVrpr6/oPfDcYMYuONCVn30Y5NPgLaUlqtL6ywLxdVvIJldrVFCtF7giBm6jShe2ApD4jrKrVYdGf0v2iO8uo7UYxJjV2fa2njNo/YPcS2Pjxuuw9fsgHrWEbNGApxXaf9sQBu7LGmItwLaERPhctIL+iSh7/7yscPjQYJbOZQrp+ZBYClbF37m9YUq6pNX9Ej6ttF5iC2kDeFrj/0PFevf3uQ3ow2C+XACwDl5QSyAI5mbgauVKIZYreDIi5C9f6drb0y/Y4J2PiQPnG6IBYAPcUjdphpL6Hg23algoYIQMIn0aHUwCMQvPGAbzmf2WVX/HOYDy351PCHhLwGtSiedf792/c1DUzDufozMulFWsgD3gyd6amDxKhfRMrfU8pfVcgZiqBePRulkIkQ7ubGOpay89LbTWPQjRLjSHNPo9KcRmIcQG6Ygdr+X2tX0QG+dL/x9JtiqfeAIsHAAAAABJRU5ErkJggg==">
+<meta name="robots" content="noindex, nofollow">
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oferta Estrategia y Coaching SHU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Layout: secciones centradas a todo lo ancho que alternan dos negros; tarjetas vino con borde fino; un solo tema oscuro por decisión de marca. */
+  :root {
+    color-scheme: dark;
+    --bg: #090708;
+    --bg-alt: #100c0d;
+    --card: #1b0e13;
+    --card-hi: #27101a;
+    --line: #4b2331;
+    --line-soft: #2a171d;
+    --rose: #b8687f;
+    --wine: #8f2a3c;
+    --cream: #f4ecdf;
+    --muted: #a8999d;
+    --display: "Playfair Display", "Larken", Georgia, "Times New Roman", serif;
+    --body: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--cream);
+    font-family: var(--body);
+    font-weight: 300;
+    font-size: 17px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, p { margin: 0; }
+  h1, h2, h3 { font-family: var(--display); font-weight: 500; text-wrap: balance; }
+  a { color: inherit; }
+  .rose { color: var(--rose); }
+
+  section { padding: 104px 24px; }
+  section.alt { background: var(--bg-alt); }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .narrow { max-width: 820px; margin: 0 auto; }
+
+  .head { display: grid; gap: 28px; justify-items: center; text-align: center; margin-bottom: 64px; }
+  .eyebrow {
+    display: flex; align-items: center; gap: 20px;
+    font-size: 12px; font-weight: 500; letter-spacing: 0.42em; text-transform: uppercase; color: var(--rose);
+  }
+  .eyebrow::before, .eyebrow::after { content: ""; width: 44px; height: 1px; background: var(--rose); opacity: 0.7; }
+  h2 { font-size: clamp(34px, 5vw, 58px); line-height: 1.15; max-width: 20ch; }
+  .lead { color: var(--muted); font-size: 18px; max-width: 58ch; }
+
+  /* Hero */
+  .hero { padding: 96px 24px 88px; background: radial-gradient(90% 70% at 50% 0%, #1e0d14 0%, var(--bg) 70%); }
+  .hero .wrap { display: grid; gap: 36px; justify-items: center; text-align: center; }
+  h1 { font-size: clamp(38px, 6.2vw, 72px); line-height: 1.1; max-width: 17ch; }
+  .hero .lead { font-size: 19px; max-width: 62ch; }
+  .btn {
+    display: inline-block; padding: 18px 40px; border-radius: 4px;
+    background: var(--rose); color: #14090d; text-decoration: none;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
+    transition: background 0.2s ease;
+  }
+  .btn:hover { background: #c97d93; }
+  .btn:focus-visible, a:focus-visible { outline: 2px solid var(--cream); outline-offset: 4px; }
+
+  .strip {
+    display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 900px; margin-top: 20px;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--card);
+  }
+  .strip div { padding: 26px 20px; display: grid; gap: 4px; justify-items: center; align-content: start; }
+  .strip div + div { border-left: 1px solid var(--line-soft); }
+  .strip b { font-family: var(--display); font-weight: 500; font-size: 34px; line-height: 1; color: var(--rose); }
+  .strip span { font-size: 14px; color: var(--muted); line-height: 1.5; }
+
+  /* Tarjetas */
+  .grid { display: grid; gap: 28px; }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 6px;
+    padding: 44px 36px; display: grid; gap: 16px; align-content: start;
+  }
+  .card.glow { background: linear-gradient(135deg, var(--card-hi) 0%, #170c11 100%); }
+  .card h3 { font-size: 25px; line-height: 1.25; }
+  .card p { color: var(--muted); font-size: 16px; }
+  .card p strong { color: var(--cream); font-weight: 500; }
+
+  .step { display: flex; align-items: center; gap: 18px; margin-bottom: 26px; font-family: var(--display); font-size: 28px; color: var(--wine); line-height: 1; }
+  .step::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line), transparent); }
+
+  .star { width: 22px; height: 22px; margin-bottom: 22px; fill: var(--rose); }
+  .tri { width: 14px; height: 18px; margin-bottom: 22px; fill: var(--rose); }
+
+  /* Franja de guiones */
+  .feature {
+    margin-top: 28px; padding: 44px 48px; border: 1px solid var(--rose); border-radius: 6px;
+    background: linear-gradient(135deg, var(--card-hi) 0%, #170c11 100%);
+    display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: center;
+  }
+  .feature .tag { font-size: 12px; font-weight: 500; letter-spacing: 0.36em; text-transform: uppercase; color: var(--rose); margin-bottom: 14px; }
+  .feature h3 { font-size: clamp(28px, 3.4vw, 38px); line-height: 1.2; }
+  .feature ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+  .feature li { color: var(--muted); font-size: 17px; padding-left: 26px; position: relative; }
+  .feature li::before { content: ""; position: absolute; left: 0; top: 0.72em; width: 12px; height: 1px; background: var(--rose); }
+  .feature li strong { color: var(--cream); font-weight: 500; }
+
+  /* Coaching */
+  .big { text-align: center; justify-items: center; padding: 64px 40px; }
+  .big .num { font-family: var(--display); font-weight: 500; font-size: 92px; line-height: 1; color: var(--rose); }
+  .big h3 { font-size: 30px; }
+  .big p { max-width: 40ch; font-size: 17px; }
+
+  .weeks { margin-top: 28px; padding: 36px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); display: grid; grid-template-columns: 1fr 1fr; gap: 36px; }
+  .month { display: grid; gap: 18px; }
+  .month > span { font-size: 12px; font-weight: 500; letter-spacing: 0.32em; text-transform: uppercase; color: var(--rose); }
+  .month ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .month li { border: 1px solid var(--line-soft); border-radius: 4px; padding: 14px 8px; text-align: center; display: grid; gap: 2px; }
+  .month li b { font-family: var(--display); font-weight: 500; font-size: 26px; line-height: 1.1; color: var(--cream); }
+  .month li small { font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+  .weeks-note { margin-top: 16px; text-align: center; color: var(--muted); font-size: 15px; }
+
+  .subhead { margin: 72px 0 32px; text-align: center; font-size: 30px; }
+
+  /* Tabla de valor */
+  .stack { border: 1px solid var(--line); border-radius: 6px; background: var(--card); overflow: hidden; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; padding: 30px 36px; border-bottom: 1px solid var(--line-soft); }
+  .row span { font-size: 17px; }
+  .row span small { display: block; font-size: 14px; color: var(--muted); margin-top: 2px; }
+  .row b { font-family: var(--display); font-weight: 500; font-size: 22px; color: var(--rose); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .row b.inc { font-family: var(--body); font-size: 12px; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase; }
+  .row.total { border-bottom: 0; border-top: 1px solid var(--wine); background: linear-gradient(135deg, var(--card-hi) 0%, #170c11 100%); padding: 38px 36px; }
+  .row.total span { font-family: var(--display); font-weight: 600; font-size: 26px; }
+  .row.total b { font-size: 36px; }
+
+  /* Inversión */
+  .invest { text-align: center; justify-items: center; padding: 64px 40px; gap: 22px; }
+  .invest .was { color: var(--muted); font-size: 16px; }
+  .invest .was s { font-family: var(--display); font-size: 22px; margin-left: 8px; }
+  .price { font-family: var(--display); font-weight: 500; font-size: clamp(60px, 10vw, 104px); line-height: 1; color: var(--cream); font-variant-numeric: tabular-nums; }
+  .invest p.note { color: var(--muted); font-size: 15px; max-width: 52ch; }
+
+  footer { padding: 40px 24px; text-align: center; border-top: 1px solid var(--line-soft); font-size: 12px; letter-spacing: 0.36em; text-transform: uppercase; color: var(--muted); }
+
+  @media (max-width: 980px) {
+    .g4 { grid-template-columns: repeat(2, 1fr); }
+    .g3 { grid-template-columns: 1fr; }
+    .weeks { grid-template-columns: 1fr; }
+    .feature { grid-template-columns: 1fr; gap: 28px; }
+  }
+  @media (max-width: 640px) {
+    section { padding: 72px 18px; }
+    .hero { padding: 64px 18px; }
+    .head { margin-bottom: 44px; }
+    .g2, .g4 { grid-template-columns: 1fr; }
+    .strip { grid-template-columns: 1fr; }
+    .strip div + div { border-left: 0; border-top: 1px solid var(--line-soft); }
+    .card { padding: 34px 26px; }
+    .feature { padding: 34px 26px; }
+    .big { padding: 44px 26px; }
+    .big .num { font-size: 72px; }
+    .weeks { padding: 24px 18px; }
+    .row { padding: 22px 20px; }
+    .row.total { padding: 28px 20px; }
+    .row.total b { font-size: 30px; }
+    .eyebrow { letter-spacing: 0.3em; gap: 12px; }
+    .eyebrow::before, .eyebrow::after { width: 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .btn { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Step Her Up</div>
+    <h1>Tu marca personal con estrategia, oferta y <span class="rose">dos meses de coaching 1 a 1.</span></h1>
+    <p class="lead">Sales con tu estrategia de marca personal hecha, con guiones escritos por Gianie, tu perfil optimizado y tu oferta paquetizada con precio. Después tienes una llamada 1 a 1 cada semana durante dos meses para revisar tu contenido, tus anuncios y todo lo que vayas aplicando.</p>
+    <a class="btn" href="#incluye">Ver lo que incluye</a>
+    <div class="strip">
+      <div><b>1</b><span>Estrategia de marca personal con guiones escritos por Gianie</span></div>
+      <div><b>1</b><span>Oferta paquetizada con precio</span></div>
+      <div><b>8</b><span>Llamadas 1 a 1, una por semana</span></div>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Cómo funciona</div>
+      <h2>Cuatro piezas que trabajan <span class="rose">juntas.</span></h2>
+    </div>
+    <div class="grid g2">
+      <article class="card glow">
+        <div class="step">01</div>
+        <h3>Estrategia de marca personal</h3>
+        <p>Construimos contigo la estructura de tu marca personal y tu presencia digital para posicionarte con autoridad. Incluye guiones escritos por Gianie para tu contenido orgánico y tus anuncios.</p>
+      </article>
+      <article class="card glow">
+        <div class="step">02</div>
+        <h3>Análisis y optimización de perfil</h3>
+        <p>Analizamos tu perfil de Instagram y te decimos qué poner en tu bio y cómo optimizar el resto para que quien llegue entienda a qué te dedicas.</p>
+      </article>
+      <article class="card glow">
+        <div class="step">03</div>
+        <h3>Paquetización de precio y oferta</h3>
+        <p>Definimos qué vendes, qué incluye cada paquete y cuánto cobras, para que tu oferta se entienda y se pueda comprar.</p>
+      </article>
+      <article class="card glow">
+        <div class="step">04</div>
+        <h3>Dos meses de coaching 1 a 1</h3>
+        <p>Una llamada 1 a 1 cada semana, ocho en total, para analizar tu contenido, tus anuncios y lo que aplicaste, y ajustar lo que no esté dando resultado.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Lo que trabajamos juntas</div>
+      <h2>Tu estrategia de marca personal, <span class="rose">completa.</span></h2>
+      <p class="lead">No es teoría. Sales con tu estrategia diseñada en cuatro frentes:</p>
+    </div>
+    <div class="grid g4">
+      <article class="card">
+        <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c1.2 6.6 5.4 10.8 12 12-6.6 1.2-10.8 5.4-12 12-1.2-6.6-5.4-10.8-12-12 6.6-1.2 10.8-5.4 12-12z"/></svg>
+        <h3>Contenido orgánico</h3>
+        <p>Tu línea editorial, pilares de contenido y sistema para crear sin agotarte. <strong>Con guiones escritos por Gianie para que empieces a grabar.</strong></p>
+      </article>
+      <article class="card">
+        <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c1.2 6.6 5.4 10.8 12 12-6.6 1.2-10.8 5.4-12 12-1.2-6.6-5.4-10.8-12-12 6.6-1.2 10.8-5.4 12-12z"/></svg>
+        <h3>Meta Ads</h3>
+        <p>La estrategia de pauta para amplificar tu mensaje y atraer clientas calificadas. <strong>Con guiones escritos por Gianie para tus primeros anuncios.</strong></p>
+      </article>
+      <article class="card">
+        <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c1.2 6.6 5.4 10.8 12 12-6.6 1.2-10.8 5.4-12 12-1.2-6.6-5.4-10.8-12-12 6.6-1.2 10.8-5.4 12-12z"/></svg>
+        <h3>Ideas para comenzar</h3>
+        <p>Un banco de ideas accionables para que ejecutes desde la primera semana.</p>
+      </article>
+      <article class="card">
+        <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c1.2 6.6 5.4 10.8 12 12-6.6 1.2-10.8 5.4-12 12-1.2-6.6-5.4-10.8-12-12 6.6-1.2 10.8-5.4 12-12z"/></svg>
+        <h3>Embudo de venta</h3>
+        <p>El camino completo de tu clienta: de descubrirte en redes a comprarte.</p>
+      </article>
+    </div>
+
+    <div class="feature">
+      <div>
+        <div class="tag">Incluido en tu estrategia</div>
+        <h3>Tus primeros guiones los escribe <span class="rose">Gianie.</span></h3>
+      </div>
+      <ul>
+        <li><strong>Guiones para tu contenido orgánico.</strong> Los recibes escritos para que empieces a grabar y publicar.</li>
+        <li><strong>Guiones para tus anuncios en Meta.</strong> Los recibes escritos para que montes tus primeros anuncios.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Tu perfil</div>
+      <h2>Tu perfil de Instagram, analizado <span class="rose">y optimizado.</span></h2>
+      <p class="lead">Revisamos tu perfil como lo ve una clienta que llega por primera vez y te decimos qué cambiar.</p>
+    </div>
+    <div class="grid g4">
+      <article class="card">
+        <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c1.2 6.6 5.4 10.8 12 12-6.6 1.2-10.8 5.4-12 12-1.2-6.6-5.4-10.8-12-12 6.6-1.2 10.8-5.4 12-12z"/></svg>
+        <h3>Tu bio</h3>
+        <p>Qué vas a poner en tu bio para que se entienda a qué te dedicas, a quién ayudas y cómo te contratan.</p>
+      </article>
+      <article class="card">
+        <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c1.2 6.6 5.4 10.8 12 12-6.6 1.2-10.8 5.4-12 12-1.2-6.6-5.4-10.8-12-12 6.6-1.2 10.8-5.4 12-12z"/></svg>
+        <h3>Nombre y foto</h3>
+        <p>El nombre del perfil con las palabras por las que te buscan y la foto que te representa como profesional.</p>
+      </article>
+      <article class="card">
+        <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c1.2 6.6 5.4 10.8 12 12-6.6 1.2-10.8 5.4-12 12-1.2-6.6-5.4-10.8-12-12 6.6-1.2 10.8-5.4 12-12z"/></svg>
+        <h3>Destacadas</h3>
+        <p>Cuáles destacadas dejar, cuáles borrar y en qué orden ponerlas.</p>
+      </article>
+      <article class="card">
+        <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c1.2 6.6 5.4 10.8 12 12-6.6 1.2-10.8 5.4-12 12-1.2-6.6-5.4-10.8-12-12 6.6-1.2 10.8-5.4 12-12z"/></svg>
+        <h3>Publicaciones pineadas</h3>
+        <p>Las tres publicaciones que se quedan fijas arriba para presentarte y presentar tu oferta.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Tu oferta</div>
+      <h2>Lo que sabes hacer, con nombre <span class="rose">y con precio.</span></h2>
+      <p class="lead">Paquetizamos tu oferta contigo para que tu clienta entienda qué compra, qué recibe y cuánto cuesta.</p>
+    </div>
+    <div class="grid g2">
+      <article class="card glow">
+        <div class="step">A</div>
+        <h3>Qué vendes</h3>
+        <p>Escogemos el servicio o programa principal de tu marca y a quién se lo vendes.</p>
+      </article>
+      <article class="card glow">
+        <div class="step">B</div>
+        <h3>Qué incluye</h3>
+        <p>Armamos tus paquetes por escrito: entregables, duración y límites de cada uno.</p>
+      </article>
+      <article class="card glow">
+        <div class="step">C</div>
+        <h3>Cuánto cobras</h3>
+        <p>Le ponemos precio a cada paquete y definimos las opciones de pago.</p>
+      </article>
+      <article class="card glow">
+        <div class="step">D</div>
+        <h3>Cómo la presentas</h3>
+        <p>Dejamos lista la explicación de tu oferta para tus redes, tus mensajes y tus llamadas de venta.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Acompañamiento</div>
+      <h2>No caminas <span class="rose">sola.</span></h2>
+    </div>
+    <div class="grid g2">
+      <article class="card glow big">
+        <div class="num">2</div>
+        <h3>Meses de coaching 1 a 1</h3>
+        <p>Dos meses de acompañamiento 1 a 1 mientras pones en práctica tu estrategia y tu oferta.</p>
+      </article>
+      <article class="card glow big">
+        <div class="num">8</div>
+        <h3>Llamadas 1 a 1</h3>
+        <p>Una llamada cada semana, ocho en total, para optimizar y analizar lo que publicaste, lo que pautaste y lo que aplicaste.</p>
+      </article>
+    </div>
+
+    <div class="weeks" aria-label="Calendario: una llamada 1 a 1 por semana durante 8 semanas">
+      <div class="month">
+        <span>Mes 1</span>
+        <ol>
+          <li><b>1</b><small>Semana</small></li>
+          <li><b>2</b><small>Semana</small></li>
+          <li><b>3</b><small>Semana</small></li>
+          <li><b>4</b><small>Semana</small></li>
+        </ol>
+      </div>
+      <div class="month">
+        <span>Mes 2</span>
+        <ol start="5">
+          <li><b>5</b><small>Semana</small></li>
+          <li><b>6</b><small>Semana</small></li>
+          <li><b>7</b><small>Semana</small></li>
+          <li><b>8</b><small>Semana</small></li>
+        </ol>
+      </div>
+    </div>
+    <p class="weeks-note">Una llamada 1 a 1 por semana. Ocho llamadas en total.</p>
+
+    <h3 class="subhead">En cada llamada revisamos</h3>
+    <div class="grid g3">
+      <article class="card">
+        <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c1.2 6.6 5.4 10.8 12 12-6.6 1.2-10.8 5.4-12 12-1.2-6.6-5.4-10.8-12-12 6.6-1.2 10.8-5.4 12-12z"/></svg>
+        <h3>Tu contenido</h3>
+        <p>Lo que publicaste esa semana: el hook, la retención, los guardados y los compartidos, y qué grabar después.</p>
+      </article>
+      <article class="card">
+        <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c1.2 6.6 5.4 10.8 12 12-6.6 1.2-10.8 5.4-12 12-1.2-6.6-5.4-10.8-12-12 6.6-1.2 10.8-5.4 12-12z"/></svg>
+        <h3>Tus anuncios</h3>
+        <p>Los números de tus anuncios en Meta: cuánto gastaste, cuánto te costó cada mensaje y qué anuncio se queda o se apaga.</p>
+      </article>
+      <article class="card">
+        <svg class="star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c1.2 6.6 5.4 10.8 12 12-6.6 1.2-10.8 5.4-12 12-1.2-6.6-5.4-10.8-12-12 6.6-1.2 10.8-5.4 12-12z"/></svg>
+        <h3>Todo lo aplicado</h3>
+        <p>Tu perfil, tu oferta, tu embudo y tus conversaciones de venta, para ajustar lo que haga falta antes de la próxima semana.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <div class="head">
+      <div class="eyebrow">Bono</div>
+      <h2>Acceso a la <span class="rose">plataforma.</span></h2>
+      <p class="lead">Entras a la plataforma de Step Her Up, donde están los adiestramientos grabados. Entre ellos:</p>
+    </div>
+    <div class="grid g2">
+      <article class="card">
+        <svg class="tri" viewBox="0 0 14 18" aria-hidden="true"><path d="M0 0l14 9L0 18z"/></svg>
+        <h3>Cómo editar con Claude</h3>
+        <p>El paso a paso para editar tu contenido con Claude.</p>
+      </article>
+      <article class="card">
+        <svg class="tri" viewBox="0 0 14 18" aria-hidden="true"><path d="M0 0l14 9L0 18z"/></svg>
+        <h3>Automatizaciones de ManyChat</h3>
+        <p>Cómo montar tus automatizaciones en ManyChat para contestar comentarios y mensajes de Instagram.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="incluye">
+  <div class="wrap">
+    <div class="head">
+      <h2>Todo lo que recibes.</h2>
+    </div>
+    <div class="narrow">
+      <div class="stack">
+        <div class="row"><span>Estrategia de marca personal completa<small>Con guiones escritos por Gianie para contenido orgánico y Meta Ads</small></span><b>$1,997</b></div>
+        <div class="row"><span>Análisis y optimización de perfil</span><b class="inc">Incluido</b></div>
+        <div class="row"><span>Paquetización de precio y oferta</span><b>$497</b></div>
+        <div class="row"><span>2 meses de coaching 1 a 1<small>8 llamadas 1 a 1, una por semana</small></span><b>$2,376</b></div>
+        <div class="row"><span>Bono: acceso a la plataforma<small>Cómo editar con Claude y automatizaciones de ManyChat</small></span><b class="inc">Incluido</b></div>
+        <div class="row total"><span>Valor total</span><b>$6,500</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="inversion">
+  <div class="wrap">
+    <div class="narrow">
+      <div class="card glow invest">
+        <div class="eyebrow">Tu inversión</div>
+        <p class="was">Valor total <s>$6,500</s></p>
+        <div class="price">$2,497</div>
+        <p class="note">Estrategia de marca personal con guiones escritos por Gianie, análisis y optimización de perfil, paquetización de precio y oferta, 2 meses de coaching 1 a 1 y acceso a la plataforma.</p>
+        <!-- ENLACE: cambia el href por el link de agenda o de pago -->
+        <a class="btn" href="#inversion">Quiero mi estrategia</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>Step Her Up</footer>
+
+</body>
+</html>
