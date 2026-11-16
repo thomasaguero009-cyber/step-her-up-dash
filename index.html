@@ -7084,14 +7084,28 @@
     '120253946665660248': 'AD CUATRO',
     '120253946715940248': 'AD CINCO',
     '120253946751710248': 'AD SEIS',
+    // Campaña "SHU 100k" (la de antes de la nueva)
+    '120253886170810248': 'AD #1 · SHU 100k',
+    '120253886170820248': 'AD #2 · SHU 100k',
+    '120253886170840248': 'AD #3 · SHU 100k',
+    '120253886170830248': 'AD #4 · SHU 100k',
+    '120253821415480248': 'AD #1 · SHU 100k (conjunto viejo)',
+    '120253884659320248': 'AD #2 · SHU 100k (conjunto viejo)',
+    '120253885658800248': 'AD #4 · SHU 100k (conjunto viejo)',
+    // Campaña "Webinar Octubre"
+    '120253475974240248': 'FLYER #1 · Webinar Octubre',
+    '120253476048970248': 'FLYER #1 · Webinar Octubre',
+    '120253475700090248': 'FLYER #2 · Webinar Octubre',
+    '120253476048980248': 'FLYER #2 · Webinar Octubre',
   };
+  // Nombre que trae la hoja Ads -> ID del anuncio (el principal de cada uno).
+  const IDS_HOJA_ADS = { 'AD #1': '120253886170810248', 'AD #2': '120253886170820248', 'AD #3': '120253886170840248', 'AD #4': '120253886170830248' };
   // Botón que abre el anuncio en el Administrador de anuncios de Meta (vista de tabla, no la de edición). Solo para IDs de Meta (número largo).
   const META_CUENTA = { act: '1145720454196838', business: '197930401405712' };
-  // La hoja Ads trae el nombre del anuncio, no su ID. Solo se resuelve para los de NOMBRES_META (AD UNO a AD SEIS);
-  // "AD #1…#4" son de la campaña vieja "SHU 100k" y no se confunden con estos.
+  // La hoja Ads trae el nombre del anuncio, no su ID: AD UNO a AD SEIS salen de NOMBRES_META y AD #1 a #4 (campaña "SHU 100k") de IDS_HOJA_ADS.
   function idMetaPorNombre(nombre){
     const n = String(nombre || '').trim().toUpperCase();
-    return Object.keys(NOMBRES_META).find(id => NOMBRES_META[id].toUpperCase() === n) || '';
+    return IDS_HOJA_ADS[n] || Object.keys(NOMBRES_META).find(id => NOMBRES_META[id].toUpperCase() === n) || '';
   }
   function botonVerAnuncio(id){
     if(!/^\d{12,}$/.test(id || '')) return '';
