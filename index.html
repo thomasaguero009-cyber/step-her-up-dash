@@ -1296,6 +1296,20 @@
   @media (max-width:620px){ .tabla-campanas{ font-size:12px; } .tabla-campanas th{ font-size:9px; letter-spacing:0; padding:8px 3px; white-space:normal; } .tabla-campanas td{ padding:9px 3px; white-space:normal; } .tabla-campanas th:first-child, .tabla-campanas td:first-child{ min-width:0; width:34%; padding-left:8px; } .estado-ads{ padding:1px 5px; font-size:9px; } }
   .estado-ads{ display:inline-block; padding:2px 10px; border-radius:99px; font-size:11px; font-weight:600; border:1px solid var(--border); color:var(--text-dim); }
   .estado-ads.verde{ color:#7fe0a8; border-color:rgba(127,224,168,.5); background:rgba(127,224,168,.1); }
+  .sa-pill{ display:inline-block; padding:2px 10px; border-radius:99px; font-size:11.5px; font-weight:600; border:1px solid var(--border); }
+  .sa-pill.cerrada{ color:#7fe0a8; border-color:rgba(127,224,168,.5); background:rgba(127,224,168,.1); }
+  .sa-pill.pendiente{ color:#e9c46a; border-color:rgba(233,196,106,.5); background:rgba(233,196,106,.1); }
+  .sa-pill.perdida{ color:#ff9b9b; border-color:rgba(255,155,155,.5); background:rgba(255,155,155,.1); }
+  .sa-ejemplo{ background:rgba(233,196,106,.12); border:1px solid rgba(233,196,106,.45); color:#e9c46a; border-radius:12px; padding:10px 14px; font-size:13px; margin-bottom:14px; }
+  .sa-clave{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0 14px; }
+  .sa-clave input{ flex:1 1 240px; min-width:200px; padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:rgba(0,0,0,.25); color:var(--cream); font:inherit; }
+  .sa-fila{ cursor:pointer; } .sa-fila:hover td{ background:rgba(255,255,255,.04); }
+  .sa-det td{ white-space:normal !important; text-align:left !important; background:rgba(0,0,0,.18); }
+  .sa-rev{ font-size:13.5px; line-height:1.55; max-width:860px; }
+  .sa-mot{ display:grid; grid-template-columns:auto 1fr; gap:22px; align-items:center; }
+  .sa-mot-lista{ display:flex; flex-direction:column; gap:8px; font-size:14px; }
+  .sa-mot-lista i{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; }
+  @media (max-width:620px){ .sa-mot{ grid-template-columns:1fr; justify-items:center; } }
   .estado-ads.rojo{ color:#ff9b9b; border-color:rgba(255,155,155,.5); background:rgba(255,155,155,.1); }
   .ranking-table{ background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden; margin-bottom:10px; }
   .ranking-head-row, .ranking-row{
@@ -1734,6 +1748,7 @@
         <button type="button" class="quick-nav-btn" data-tab="matematica">Matemática del éxito</button>
         <button type="button" class="quick-nav-btn" data-tab="setters">Setters</button>
         <button type="button" class="quick-nav-btn" data-tab="closers">Closers</button>
+        <button type="button" class="quick-nav-btn" data-tab="saleaudit">Sale Audit</button>
         <button type="button" class="quick-nav-btn" data-tab="utm">Campañas (UTM)</button>
         <button type="button" class="quick-nav-btn" data-tab="webinar">Webinar</button>
         <button type="button" class="quick-nav-btn" data-tab="email">Email</button>
@@ -2234,6 +2249,10 @@
       <!-- Campañas (UTM): de dónde vienen los leads, las agendas y las ventas.
            Sale de las etiquetas src-/med-/camp-/cont- que el Worker le pone a
            cada contacto en GHL según las UTMs del link por el que entró. -->
+      <div class="tab-panel" data-tab-panel="saleaudit">
+        <div id="saleAuditRoot"><div class="chart-status">Abre esta pestaña para cargar la auditoría de llamadas.</div></div>
+      </div>
+
       <div class="tab-panel" data-tab-panel="utm">
         <div class="section-label" id="utm">De dónde vienen los leads y las agendas</div>
         <div class="chart-panel">
@@ -3344,6 +3363,7 @@
       if(tab === 'general'){ renderEsencial(); renderEmbudo(); pintarCambiosMes(); }
       if(['leads','setters','closers','ventas','llamadas'].indexOf(tab) > -1) renderSemanas();
       if(tab === 'matematica') iniciarMiMatematica();
+      if(tab === 'saleaudit') cargarSaleAudit();
     });
   });
 
@@ -3463,11 +3483,144 @@
     }
   }
 
+
+  // ===== Sale Audit: auditoría de las llamadas de venta (Zapier revisa cada reunión de Fathom y la deja en la hoja "Auditoría de llamadas" del Tracker).
+  // Los datos salen del Apps Script (?action=auditoria&clave=...). La clave se pide una vez y queda solo en este navegador (localStorage), nunca en el código. =====
+  const SA_CLAVE_LS = 'shu_audit_clave';
+  const SA_MOTIVOS = { lead: ['Lead', '#e9c46a'], setting: ['Setting', '#7fb2f0'], oferta: ['Oferta', '#e6a1c9'], cierre: ['Cierre', '#ff9b9b'] };
+  const SA_EJEMPLO = [
+    { Fecha: '2026-11-04 10:30', Closer: 'Paula', Clienta: 'Ejemplo Uno', Resultado: 'cerrada', Motivo: 'ninguno', 'Siguiente acción': 'Enviar contrato y acceso', Reunión: 'Consulta 1:1 · Ejemplo Uno', Enlace: '', Revisión: '*Qué salió bien*\nDetectó el dolor principal y cerró con claridad.\n*A mejorar*\nPreguntar por el presupuesto antes de presentar el precio.' },
+    { Fecha: '2026-11-05 15:00', Closer: 'Belén', Clienta: 'Ejemplo Dos', Resultado: 'perdida', Motivo: 'oferta', 'Siguiente acción': 'Ninguna', Reunión: 'Consulta 1:1 · Ejemplo Dos', Enlace: '', Revisión: '*Motivo de pérdida*\nNo vio el valor de la oferta frente a su situación actual.\n*Siguiente paso*\nRevisar cómo se presenta el resultado esperado.' },
+    { Fecha: '2026-11-06 11:00', Closer: 'Mía', Clienta: 'Ejemplo Tres', Resultado: 'pendiente', Motivo: 'ninguno', 'Siguiente acción': 'Seguimiento el viernes', Reunión: 'Consulta 1:1 · Ejemplo Tres', Enlace: '', Revisión: '*Estado*\nQuedó en consultarlo con su pareja y confirmar esta semana.' },
+    { Fecha: '2026-11-07 09:30', Closer: 'Paula', Clienta: 'Ejemplo Cuatro', Resultado: 'perdida', Motivo: 'lead', 'Siguiente acción': 'Ninguna', Reunión: 'Consulta 1:1 · Ejemplo Cuatro', Enlace: '', Revisión: '*Motivo de pérdida*\nNo tenía el perfil: ingresos por debajo de lo necesario.' },
+  ];
+  let saLog = [], saFilas = null, saEsEjemplo = false, saRango = null, saCloser = 'Todos', saVerTodas = false, saCargando = false;
+  const saEsc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const saIso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const saDias = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const saHoy = () => { const h = new Date(); return new Date(h.getFullYear(), h.getMonth(), h.getDate()); };
+  const saNorm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  const saRes = f => { const r = saNorm(f.Resultado); return r === 'cerrada' || r === 'perdida' || r === 'pendiente' ? r : 'pendiente'; };
+  // Revisión en formato Slack: *negrita*, saltos de línea y <url|texto>; todo lo demás va escapado.
+  function saRevision(t){
+    let h = saEsc(t || '').replace(/&lt;(https?:\/\/[^|&>]+)\|([^&>]+)&gt;/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--blush-2,#f0a8be)">$2</a>');
+    h = h.replace(/\*([^*\n]+)\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+    return h || '<span style="color:var(--text-dim)">Sin revisión escrita.</span>';
+  }
+  function saMes(){ const h = saHoy(); return { ini: new Date(h.getFullYear(), h.getMonth(), 1), fin: new Date(h.getFullYear(), h.getMonth() + 1, 0) }; }
+  function saFiltradas(){
+    const r = saRango || saMes(), a = saIso(r.ini), b = saIso(r.fin);
+    return (saFilas || []).filter(f => { const d = String(f.Fecha || '').slice(0, 10); return d >= a && d <= b && (saCloser === 'Todos' || saNorm(f.Closer) === saNorm(saCloser)); });
+  }
+  function saPintarClave(msg){
+    document.getElementById('saleAuditRoot').innerHTML = `
+      <div class="section-label">Sale Audit · auditoría de llamadas de venta</div>
+      <div class="chart-panel">
+        <p style="margin:0 0 6px; color:var(--text-dim); font-size:14px;">${msg || 'No se pudo leer la auditoría.'}</p>
+        <div class="sa-clave"><button type="button" class="chart-chip" id="saClaveGuardar">Reintentar</button><button type="button" class="chart-chip" id="saVerEjemplo">Ver datos de ejemplo</button></div>
+      </div>`;
+    document.getElementById('saClaveGuardar').addEventListener('click', () => {
+      saFilas = null; cargarSaleAudit(true);
+    });
+    document.getElementById('saVerEjemplo').addEventListener('click', () => { saFilas = SA_EJEMPLO.slice(); saEsEjemplo = true; saRango = { ini: new Date(2026, 10, 1), fin: new Date(2026, 10, 30) }; saRender(); });
+  }
+  async function cargarSaleAudit(forzar){
+    const raiz = document.getElementById('saleAuditRoot'); if(!raiz || saCargando) return;
+    if(saFilas && !forzar){ saRender(); return; }
+    // Las llamadas las revisa el Worker (cada closer conecta su Fathom a /auditoria/fathom); acá se leen con la contraseña de la plataforma.
+    saCargando = true; raiz.innerHTML = '<div class="chart-status">Leyendo la auditoría de llamadas…</div>';
+    try {
+      const ctrl = new AbortController(), cortar = setTimeout(() => ctrl.abort(), 20000);
+      let d, res; try { res = await fetch(`${WORKER_URL}/auditoria/lista?log=1`, { headers: { 'X-Site-Key': claveDePlataforma() }, signal: ctrl.signal }); d = await res.json(); } finally { clearTimeout(cortar); }
+      if(!res.ok || !Array.isArray(d.filas)) throw new Error(d && d.error === 'unauthorized' ? 'La contraseña de la plataforma no es válida' : ((d && (d.error || d.message)) || 'sin respuesta'));
+      saLog = Array.isArray(d.log) ? d.log : [];
+      const filas = Array.isArray(d.filas) ? d.filas : [];
+      if(filas.length){ saFilas = filas; saEsEjemplo = false; }
+      else { saFilas = []; saEsEjemplo = false; }
+      saRender();
+    } catch(e){
+      saFilas = null;
+      saPintarClave('No se pudo leer: ' + saEsc(e.message || e) + '');
+    } finally { saCargando = false; }
+  }
+  // Lo que le llegó al Worker desde Fathom (últimas 40 reuniones): cuántas se revisaron y por qué se descartaron las demás.
+  function saResumenLog(){
+    if(!saLog.length) return ' · todavía no llegó ninguna reunión desde Fathom';
+    const rev = saLog.filter(x => x.estado === 'revisada').length, des = saLog.filter(x => x.estado === 'descartada'), err = saLog.filter(x => x.estado === 'error-ia').length;
+    const mot = {}; des.forEach(x => { mot[x.motivo] = (mot[x.motivo] || 0) + 1; });
+    const txt = { 'reunion-interna': 'reuniones internas', 'sin-persona-externa': 'sin persona externa', 'transcripcion-corta': 'transcripción corta', 'sin-id': 'sin id' };
+    return ` · Fathom (últimas ${saLog.length}): ${rev} revisadas, ${des.length} descartadas${des.length ? ' (' + Object.keys(mot).map(k => mot[k] + ' ' + (txt[k] || k)).join(', ') + ')' : ''}${err ? ', ' + err + ' con error' : ''}`;
+  }
+  function saRender(){
+    const raiz = document.getElementById('saleAuditRoot'); if(!raiz || !saFilas) return;
+    const mes = saMes(), r = saRango || mes;
+    const cierres = [...new Set(saFilas.map(f => String(f.Closer || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+    const fil = saFiltradas().sort((a, b) => String(b.Fecha).localeCompare(String(a.Fecha)));
+    const n = k => fil.filter(f => saRes(f) === k).length, cer = n('cerrada'), pen = n('pendiente'), per = n('perdida');
+    const base = cer + per, tasa = base > 0 ? Math.round(cer / base * 100) + '%' : '—';
+    const corto = d => d.getDate() + ' ' + MCORTO2[d.getMonth()];
+    const etiqueta = saRango ? (saIso(r.ini) === saIso(r.fin) ? corto(r.ini) : corto(r.ini) + ' – ' + corto(r.fin)) + ' ' + r.fin.getFullYear() : MLARGO2[mes.ini.getMonth()] + ' ' + mes.ini.getFullYear();
+    const motivos = Object.keys(SA_MOTIVOS).map(k => ({ nombre: SA_MOTIVOS[k][0], color: SA_MOTIVOS[k][1], valor: fil.filter(f => saRes(f) === 'perdida' && saNorm(f.Motivo) === k).length }));
+    const totMot = motivos.reduce((t, x) => t + x.valor, 0);
+    const tarjeta = (t, v, c, sub) => `<div class="kpi-card"><div class="kpi-label" style="color:${c}">${t}</div><div class="kpi-value">${v}</div><div class="leads2-tri">${sub}</div></div>`;
+    const filas = (saVerTodas ? fil : fil.slice(0, 25)).map((f, i) => {
+      const k = saRes(f), mot = SA_MOTIVOS[saNorm(f.Motivo)], enlace = /^https:\/\//.test(String(f.Enlace || '')) ? `<a href="${saEsc(f.Enlace)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--blush-2,#f0a8be)">Ver en Fathom</a>` : '<span style="color:var(--text-dim)">—</span>';
+      return `<tr class="sa-fila" data-i="${i}"><td>${saEsc(String(f.Fecha || '').slice(0, 16))}</td><td>${saEsc(f.Clienta || '—')}</td><td>${saEsc(f.Closer || '—')}</td><td><span class="sa-pill ${k}">${k === 'cerrada' ? 'Cerrada' : k === 'perdida' ? 'Perdida' : 'Pendiente'}</span></td><td>${k === 'perdida' && mot ? mot[0] : '—'}</td><td style="white-space:normal;text-align:left;max-width:260px">${saEsc(f['Siguiente acción'] || '—')}</td><td>${enlace}</td></tr>
+        <tr class="sa-det" id="saDet${i}" hidden><td colspan="7"><div class="sa-rev">${saRevision(f['Revisión'])}</div>${f['Reunión'] ? '<div style="margin-top:8px;color:var(--text-dim);font-size:12px">' + saEsc(f['Reunión']) + '</div>' : ''}</td></tr>`;
+    }).join('');
+    raiz.innerHTML = `
+      <div class="leads2-titulo">
+        <div class="section-label" style="margin:0;">Sale Audit · auditoría de llamadas de venta</div>
+        <div class="leads2-sel">
+          <button type="button" class="chart-chip" id="saSelBtn">📅 <span>${saEsc(etiqueta)}</span> ▾</button>
+          <div class="leads2-panel" id="saPanel" hidden>
+            <div class="leads2-presets" id="saPresets">${[['hoy', 'Hoy'], ['ayer', 'Ayer'], ['semana', 'Esta semana'], ['semanapasada', 'Semana pasada'], ['mes', 'Mes completo'], ['todo', 'Todo']].map(([k, t]) => `<button type="button" class="chart-chip" data-preset="${k}">${t}</button>`).join('')}</div>
+            <div class="leads2-custom"><label>Desde <input type="date" id="saDesde" value="${saIso(r.ini)}"></label><label>Hasta <input type="date" id="saHasta" value="${saIso(r.fin)}"></label><button type="button" class="chart-chip" id="saAplicar">Aplicar</button></div>
+          </div>
+        </div>
+      </div>
+      ${saEsEjemplo ? '<div class="sa-ejemplo"><b>DATOS DE EJEMPLO.</b> Todavía no hay llamadas revisadas. Estas filas son inventadas, solo para ver cómo se verá.</div>' : ''}
+      <div class="chart-chips" id="saClosers" style="margin-bottom:14px">${['Todos'].concat(cierres).map(c => `<button type="button" class="chart-chip${c === saCloser ? ' active' : ''}" data-closer="${saEsc(c)}">${saEsc(c)}</button>`).join('')}</div>
+      <div class="leads2-cards">
+        ${tarjeta('Llamadas cerradas', cer, '#7fe0a8', 'de ' + fil.length + ' revisadas')}
+        ${tarjeta('Pendientes', pen, '#e9c46a', 'esperan decisión')}
+        ${tarjeta('Perdidas', per, '#ff9b9b', 'con motivo de pérdida')}
+        ${tarjeta('Tasa de cierre', tasa, '#c98aa0', 'cerradas sobre cerradas + perdidas')}
+      </div>
+      <div class="chart-panel" style="margin-bottom:18px">
+        <div class="section-label" style="margin:0 0 14px">Por qué se pierden</div>
+        ${totMot > 0 ? `<div class="sa-mot">${donutEq(motivos, String(totMot), 'perdidas')}<div class="sa-mot-lista">${motivos.map(m => `<div><i style="background:${m.color}"></i><b>${m.nombre}</b> · ${m.valor} <span style="color:var(--text-dim)">(${Math.round(m.valor / totMot * 100)}%)</span></div>`).join('')}</div></div>` : '<div class="chart-status">No hay llamadas perdidas con motivo en este rango.</div>'}
+      </div>
+      <div class="chart-panel">
+        <div class="section-label" style="margin:0 0 10px">Llamadas recientes</div>
+        <div class="utm-wrap" style="overflow-x:auto"><table class="utm-table" style="min-width:760px"><thead><tr><th>Fecha</th><th>Clienta</th><th>Closer</th><th>Resultado</th><th>Motivo</th><th style="text-align:left">Siguiente acción</th><th>Grabación</th></tr></thead><tbody>${filas || '<tr><td colspan="7" style="text-align:center;color:var(--text-dim)">No hay llamadas en este rango.</td></tr>'}</tbody></table></div>
+        ${fil.length > 25 ? `<div style="margin-top:12px"><button type="button" class="chart-chip" id="saMas">${saVerTodas ? 'Ver menos' : 'Ver las ' + fil.length}</button></div>` : ''}
+        <div class="chart-status">${saEsEjemplo ? 'Ejemplo' : 'Datos de la auditoría automática'} · ${saEsc(etiqueta)} · toca una fila para ver la revisión${saEsEjemplo ? '' : saResumenLog()}</div>
+      </div>`;
+    const panel = document.getElementById('saPanel');
+    document.getElementById('saSelBtn').addEventListener('click', e => { e.stopPropagation(); panel.hidden = !panel.hidden; });
+    document.addEventListener('click', e => { const p = document.getElementById('saPanel'); if(p && !p.hidden && !e.target.closest('.leads2-sel')) p.hidden = true; }, { once: true });
+    const aplicar = k => {
+      const h = saHoy(), lunes = saDias(h, -((h.getDay() + 6) % 7));
+      saRango = k === 'hoy' ? { ini: h, fin: h } : k === 'ayer' ? { ini: saDias(h, -1), fin: saDias(h, -1) } : k === 'semana' ? { ini: lunes, fin: saDias(lunes, 6) } : k === 'semanapasada' ? { ini: saDias(lunes, -7), fin: saDias(lunes, -1) } : k === 'todo' ? { ini: new Date(2025, 0, 1), fin: new Date(2099, 11, 31) } : null;
+      saRender();
+    };
+    raiz.querySelectorAll('#saPresets [data-preset]').forEach(b => b.addEventListener('click', () => aplicar(b.dataset.preset)));
+    document.getElementById('saAplicar').addEventListener('click', () => {
+      const f = id => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(document.getElementById(id).value); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+      let a = f('saDesde'), b = f('saHasta'); if(!a && !b) return; a = a || b; b = b || a; if(b < a) [a, b] = [b, a];
+      saRango = { ini: a, fin: b }; saRender();
+    });
+    raiz.querySelectorAll('#saClosers [data-closer]').forEach(b => b.addEventListener('click', () => { saCloser = b.dataset.closer; saRender(); }));
+    raiz.querySelectorAll('.sa-fila').forEach(tr => tr.addEventListener('click', () => { const d = document.getElementById('saDet' + tr.dataset.i); if(d) d.hidden = !d.hidden; }));
+    const mas = document.getElementById('saMas'); if(mas) mas.addEventListener('click', () => { saVerTodas = !saVerTodas; saRender(); });
+  }
+
   // ===== Menú por secciones (Resumen / Marketing / Ventas) y orden de cada pestaña: día → semana → mes =====
   const GRUPOS_DASH = [
     ['Resumen', ['general', 'ghl']],
     ['Marketing', ['leads', 'ads', 'organico', 'utm', 'webinar', 'email']],
-    ['Ventas', ['llamadas', 'setters', 'closers', 'ventas', 'matematica']],
+    ['Ventas', ['llamadas', 'setters', 'closers', 'saleaudit', 'ventas', 'matematica']],
   ];
   function iniciarGruposDash(){
     const nav = document.getElementById('dashTabNav');
