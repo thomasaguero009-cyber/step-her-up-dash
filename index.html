@@ -3837,6 +3837,8 @@
     const med = (utmResumen && utmResumen.med) || {}, leadsMed = (leadsData && leadsData.utmLeads && leadsData.utmLeads.med) || {};
     Object.keys(med).forEach(k => { const x = g[grupoMedio(k)], v = med[k]; x.a += v.agendadas || 0; x.s += v.shows || 0; x.c += v.cierres || 0; });
     Object.keys(leadsMed).forEach(k => { g[grupoMedio(k)].l += leadsMed[k] || 0; });
+    // Los leads que escriben por DM de Instagram no traen UTM y caían en "Sin fuente": son orgánicos.
+    { const dm = Math.min(g.sin.l, (leadsData && leadsData.canales && leadsData.canales['Instagram DM (orgánico)']) || 0); g.sin.l -= dm; g.organico.l += dm; }
     (ventas || []).forEach(v => { g[grupoCash(v.source)].$ += v.cash || 0; });
     const sel = embudoFuente === 'todas' ? Object.values(g).reduce((t, x) => ({ l: t.l + x.l, a: t.a + x.a, s: t.s + x.s, c: t.c + x.c, $: t.$ + x.$ }), { l: 0, a: 0, s: 0, c: 0, $: 0 }) : g[embudoFuente];
     const etapas = [['Leads', sel.l], ['Agendadas', sel.a], ['Shows', sel.s], ['Cierres', sel.c]];
