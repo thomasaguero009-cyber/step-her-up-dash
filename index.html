@@ -7086,6 +7086,12 @@
   };
   // Botón que abre el anuncio en el Administrador de anuncios de Meta (vista de tabla, no la de edición). Solo para IDs de Meta (número largo).
   const META_CUENTA = { act: '1145720454196838', business: '197930401405712' };
+  // La hoja Ads trae el nombre del anuncio, no su ID. Solo se resuelve para los de NOMBRES_META (AD UNO a AD SEIS);
+  // "AD #1…#4" son de la campaña vieja "SHU 100k" y no se confunden con estos.
+  function idMetaPorNombre(nombre){
+    const n = String(nombre || '').trim().toUpperCase();
+    return Object.keys(NOMBRES_META).find(id => NOMBRES_META[id].toUpperCase() === n) || '';
+  }
   function botonVerAnuncio(id){
     if(!/^\d{12,}$/.test(id || '')) return '';
     const url = `https://adsmanager.facebook.com/adsmanager/manage/ads?act=${META_CUENTA.act}&business_id=${META_CUENTA.business}&selected_ad_ids=${id}`;
@@ -8144,7 +8150,7 @@
     if(!anuncios.length || anuncios.every(x => /^sin (detalle|nombre)/i.test(x.nombre))){ anuncios = armar('campana'); nivelTop = 'campañas'; }
     const tt = document.getElementById('top5Titulo'); if(tt) tt.textContent = 'Top 5 ' + nivelTop;
     const maxR = Math.max(1, ...anuncios.map(x => x.r));
-    document.getElementById('top5Ads').innerHTML = anuncios.length ? anuncios.map((x, i) => `<div class="top5-fila"><b>${i + 1}</b><span>${escapeHtml(x.nombre)}</span><span style="color:var(--text-dim)">${x.r} resultados · CPR $${(x.c.gasto / x.r).toFixed(2).replace('.', ',')} · gasto ${usdEq(x.c.gasto)}</span><div class="top5-barra"><i style="width:${Math.round(x.r / maxR * 100)}%"></i></div></div>`).join('') + '<div class="chart-status" style="margin-top:8px;">Ordenado por costo por resultado.' + (nivelTop === 'campañas' ? ' Falta el detalle por anuncio: exportá la pestaña Anuncios de Meta (por día).' : ' Desde noviembre se ordena por cash cobrado.') + '</div>' : '<div class="chart-status">Cargá anuncios en la hoja Ads para ver el ranking.</div>';
+    document.getElementById('top5Ads').innerHTML = anuncios.length ? anuncios.map((x, i) => `<div class="top5-fila"><b>${i + 1}</b><span>${escapeHtml(x.nombre)}${nivelTop === 'anuncios' ? botonVerAnuncio(idMetaPorNombre(x.nombre)) : ''}</span><span style="color:var(--text-dim)">${x.r} resultados · CPR $${(x.c.gasto / x.r).toFixed(2).replace('.', ',')} · gasto ${usdEq(x.c.gasto)}</span><div class="top5-barra"><i style="width:${Math.round(x.r / maxR * 100)}%"></i></div></div>`).join('') + '<div class="chart-status" style="margin-top:8px;">Ordenado por costo por resultado.' + (nivelTop === 'campañas' ? ' Falta el detalle por anuncio: exportá la pestaña Anuncios de Meta (por día).' : ' Desde noviembre se ordena por cash cobrado.') + '</div>' : '<div class="chart-status">Cargá anuncios en la hoja Ads para ver el ranking.</div>';
   }
   // --- Orgánico v2
   (function(){
