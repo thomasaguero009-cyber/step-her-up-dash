@@ -1788,10 +1788,18 @@
         </div>
         <div class="kpi-grid">
           <div class="kpi-card">
+            <div class="kpi-label">ROAS de ads</div>
+            <div class="kpi-value" id="adsRoasAds">–</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">ROAS general</div>
+            <div class="kpi-value" id="adsRoasGeneral">–</div>
+          </div>
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Llamadas</div>
             <div class="kpi-value" id="ghlLlamadas">–</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Agendadas</div>
             <div class="kpi-value" id="ghlAgendadas">–</div>
           </div>
@@ -1834,14 +1842,6 @@
           <div class="kpi-card" data-oculto="1">
             <div class="kpi-label">Gasto en ads</div>
             <div class="kpi-value" id="adsGasto">–</div>
-          </div>
-          <div class="kpi-card" data-oculto="1">
-            <div class="kpi-label">ROAS de ads</div>
-            <div class="kpi-value" id="adsRoasAds">–</div>
-          </div>
-          <div class="kpi-card" data-oculto="1">
-            <div class="kpi-label">ROAS general</div>
-            <div class="kpi-value" id="adsRoasGeneral">–</div>
           </div>
         </div>
         <div class="chart-status" id="statusAds" style="margin-top:4px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
@@ -3842,7 +3842,7 @@
     const etapas = [['Leads', sel.l], ['Agendadas', sel.a], ['Shows', sel.s], ['Cierres', sel.c]];
     const max = Math.max(1, ...etapas.map(e => e[1]));
     const n = v => Math.round(v).toLocaleString('es-AR');
-    const filas = etapas.map((e, i) => '<div class="emb-fila"><span>' + e[0] + '</span><div class="emb-barra"><i style="width:' + Math.round(e[1] / max * 100) + '%"></i></div><span class="emb-num"><b>' + n(e[1]) + '</b>' + (i > 0 && etapas[i - 1][1] > 0 && e[1] <= etapas[i - 1][1] ? '<small>' + Math.round(e[1] / etapas[i - 1][1] * 100) + '% de la anterior</small>' : '') + '</span></div>').join('');
+    const filas = etapas.map((e, i) => '<div class="emb-fila"><span>' + e[0] + '</span><div class="emb-barra"><i style="width:' + Math.round(e[1] / max * 100) + '%"></i></div><span class="emb-num"><b>' + n(e[1]) + '</b>'  + '</span></div>').join('');
     const totalCash = Object.values(g).reduce((t, x) => t + x.$, 0);
     const sinAtribuir = g.sin.$, totalLeads = Object.values(g).reduce((t, x) => t + x.l, 0);
     cont.innerHTML =
