@@ -8053,6 +8053,7 @@
   const COLOR_ORIGEN = {
     'Anuncio de pago · Funnel viejo': '#f0a8be', 'Anuncio de pago · Funnel dorado': '#ffd166', 'Anuncio de pago · Otro funnel': '#fb923c',
     'Sin anuncio · Funnel viejo': '#5b8def', 'Sin anuncio · Funnel dorado': '#38bdf8', 'Sin anuncio · Otro funnel': '#8d7b86',
+    'Instagram DM (orgánico)': '#e879f9', 'Otro / manual': '#8d7b86',
     Instagram: '#f0a8be', Facebook: '#5b8def', Calendar: '#a78bfa', Manual: '#ffd166', Otro: '#8d7b86',
   };
   const COLORES_ORIGEN_EXTRA = ['#5fd39a', '#e879f9', '#a78bfa', '#facc15'];
@@ -8091,7 +8092,7 @@
     }).join('');
     if(hayCanal){
       const pago = filas.filter(f => f.o.startsWith('Anuncio de pago')).reduce((a, f) => a + f.n, 0);
-      nota.textContent = `${Math.round(pago / total * 100)}% de los leads (${pago.toLocaleString('es-AR')} de ${total.toLocaleString('es-AR')}) entró por un anuncio de pago. "Sin anuncio" son contactos que no traen el UTM de un anuncio de Meta (orgánico, mensajes directos u otros). Los contactos de prueba no se cuentan.`;
+      nota.textContent = `${Math.round(pago / total * 100)}% de los leads (${pago.toLocaleString('es-AR')} de ${total.toLocaleString('es-AR')}) entró por un anuncio de pago. "Instagram DM" son personas que escribieron por mensaje directo (sin anuncio ni landing). Los contactos de prueba no se cuentan.`;
     } else {
       nota.textContent = 'Origen que guarda GHL en cada contacto. No separa anuncio de orgánico: para eso mirá Marketing → Campañas (UTM).';
     }
