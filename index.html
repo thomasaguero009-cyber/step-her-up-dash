@@ -8578,10 +8578,12 @@
     let totalMes = 0, totalDia = 0;
     huboDatosCloserActual = false; huboDatosSetterActual = false;
     porCloserActual = new Map(); porSetterVentasActual = new Map();
+    // Si una venta no tiene setter porque la closer agendó y cerró ella misma (agenda directa), el crédito de setter es de esa closer, siempre que también trabaje como setter ese mes.
+    const comoSetter = new Set((ventasMes || []).map(v => (v.setter || '').trim().toLowerCase()).filter(Boolean));
     (ventasMes || []).forEach(v => {
       huboDatosCloserActual = true; huboDatosSetterActual = true;
       totalMes += v.cash || 0;
-      const c = v.closer || 'Sin closer asignado', st = v.setter || 'Sin setter asignada';
+      const c = v.closer || 'Sin closer asignado', st = v.setter || (v.closer && comoSetter.has(v.closer.trim().toLowerCase()) ? v.closer : 'Sin setter asignada');
       porCloserActual.set(c, (porCloserActual.get(c) || 0) + (v.cash || 0));
       porSetterVentasActual.set(st, (porSetterVentasActual.get(st) || 0) + (v.cash || 0));
     });
