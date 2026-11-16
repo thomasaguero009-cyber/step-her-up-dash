@@ -1306,6 +1306,17 @@
   .sa-fila{ cursor:pointer; } .sa-fila:hover td{ background:rgba(255,255,255,.04); }
   .sa-det td{ white-space:normal !important; text-align:left !important; background:rgba(0,0,0,.18); }
   .sa-rev{ font-size:13.5px; line-height:1.55; max-width:860px; }
+  .sa-bloque{ margin:0 0 16px; } .sa-bloque h4{ margin:0 0 8px; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-dim); font-weight:700; }
+  .sa-cols{ display:grid; grid-template-columns:1fr 1fr; gap:14px; } @media (max-width:760px){ .sa-cols{ grid-template-columns:1fr; } }
+  .sa-item{ border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; background:rgba(255,255,255,.02); font-size:13.5px; line-height:1.5; }
+  .sa-item b{ display:block; margin-bottom:2px; } .sa-item.bien{ border-color:rgba(127,224,168,.35); } .sa-item.mejorar{ border-color:rgba(255,155,155,.35); }
+  .sa-min{ display:inline-block; font-size:11px; padding:1px 7px; border-radius:99px; border:1px solid var(--border); margin-left:6px; color:var(--text-dim); font-weight:600; }
+  .sa-crit{ display:inline-block; font-size:10.5px; padding:1px 7px; border-radius:99px; margin-left:6px; color:#ff9b9b; border:1px solid rgba(255,155,155,.5); font-weight:700; }
+  .sa-etapas{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; }
+  .sa-et{ border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:12.5px; line-height:1.4; } .sa-et b{ display:block; font-size:12px; }
+  .sa-et.hecho{ border-color:rgba(127,224,168,.45); } .sa-et.parcial{ border-color:rgba(233,196,106,.5); } .sa-et.no{ border-color:rgba(255,155,155,.4); }
+  .sa-senales{ display:flex; flex-wrap:wrap; gap:6px; } .sa-senales span{ font-size:12.5px; padding:3px 10px; border-radius:99px; border:1px solid rgba(233,196,106,.45); background:rgba(233,196,106,.08); }
+  .sa-msg{ border:1px dashed var(--border); border-radius:12px; padding:12px 14px; font-size:13.5px; line-height:1.55; white-space:pre-wrap; background:rgba(0,0,0,.2); }
   .sa-mot{ display:grid; grid-template-columns:auto 1fr; gap:22px; align-items:center; }
   .sa-mot-lista{ display:flex; flex-direction:column; gap:8px; font-size:14px; }
   .sa-mot-lista i{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; }
@@ -3490,7 +3501,14 @@
   const SA_EJEMPLO = [
     { Fecha: '2026-11-04 10:30', Closer: 'Paula', Clienta: 'Ejemplo Uno', Resultado: 'cerrada', Motivo: 'ninguno', 'Siguiente acción': 'Enviar contrato y acceso', Reunión: 'Consulta 1:1 · Ejemplo Uno', Enlace: '', Revisión: '*Qué salió bien*\nDetectó el dolor principal y cerró con claridad.\n*A mejorar*\nPreguntar por el presupuesto antes de presentar el precio.' },
     { Fecha: '2026-11-05 15:00', Closer: 'Belén', Clienta: 'Ejemplo Dos', Resultado: 'perdida', Motivo: 'oferta', 'Siguiente acción': 'Ninguna', Reunión: 'Consulta 1:1 · Ejemplo Dos', Enlace: '', Revisión: '*Motivo de pérdida*\nNo vio el valor de la oferta frente a su situación actual.\n*Siguiente paso*\nRevisar cómo se presenta el resultado esperado.' },
-    { Fecha: '2026-11-06 11:00', Closer: 'Mía', Clienta: 'Ejemplo Tres', Resultado: 'pendiente', Motivo: 'ninguno', 'Siguiente acción': 'Seguimiento el viernes', Reunión: 'Consulta 1:1 · Ejemplo Tres', Enlace: '', Revisión: '*Estado*\nQuedó en consultarlo con su pareja y confirmar esta semana.' },
+    { Fecha: '2026-11-06 11:00', Closer: 'Mía', Clienta: 'Ejemplo Tres', Resultado: 'pendiente', Motivo: 'ninguno', 'Siguiente acción': 'Seguimiento el viernes', Reunión: 'Consulta 1:1 · Ejemplo Tres', Enlace: '', Revisión: '*Estado*\nQuedó en consultarlo con su pareja y confirmar esta semana.',
+      Score: 68, Probabilidad: 60,
+      Etapas: { romper_barrera: { estado: 'hecho', nota: 'Abrió con una pregunta abierta y explicó el propósito.' }, fact_finding: { estado: 'parcial', nota: 'Preguntó la meta pero no qué le cuesta no resolverlo.' }, resumen_espejo: { estado: 'no', nota: 'No devolvió lo que ella dijo.' }, demo: { estado: 'hecho', nota: 'Conectó el método con su problema.' }, test_close: { estado: 'hecho', nota: 'Preguntó si le hacía sentido.' }, close: { estado: 'parcial', nota: 'Dio la inversión pero siguió hablando.' }, objeciones: { estado: 'parcial', nota: 'Quedó en consultarlo con su pareja.' }, siguiente_paso: { estado: 'hecho', nota: 'Quedaron para el viernes.' } },
+      Bien: [{ titulo: 'Buen descubrimiento de la meta', minuto: '08:30', detalle: 'Ejemplo inventado para ver el formato.' }],
+      Mejorar: [{ titulo: 'No hizo el resumen espejo', minuto: '21:10', critico: false, detalle: 'Ejemplo inventado.' }, { titulo: 'No se calló después de dar la inversión', minuto: '34:40', critico: true, detalle: 'Ejemplo inventado.' }],
+      'Señales': ['Quiere empezar este mes', 'Decide junto a su pareja'],
+      Pasos: [{ tipo: 'mensaje', titulo: 'Escribirle el jueves', detalle: 'Ejemplo inventado.' }],
+      Mensaje: 'Hola, soy del equipo de Step Her Up. Quería saber cómo te fue hablando con tu pareja. (Ejemplo inventado)' },
     { Fecha: '2026-11-07 09:30', Closer: 'Paula', Clienta: 'Ejemplo Cuatro', Resultado: 'perdida', Motivo: 'lead', 'Siguiente acción': 'Ninguna', Reunión: 'Consulta 1:1 · Ejemplo Cuatro', Enlace: '', Revisión: '*Motivo de pérdida*\nNo tenía el perfil: ingresos por debajo de lo necesario.' },
   ];
   let saLog = [], saFilas = null, saEsEjemplo = false, saRango = null, saCloser = 'Todos', saVerTodas = false, saCargando = false;
@@ -3550,6 +3568,31 @@
     const txt = { 'reunion-interna': 'reuniones internas', 'sin-persona-externa': 'sin persona externa', 'transcripcion-corta': 'transcripción corta', 'sin-id': 'sin id' };
     return ` · Fathom (últimas ${saLog.length}): ${rev} revisadas, ${des.length} descartadas${des.length ? ' (' + Object.keys(mot).map(k => mot[k] + ' ' + (txt[k] || k)).join(', ') + ')' : ''}${err ? ', ' + err + ' con error' : ''}`;
   }
+  const SA_ETAPAS = { romper_barrera: 'Romper la barrera', fact_finding: 'Fact finding', resumen_espejo: 'Resumen espejo', demo: 'Demo', test_close: 'Test close', close: 'Close', objeciones: 'Objeciones', siguiente_paso: 'Próximo paso con fecha' };
+  const SA_PASO_ICONO = { mensaje: '💬', audio: '🎙️', video: '🎥', imagen: '🖼️', propuesta: '📄', llamada: '📞' };
+  // Detalle de una llamada: etapas del proceso SHU, lo que hizo bien / debe mejorar (con minuto), señales, pasos de seguimiento y mensaje listo.
+  // Las llamadas revisadas antes de este formato solo traen el texto de la revisión.
+  function saDetalle(f){
+    const arr = v => Array.isArray(v) ? v : [];
+    const min = m => m ? `<span class="sa-min">${saEsc(m)}</span>` : '';
+    let h = '';
+    const bien = arr(f.Bien), mej = arr(f.Mejorar);
+    if(bien.length || mej.length){
+      h += `<div class="sa-cols sa-bloque"><div><h4>Lo que hizo bien</h4>${bien.map(x => `<div class="sa-item bien"><b>${saEsc(x.titulo)}${min(x.minuto)}</b>${saEsc(x.detalle)}</div>`).join('') || '<div class="sa-item">—</div>'}</div>
+        <div><h4>Qué mejorar</h4>${mej.map(x => `<div class="sa-item mejorar"><b>${saEsc(x.titulo)}${x.critico ? '<span class="sa-crit">CRÍTICO</span>' : ''}${min(x.minuto)}</b>${saEsc(x.detalle)}</div>`).join('') || '<div class="sa-item">—</div>'}</div></div>`;
+    }
+    if(f.Etapas && typeof f.Etapas === 'object'){
+      const claves = Object.keys(SA_ETAPAS).filter(k => f.Etapas[k]);
+      if(claves.length) h += `<div class="sa-bloque"><h4>Proceso de venta SHU</h4><div class="sa-etapas">${claves.map(k => { const e = f.Etapas[k], est = ['hecho', 'parcial', 'no'].includes(e.estado) ? e.estado : 'no'; return `<div class="sa-et ${est}"><b>${est === 'hecho' ? '✅' : est === 'parcial' ? '🟡' : '❌'} ${SA_ETAPAS[k]}</b>${saEsc(e.nota || '')}</div>`; }).join('')}</div></div>`;
+    }
+    const sen = arr(f['Señales']);
+    if(sen.length) h += `<div class="sa-bloque"><h4>Señales de compra</h4><div class="sa-senales">${sen.map(x => `<span>${saEsc(x)}</span>`).join('')}</div></div>`;
+    const pasos = arr(f.Pasos);
+    if(pasos.length) h += `<div class="sa-bloque"><h4>Pasos sugeridos</h4>${pasos.map((x, i) => `<div class="sa-item"><b>${SA_PASO_ICONO[x.tipo] || '💬'} ${i + 1}. ${saEsc(x.titulo)}</b>${saEsc(x.detalle)}</div>`).join('')}</div>`;
+    if(f.Mensaje) h += `<div class="sa-bloque"><h4>Mensaje listo para mandar · WhatsApp</h4><div class="sa-msg">${saEsc(f.Mensaje)}</div><div style="margin-top:8px"><button type="button" class="chart-chip" data-copiar="${saEsc(encodeURIComponent(f.Mensaje))}">Copiar mensaje</button></div></div>`;
+    h += `<div class="sa-bloque"><h4>${h ? 'Revisión completa' : 'Revisión'}</h4><div class="sa-rev">${saRevision(f['Revisión'])}</div></div>`;
+    return h;
+  }
   function saRender(){
     const raiz = document.getElementById('saleAuditRoot'); if(!raiz || !saFilas) return;
     const mes = saMes(), r = saRango || mes;
@@ -3564,8 +3607,8 @@
     const tarjeta = (t, v, c, sub) => `<div class="kpi-card"><div class="kpi-label" style="color:${c}">${t}</div><div class="kpi-value">${v}</div><div class="leads2-tri">${sub}</div></div>`;
     const filas = (saVerTodas ? fil : fil.slice(0, 25)).map((f, i) => {
       const k = saRes(f), mot = SA_MOTIVOS[saNorm(f.Motivo)], enlace = /^https:\/\//.test(String(f.Enlace || '')) ? `<a href="${saEsc(f.Enlace)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--blush-2,#f0a8be)">Ver en Fathom</a>` : '<span style="color:var(--text-dim)">—</span>';
-      return `<tr class="sa-fila" data-i="${i}"><td>${saEsc(String(f.Fecha || '').slice(0, 16))}</td><td>${saEsc(f.Clienta || '—')}</td><td>${saEsc(f.Closer || '—')}</td><td><span class="sa-pill ${k}">${k === 'cerrada' ? 'Cerrada' : k === 'perdida' ? 'Perdida' : 'Pendiente'}</span></td><td>${k === 'perdida' && mot ? mot[0] : '—'}</td><td style="white-space:normal;text-align:left;max-width:260px">${saEsc(f['Siguiente acción'] || '—')}</td><td>${enlace}</td></tr>
-        <tr class="sa-det" id="saDet${i}" hidden><td colspan="7"><div class="sa-rev">${saRevision(f['Revisión'])}</div>${f['Reunión'] ? '<div style="margin-top:8px;color:var(--text-dim);font-size:12px">' + saEsc(f['Reunión']) + '</div>' : ''}</td></tr>`;
+      return `<tr class="sa-fila" data-i="${i}"><td>${saEsc(String(f.Fecha || '').slice(0, 16))}</td><td>${saEsc(f.Clienta || '—')}</td><td>${saEsc(f.Closer || '—')}</td><td><span class="sa-pill ${k}">${k === 'cerrada' ? 'Cerrada' : k === 'perdida' ? 'Perdida' : 'Pendiente'}</span></td><td>${f.Score != null ? saEsc(f.Score) : '—'}</td><td>${k === 'perdida' && mot ? mot[0] : '—'}</td><td style="white-space:normal;text-align:left;max-width:260px">${saEsc(f['Siguiente acción'] || '—')}</td><td>${enlace}</td></tr>
+        <tr class="sa-det" id="saDet${i}" hidden><td colspan="8">${saDetalle(f)}${f['Reunión'] ? '<div style="margin-top:8px;color:var(--text-dim);font-size:12px">' + saEsc(f['Reunión']) + '</div>' : ''}</td></tr>`;
     }).join('');
     raiz.innerHTML = `
       <div class="leads2-titulo">
@@ -3592,7 +3635,7 @@
       </div>
       <div class="chart-panel">
         <div class="section-label" style="margin:0 0 10px">Llamadas recientes</div>
-        <div class="utm-wrap" style="overflow-x:auto"><table class="utm-table" style="min-width:760px"><thead><tr><th>Fecha</th><th>Clienta</th><th>Closer</th><th>Resultado</th><th>Motivo</th><th style="text-align:left">Siguiente acción</th><th>Grabación</th></tr></thead><tbody>${filas || '<tr><td colspan="7" style="text-align:center;color:var(--text-dim)">No hay llamadas en este rango.</td></tr>'}</tbody></table></div>
+        <div class="utm-wrap" style="overflow-x:auto"><table class="utm-table" style="min-width:820px"><thead><tr><th>Fecha</th><th>Clienta</th><th>Closer</th><th>Resultado</th><th>Score</th><th>Motivo</th><th style="text-align:left">Siguiente acción</th><th>Grabación</th></tr></thead><tbody>${filas || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim)">No hay llamadas en este rango.</td></tr>'}</tbody></table></div>
         ${fil.length > 25 ? `<div style="margin-top:12px"><button type="button" class="chart-chip" id="saMas">${saVerTodas ? 'Ver menos' : 'Ver las ' + fil.length}</button></div>` : ''}
         <div class="chart-status">${saEsEjemplo ? 'Ejemplo' : 'Datos de la auditoría automática'} · ${saEsc(etiqueta)} · toca una fila para ver la revisión${saEsEjemplo ? '' : saResumenLog()}</div>
       </div>`;
@@ -3612,6 +3655,7 @@
     });
     raiz.querySelectorAll('#saClosers [data-closer]').forEach(b => b.addEventListener('click', () => { saCloser = b.dataset.closer; saRender(); }));
     raiz.querySelectorAll('.sa-fila').forEach(tr => tr.addEventListener('click', () => { const d = document.getElementById('saDet' + tr.dataset.i); if(d) d.hidden = !d.hidden; }));
+    raiz.querySelectorAll('[data-copiar]').forEach(b => b.addEventListener('click', async e => { e.stopPropagation(); try { await navigator.clipboard.writeText(decodeURIComponent(b.dataset.copiar)); b.textContent = 'Copiado ✓'; } catch(_) { b.textContent = 'No se pudo copiar'; } setTimeout(() => { b.textContent = 'Copiar mensaje'; }, 2000); }));
     const mas = document.getElementById('saMas'); if(mas) mas.addEventListener('click', () => { saVerTodas = !saVerTodas; saRender(); });
   }
 
