@@ -569,7 +569,7 @@ const optsGuion=t=>{const x=t.toLowerCase();return{...(/\bcarrusel(es)?\b/.test(
 function tipoDe(t){const x=t.toLowerCase();if(CUR&&CUR.sec&&CUR.sec!=="Contenido"&&!CUR.esSemana)return"";
   if(pideSemana(t))return"semana";
   if(/\bgu[ií]on\b|\bcarrusel(es)?\b/.test(x))return"guion";if(/\bganchos?\b/.test(x))return"ganchos";if(/\bcaption\b|pie de foto/.test(x))return"caption";if(/\bhistorias?\b/.test(x))return"historias";return""}
-function resumenPrevio(){return(CUR?CUR.msgs:[]).slice(-9).map(m=>m.r==="u"?{role:"user",content:m.t}:{role:"assistant",content:m.k==="consejo"?[m.intro,...m.pasos].join(" "):m.k==="txt"?m.t:m.intro||""}).filter(x=>x.content)}
+function resumenPrevio(){return(CUR?CUR.msgs:[]).slice(-14).map(m=>m.r==="u"?{role:"user",content:m.t}:{role:"assistant",content:m.k==="consejo"?[m.intro,...m.pasos].join(" "):m.k==="txt"?m.t:m.k==="hoja"?[m.tit,...(m.items?m.items.map(x=>x.tx):(m.lineas||[]).map(l=>(l.et?l.et+": ":"")+l.tx))].filter(Boolean).join(" | "):m.intro||""}).filter(x=>x.content)}
 /* La respuesta del chat llega en streaming: el texto va apareciendo (primero la intro, luego los pasos). Si el streaming no está disponible, se usa la ruta normal. */
 async function leeStream(hist,sec,pinta){
   /* si el servidor se queda callado más de 45 s, se corta y se prueba la ruta normal (el Worker ya tiene sus propios topes y reintentos) */

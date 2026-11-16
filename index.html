@@ -8048,23 +8048,30 @@
     document.getElementById('statusLeads2').textContent = 'Datos en vivo desde GHL · ' + etiquetaSel + ' comparado con ' + prevTxt;
     try { pintarOrigenLeads(diasSel, diasPrev, prevTxt); } catch(e){ console.warn('Origen de leads', e); }
   }
-  // ¿De dónde vienen los leads? Cuenta por origen (el que GHL guarda en cada contacto) dentro del rango elegido.
-  const COLOR_ORIGEN = { Instagram: '#f0a8be', Facebook: '#5b8def', Calendar: '#a78bfa', Manual: '#ffd166', Otro: '#8d7b86' };
-  const COLORES_ORIGEN_EXTRA = ['#5fd39a', '#fb923c', '#38bdf8', '#e879f9'];
+  // ¿De dónde vienen los leads? Por canal: si entró por un anuncio de pago (UTM de Meta) y por qué funnel (viejo o dorado).
+  // El Worker manda `porCanal` por día; si todavía no lo manda, se usa el origen que guarda GHL (Instagram, Calendario…).
+  const COLOR_ORIGEN = {
+    'Anuncio de pago · Funnel viejo': '#f0a8be', 'Anuncio de pago · Funnel dorado': '#ffd166', 'Anuncio de pago · Otro funnel': '#fb923c',
+    'Sin anuncio · Funnel viejo': '#5b8def', 'Sin anuncio · Funnel dorado': '#38bdf8', 'Sin anuncio · Otro funnel': '#8d7b86',
+    Instagram: '#f0a8be', Facebook: '#5b8def', Calendar: '#a78bfa', Manual: '#ffd166', Otro: '#8d7b86',
+  };
+  const COLORES_ORIGEN_EXTRA = ['#5fd39a', '#e879f9', '#a78bfa', '#facc15'];
   const NOMBRE_ORIGEN = { Otro: 'Otro / sin origen', Calendar: 'Calendario (agendó directo)', Manual: 'Manual (cargado a mano)' };
-  function origenesDeDias(lista){
+  function origenesDeDias(lista, campo){
     const out = {};
     lista.forEach(d => {
       const k = isoDe2(d);
       const fila = (leadsData && leadsData.dias && leadsData.dias[k]) || Object.values(leadsExtra).map(e => e && e.dias && e.dias[k]).find(Boolean);
-      if(fila && fila.porOrigen) for(const [o, n] of Object.entries(fila.porOrigen)) out[o] = (out[o] || 0) + n;
+      if(fila && fila[campo]) for(const [o, n] of Object.entries(fila[campo])) out[o] = (out[o] || 0) + n;
     });
     return out;
   }
   function pintarOrigenLeads(diasSel, diasPrev, prevTxt){
     const donut = document.getElementById('origenDonut'), barras = document.getElementById('origenBarras'), nota = document.getElementById('origenNota');
     if(!donut || !barras) return;
-    const cur = origenesDeDias(diasSel), prev = origenesDeDias(diasPrev);
+    const hayCanal = !!(leadsData && leadsData.dias && Object.values(leadsData.dias).some(f => f.porCanal));
+    const campo = hayCanal ? 'porCanal' : 'porOrigen';
+    const cur = origenesDeDias(diasSel, campo), prev = origenesDeDias(diasPrev, campo);
     const total = Object.values(cur).reduce((a, b) => a + b, 0);
     if(!total){ donut.innerHTML = ''; barras.innerHTML = '<div class="utm-vacio">Sin leads en este rango.</div>'; nota.textContent = ''; return; }
     let extra = 0;
@@ -8082,10 +8089,12 @@
         <div class="vz-barra" style="height:12px;"><i style="width:${(f.n / max * 100).toFixed(1)}%; background:${f.color}; border-right:0;"></i></div>
         <div class="leads2-tri">${vs}</div></div>`;
     }).join('');
-    const top = filas[0], sin = cur.Otro || 0;
-    nota.textContent = `Más leads vienen de ${NOMBRE_ORIGEN[top.o] || top.o} (${Math.round(top.n / total * 100)}%).`
-      + (sin && top.o !== 'Otro' ? ` ${Math.round(sin / total * 100)}% no trae origen en GHL.` : '')
-      + ' Este origen no separa anuncio de orgánico dentro de Instagram: para eso mirá Marketing → Campañas (UTM).';
+    if(hayCanal){
+      const pago = filas.filter(f => f.o.startsWith('Anuncio de pago')).reduce((a, f) => a + f.n, 0);
+      nota.textContent = `${Math.round(pago / total * 100)}% de los leads (${pago.toLocaleString('es-AR')} de ${total.toLocaleString('es-AR')}) entró por un anuncio de pago. "Sin anuncio" son contactos que no traen el UTM de un anuncio de Meta (orgánico, mensajes directos u otros). Los contactos de prueba no se cuentan.`;
+    } else {
+      nota.textContent = 'Origen que guarda GHL en cada contacto. No separa anuncio de orgánico: para eso mirá Marketing → Campañas (UTM).';
+    }
   }
 
   // ===== Gráficos v2 (Ads y Orgánico) =====
