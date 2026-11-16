@@ -1846,7 +1846,6 @@
         </div>
         <div class="chart-status" id="statusAds" style="margin-top:4px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
 
-        <p style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin:16px 0 0;">GHL en vivo</p>
         <div class="chart-status" id="statusGhl" style="margin-top:4px;">Conectando con GHL…</div>
 
         <div class="section-label" id="empresa" style="margin-top:36px;">Métricas principales</div>
@@ -3848,10 +3847,7 @@
     const sinAtribuir = g.sin.$, totalLeads = Object.values(g).reduce((t, x) => t + x.l, 0);
     cont.innerHTML =
       '<div class="chart-chips">' + EMB_GRUPOS.map(x => '<button type="button" class="chart-chip' + (x[0] === embudoFuente ? ' active' : '') + '" data-emb="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
-      filas + '<div class="emb-fila"><span>Cash cobrado</span><div></div><span class="emb-num"><b>$' + n(sel.$) + '</b></span></div>' +
-      '<div class="chart-status" style="margin:10px 0 0;">' + (totalCash > 0 ? 'Cash sin atribuir a una fuente: <b>$' + n(sinAtribuir) + '</b> (' + Math.round(sinAtribuir / totalCash * 100) + '% del cash del mes). ' : '') +
-      (totalLeads > 0 ? 'Leads sin fuente: ' + Math.round(g.sin.l / totalLeads * 100) + '%. ' : '') +
-      'La fuente de leads, agendas y cierres sale de las etiquetas UTM en GHL; el cash, de la columna Source de la pestaña Ventas. Los cierres incluyen compras directas del webinar, por eso pueden ser más que las agendadas.</div>';
+      filas + '<div class="emb-fila"><span>Cash cobrado</span><div></div><span class="emb-num"><b>$' + n(sel.$) + '</b></span></div>' ;
     cont.querySelectorAll('[data-emb]').forEach(b => b.addEventListener('click', () => { embudoFuente = b.dataset.emb; renderEmbudo(); }));
   }
   (function(){
@@ -6633,7 +6629,7 @@
     }
 
     const statusTxt = huboDatos
-      ? 'Datos en vivo — ' + mesElegido
+      ? ''
       : 'Sin datos todavía para ' + mesElegido + ' — cargá filas en el Google Sheet';
     document.getElementById('statusLlamadas').textContent = statusTxt;
     document.getElementById('statusVentas').textContent = statusTxt;
@@ -6667,7 +6663,7 @@
     pintarShowsDia();
     renderBreakdownClosers(seriesClosers);
     document.getElementById('statusClosers').textContent = huboDatosClosers
-      ? 'Datos en vivo — ' + mesElegido
+      ? ''
       : 'Sin datos todavía para ' + mesElegido + ' — cargá filas en la pestaña "Ranking" del Google Sheet';
 
     // ===== Ads / ROAS — ROAS = cuántos $ vuelven por cada $1 gastado en
@@ -6691,7 +6687,7 @@
     document.getElementById('adsRoasAds').textContent = huboDatosAds ? roas(ventasAdsRoas, totGastoAds) : '–';
     document.getElementById('adsRoasGeneral').textContent = huboDatosAds ? roas(ventasRoas, totGastoAds) : '–';
     const estadoAds = huboDatosAds
-      ? 'Datos en vivo — ' + mesElegido
+      ? ''
       : (SHEET_ADS_CSV_URL
         ? 'Sin datos todavía para ' + mesElegido + ' — cargá filas en la pestaña "Ads" del Google Sheet'
         : 'Falta conectar la pestaña "Ads" del Google Sheet (Fecha | Gasto)');
@@ -7728,7 +7724,7 @@
       pintarFuentes(cashReal);
 
       const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-      statusEl.textContent = 'Datos en vivo desde GHL — ' + mesElegido + ' · actualizado ' + hora;
+      statusEl.textContent = '';
     } catch(e){
       if(pedido !== ghlPedidoActual) return;
       const motivo = e.name === 'AbortError' ? 'tardó demasiado, probá de nuevo' : e.message;
@@ -7789,8 +7785,8 @@
       renderFunnelChart();
 
       const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-      statusEl.textContent = 'Datos en vivo desde GHL — ' + mesElegido + ' · actualizado ' + hora;
-      document.getElementById('statusFact').textContent = 'Datos en vivo desde GHL · actualizado ' + hora;
+      statusEl.textContent = '';
+      document.getElementById('statusFact').textContent = '';
     } catch(e){
       if(pedido !== funnelPedidoActual) return;
       const motivo = e.name === 'AbortError' ? 'tardó demasiado, probá de nuevo' : e.message;
