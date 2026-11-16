@@ -7107,10 +7107,22 @@
     const n = String(nombre || '').trim().toUpperCase();
     return IDS_HOJA_ADS[n] || Object.keys(NOMBRES_META).find(id => NOMBRES_META[id].toUpperCase() === n) || '';
   }
+  // Link público de la publicación de Instagram de cada anuncio (lo puede abrir todo el equipo, sin acceso a Meta).
+  // Los anuncios nuevos no tienen link hasta que alguien lo saque: Administrador > vista previa > compartir > "Publicación de Instagram con comentarios".
+  const IG_ANUNCIOS = {
+    '120253946279790248': 'https://www.instagram.com/p/DfqsBV2sAY_/',   // AD UNO
+    '120253946279810248': 'https://www.instagram.com/p/Dfql-LaM3Us/',   // AD DOS
+    '120253946522530248': 'https://www.instagram.com/p/DfqnYgYsSm3/',   // AD TRES
+    '120253946665660248': 'https://www.instagram.com/p/Dfqm7DRM7q5/',   // AD CUATRO
+    '120253946715940248': 'https://www.instagram.com/p/DfqoElfMXCm/',   // AD CINCO
+    '120253946751710248': 'https://www.instagram.com/p/DfqownfsNen/',   // AD SEIS
+    '120253886170820248': 'https://www.instagram.com/p/DfiQnjdsopj/',   // AD #2 · SHU 100k
+  };
   function botonVerAnuncio(id){
     if(!/^\d{12,}$/.test(id || '')) return '';
-    const url = `https://adsmanager.facebook.com/adsmanager/manage/ads?act=${META_CUENTA.act}&business_id=${META_CUENTA.business}&selected_ad_ids=${id}`;
-    return ` <a class="chart-chip" href="${url}" target="_blank" rel="noopener" style="margin-left:8px; padding:3px 10px; font-size:11.5px; font-weight:600; text-decoration:none; white-space:nowrap;">Ver anuncio ↗</a>`;
+    const ig = IG_ANUNCIOS[id];
+    const url = ig || `https://adsmanager.facebook.com/adsmanager/manage/ads?act=${META_CUENTA.act}&business_id=${META_CUENTA.business}&selected_ad_ids=${id}`;
+    return ` <a class="chart-chip" href="${url}" target="_blank" rel="noopener" style="margin-left:8px; padding:3px 10px; font-size:11.5px; font-weight:600; text-decoration:none; white-space:nowrap;">${ig ? 'Ver anuncio ↗' : 'Ver en Meta ↗'}</a>`;
   }
   function utmNombreLindo(slug){
     if(!slug) return '';
