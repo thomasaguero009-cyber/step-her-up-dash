@@ -3621,7 +3621,7 @@
           </div>
         </div>
       </div>
-      ${saEsEjemplo ? '<div class="sa-ejemplo"><b>DATOS DE EJEMPLO.</b> Todavía no hay llamadas revisadas. Estas filas son inventadas, solo para ver cómo se verá.</div>' : ''}
+      ${saEsEjemplo ? '<div class="sa-ejemplo"><b>DATOS DE EJEMPLO.</b> Todavía no hay llamadas revisadas. Estas filas son inventadas, solo para ver cómo se verá. <button type="button" class="chart-chip" id="saSalirEjemplo" style="margin-left:8px">Salir del ejemplo</button></div>' : ''}
       <div class="chart-chips" id="saClosers" style="margin-bottom:14px">${['Todos'].concat(cierres).map(c => `<button type="button" class="chart-chip${c === saCloser ? ' active' : ''}" data-closer="${saEsc(c)}">${saEsc(c)}</button>`).join('')}</div>
       <div class="leads2-cards">
         ${tarjeta('Llamadas cerradas', cer, '#7fe0a8', 'de ' + fil.length + ' revisadas')}
@@ -3636,6 +3636,7 @@
       <div class="chart-panel">
         <div class="section-label" style="margin:0 0 10px">Llamadas recientes</div>
         <div class="utm-wrap" style="overflow-x:auto"><table class="utm-table" style="min-width:820px"><thead><tr><th>Fecha</th><th>Clienta</th><th>Closer</th><th>Resultado</th><th>Score</th><th>Motivo</th><th style="text-align:left">Siguiente acción</th><th>Grabación</th></tr></thead><tbody>${filas || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim)">No hay llamadas en este rango.</td></tr>'}</tbody></table></div>
+        ${!saEsEjemplo && !saFilas.length ? '<div style="margin-top:12px"><button type="button" class="chart-chip" id="saVerEjemplo2">Ver datos de ejemplo</button></div>' : ''}
         ${fil.length > 25 ? `<div style="margin-top:12px"><button type="button" class="chart-chip" id="saMas">${saVerTodas ? 'Ver menos' : 'Ver las ' + fil.length}</button></div>` : ''}
         <div class="chart-status">${saEsEjemplo ? 'Ejemplo' : 'Datos de la auditoría automática'} · ${saEsc(etiqueta)} · toca una fila para ver la revisión${saEsEjemplo ? '' : saResumenLog()}</div>
       </div>`;
@@ -3656,6 +3657,8 @@
     raiz.querySelectorAll('#saClosers [data-closer]').forEach(b => b.addEventListener('click', () => { saCloser = b.dataset.closer; saRender(); }));
     raiz.querySelectorAll('.sa-fila').forEach(tr => tr.addEventListener('click', () => { const d = document.getElementById('saDet' + tr.dataset.i); if(d) d.hidden = !d.hidden; }));
     raiz.querySelectorAll('[data-copiar]').forEach(b => b.addEventListener('click', async e => { e.stopPropagation(); try { await navigator.clipboard.writeText(decodeURIComponent(b.dataset.copiar)); b.textContent = 'Copiado ✓'; } catch(_) { b.textContent = 'No se pudo copiar'; } setTimeout(() => { b.textContent = 'Copiar mensaje'; }, 2000); }));
+    const ve2 = document.getElementById('saVerEjemplo2'); if(ve2) ve2.addEventListener('click', () => { saFilas = SA_EJEMPLO.slice(); saEsEjemplo = true; saRango = { ini: new Date(2026, 10, 1), fin: new Date(2026, 10, 30) }; saRender(); });
+    const sal = document.getElementById('saSalirEjemplo'); if(sal) sal.addEventListener('click', () => { saFilas = null; saEsEjemplo = false; saRango = null; cargarSaleAudit(true); });
     const mas = document.getElementById('saMas'); if(mas) mas.addEventListener('click', () => { saVerTodas = !saVerTodas; saRender(); });
   }
 
