@@ -1384,7 +1384,8 @@
   .sa2-in{ animation:sa2In .6s cubic-bezier(.2,.7,.2,1) both; animation-delay:calc(var(--i,0) * 70ms); }
   @keyframes sa2In{ from{ opacity:0; transform:translateY(12px); } to{ opacity:1; transform:none; } }
   /* Estilo del sitio 3D del Sale Audit: títulos y números en serif, hero con la onda de audio dorada. */
-  .sa2-hero{ padding:28px 30px 22px; min-height:230px; }
+  .sa2-hero{ padding:28px 30px 22px; min-height:230px; overflow:visible; }
+  .sa2-fondo{ position:absolute; inset:0; overflow:hidden; border-radius:inherit; pointer-events:none; }
   .sa2-hero-in{ flex-direction:column; align-items:flex-start; justify-content:space-between; min-height:180px; gap:22px; }
   .sa2-wave{ position:absolute; right:0; top:0; width:66%; height:100%; pointer-events:none; -webkit-mask-image:linear-gradient(90deg,transparent,#000 24%); mask-image:linear-gradient(90deg,transparent,#000 24%); }
   .sa2-title{ font-family:"Playfair Display",Georgia,serif; font-weight:500; font-size:clamp(30px,4.4vw,50px); line-height:1.05; letter-spacing:-.012em; margin:8px 0 10px; max-width:640px; background:none; -webkit-text-fill-color:var(--cream); color:var(--cream); animation:none; }
@@ -1425,6 +1426,14 @@
   .sa2-coach .sa2-card > div:first-child > div > div:first-child{ font-family:"Playfair Display",Georgia,serif; font-weight:500 !important; font-size:21px !important; }
   @media (max-width:1000px){ .sa2-etgrid{ grid-template-columns:repeat(2,minmax(0,1fr)); } .sa2-trgrid{ grid-template-columns:minmax(0,1fr); } .sa2-banda{ grid-template-columns:repeat(3,minmax(0,1fr)); } .sa2-k:nth-child(4){ border-left:0; } .sa2-k:nth-child(n+4){ border-top:1px solid var(--sa-line); } }
   @media (max-width:620px){ .sa2-trlista{ grid-template-columns:minmax(0,1fr); } .sa2-etc{ padding:16px; } .sa2-num{ font-size:34px; } .sa2-etp{ font-size:28px; } .sa2-k{ padding:18px 6px 16px; } .sa2-k-s{ display:none; } .sa2-sec{ margin-top:56px; } }
+  .sa2-pop-f{ width:min(380px,92vw); }
+  .sa2-f-t{ font-family:"Playfair Display",Georgia,serif; font-size:20px; margin-bottom:8px; }
+  .sa2-f-pasos{ margin:0 0 12px; padding-left:18px; font-size:13px; color:var(--text-dim); line-height:1.5; } .sa2-f-pasos b{ color:var(--cream); }
+  .sa2-in-t{ width:100%; background:rgba(0,0,0,.3); border:1px solid var(--sa-line); border-radius:10px; color:var(--cream); padding:9px 11px; font:inherit; margin-bottom:8px; }
+  .sa2-f-msg{ margin:8px 0 0; font-size:12.5px; color:var(--au-1); min-height:16px; }
+  .sa2-f-lista{ margin-top:10px; border-top:1px solid var(--sa-line); padding-top:10px; font-size:13px; }
+  .sa2-f-sub{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
+  .sa2-f-fila{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
   .sa2-fuente{ font-size:11.5px; color:var(--text-dim); max-width:240px; }
   .sa2-resbtns{ display:flex; flex-wrap:wrap; gap:8px; }
   @media (prefers-reduced-motion:reduce){ .sa2-rv{ opacity:1 !important; transform:none !important; transition:none !important; } }
@@ -3866,6 +3875,16 @@
     };
     saOndaRaf = requestAnimationFrame(pintar);
   }
+  async function saFathomLista(){
+    const caja = document.getElementById('saFLista'); if(!caja) return;
+    caja.textContent = 'Cargando…';
+    try {
+      const res = await fetch(`${WORKER_URL}/auditoria/conexiones`, { headers: { 'X-Site-Key': claveDePlataforma() } });
+      const d = await res.json(); if(!res.ok || !d.ok) throw new Error('x');
+      const hace = t => { if(!t) return 'todavía sin revisar'; const m = Math.round((Date.now() - Date.parse(t)) / 60000); return m < 1 ? 'hace un momento' : m < 60 ? 'hace ' + m + ' min' : 'hace ' + Math.round(m / 60) + ' h'; };
+      caja.innerHTML = d.conexiones.length ? '<div class="sa2-f-sub">Fathom conectados</div>' + d.conexiones.map(c => `<div class="sa2-f-fila"><span>${c.error ? '⚠' : '✓'} <b>${saEsc(c.nombre)}</b> · ${saEsc(c.error ? c.error : 'última revisión ' + hace(c.ultimo))}</span><button type="button" class="sa2-chip sm" data-act="fathomDesconectar" data-nombre="${saEsc(c.nombre)}">Quitar</button></div>`).join('') : '<div class="sa2-f-sub">Todavía no hay ningún Fathom conectado.</div>';
+    } catch(e){ caja.textContent = 'No se pudo leer la lista.'; }
+  }
   function saRender(){
     const raiz = document.getElementById('saleAuditRoot'); if(!raiz || !saFilas) return;
     const mes = saMes(), r = saRango || mes;
@@ -3883,9 +3902,19 @@
     raiz.innerHTML = `
       <div class="sa2">
         <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="saGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8f6b22"/><stop offset="0.5" stop-color="#e9c46a"/><stop offset="1" stop-color="#f8e7b0"/></linearGradient></defs></svg>
-        <section class="sa2-hero"><div class="sa2-aurora"></div><canvas class="sa2-wave" aria-hidden="true"></canvas><div class="sa2-hero-in">
+        <section class="sa2-hero"><div class="sa2-fondo"><div class="sa2-aurora"></div><canvas class="sa2-wave" aria-hidden="true"></canvas></div><div class="sa2-hero-in">
           <div><div class="sa2-eyebrow">Sale Audit · Auditoría de llamadas</div><h2 class="sa2-title">Cada llamada de venta, <em>auditada</em> con IA</h2><p class="sa2-sub">La IA revisa cada llamada de venta y te dice qué corregir.</p></div>
           <div class="sa2-hero-r"><span class="sa2-tag"><i></i>IA activa</span><span class="sa2-tag">${saEsc(saResumenLog())}</span>
+            <div class="sa2-sel"><button type="button" class="sa2-chip" data-act="fathom">Conectar Fathom ▾</button>
+              <div class="sa2-pop sa2-pop-f" id="saFathom" hidden>
+                <div class="sa2-f-t">Conectar un Fathom</div>
+                <ol class="sa2-f-pasos"><li>En Fathom: <b>Settings</b>, luego <b>API Access</b> y <b>Generate API Key</b>.</li><li>Copia la clave y pégala acá, con el nombre de quien graba las llamadas.</li></ol>
+                <input type="text" id="saFNombre" class="sa2-in-t" placeholder="Nombre (ej. Paula)" autocomplete="off">
+                <input type="password" id="saFKey" class="sa2-in-t" placeholder="API key de Fathom" autocomplete="off">
+                <button type="button" class="sa2-btn" data-act="fathomConectar" style="padding:8px 18px">Conectar</button>
+                <p id="saFMsg" class="sa2-f-msg"></p>
+                <div class="sa2-f-lista" id="saFLista"></div>
+              </div></div>
             <div class="sa2-sel"><button type="button" class="sa2-chip" data-act="rango">Período · ${saEsc(etiqueta)} ▾</button>
               <div class="sa2-pop" id="saPanel" hidden>
                 <div class="row">${[['hoy', 'Hoy'], ['ayer', 'Ayer'], ['semana', 'Esta semana'], ['semanapasada', 'Semana pasada'], ['mes', 'Mes completo'], ['todo', 'Todo']].map(([k, t]) => `<button type="button" class="sa2-chip" data-act="preset" data-v="${k}">${t}</button>`).join('')}</div>
@@ -3935,6 +3964,24 @@
         } catch(err){ el.disabled = false; el.textContent = 'No se pudo guardar'; setTimeout(() => { el.textContent = antes; }, 2500); }
         return;
       }
+      if(a === 'fathom'){ const p = document.getElementById('saFathom'); if(p){ p.hidden = !p.hidden; if(!p.hidden) saFathomLista(); } return; }
+      if(a === 'fathomConectar'){
+        const nombre = (document.getElementById('saFNombre').value || '').trim(), key = (document.getElementById('saFKey').value || '').trim(), msg = document.getElementById('saFMsg');
+        if(!nombre || key.length < 10){ msg.textContent = 'Escribe el nombre y pega la API key.'; return; }
+        el.disabled = true; msg.textContent = 'Conectando…';
+        try {
+          const res = await fetch(`${WORKER_URL}/auditoria/conectar`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Site-Key': claveDePlataforma() }, body: JSON.stringify({ nombre, key }) });
+          const d = await res.json();
+          if(!res.ok || !d.ok){ msg.textContent = d && d.detalle ? d.detalle : 'No se pudo conectar.'; }
+          else { document.getElementById('saFKey').value = ''; document.getElementById('saFNombre').value = ''; msg.textContent = 'Conectado. Las llamadas de los últimos 30 días van apareciendo en unos minutos.'; saFathomLista(); setTimeout(() => { if(saleAuditScreen.classList.contains('active')) cargarSaleAudit(true); }, 45000); }
+        } catch(err){ msg.textContent = 'No se pudo conectar. Prueba de nuevo.'; }
+        el.disabled = false; return;
+      }
+      if(a === 'fathomDesconectar'){
+        el.disabled = true;
+        try { await fetch(`${WORKER_URL}/auditoria/desconectar`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Site-Key': claveDePlataforma() }, body: JSON.stringify({ nombre: el.dataset.nombre }) }); } catch(err){}
+        saFathomLista(); return;
+      }
       if(a === 'ir'){ const t = document.getElementById(v); if(t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
       if(a === 'closer'){ saCloser = v; saRender(); return; }
       if(a === 'filtro'){ saFiltro = v; saVerTodas = false; saRender(); return; }
@@ -3952,7 +3999,7 @@
         saRango = { ini: x, fin: y }; saRender();
       }
     });
-    document.addEventListener('click', e => { const p = document.getElementById('saPanel'); if(p && !p.hidden && !e.target.closest('.sa2-sel')) p.hidden = true; });
+    document.addEventListener('click', e => { document.querySelectorAll('.sa2-pop').forEach(p => { if(!p.hidden && !e.target.closest('.sa2-sel')) p.hidden = true; }); });
   }
 
   // ===== Menú por secciones (Resumen / Marketing / Ventas) y orden de cada pestaña: día → semana → mes =====
