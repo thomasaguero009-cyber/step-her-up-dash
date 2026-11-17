@@ -2627,10 +2627,6 @@
 
         <div class="metricas-grid" id="metricasCamposSetter" hidden>
           <div class="metricas-field">
-            <label for="metricasLlamadas">Llamadas</label>
-            <input type="number" min="0" inputmode="numeric" id="metricasLlamadas" placeholder="0" data-stepper>
-          </div>
-          <div class="metricas-field">
             <label for="metricasAgendadas">Agendadas</label>
             <input type="number" min="0" inputmode="numeric" id="metricasAgendadas" placeholder="0" data-stepper>
           </div>
@@ -3563,7 +3559,8 @@
     return por;
   }
   const f1 = n => (Math.round(n * 10) / 10).toLocaleString('es-AR');
-  const pc = (a, b) => b > 0 ? f1(a / b * 100) + '%' : '–';
+  // Si el desglose (p. ej. "no atendieron") es mayor que las llamadas de Zoom, el porcentaje no tiene sentido (+100 %): se muestra un guion.
+  const pc = (a, b) => b > 0 && a <= b ? f1(a / b * 100) + '%' : '–';
   const delta = (a, b) => {
     if(!(b > 0)) return '';
     if(a === b) return 'Igual que la semana anterior';
@@ -4125,7 +4122,7 @@
       fila('Shows', k => sumaDe(T(k), 'shows'), num, etqs) +
       fila('Cierres', k => sumaDe(T(k), 'cierres'), num, etqs) +
       fila('Cash cobrado', k => sumaDe(R(k), 'monto'), dinero, etqs);
-    document.getElementById('esencialNota').textContent = 'Leads: GHL. Llamadas, agendadas, shows y cierres: lo que cargan las setters en Métricas. Cash: pestaña Ranking del Tracker. Debajo de cada número, el período anterior completo para comparar.' + (cortado ? ' Ojo: hay más contactos de los que se pudieron leer.' : '');
+    document.getElementById('esencialNota').textContent = 'Leads: GHL. Llamadas: salen solas del registro de Zoom (salientes). Agendadas, shows y cierres: lo que cargan las setters en Métricas. Cash: pestaña Ranking del Tracker. Debajo de cada número, el período anterior completo para comparar.' + (cortado ? ' Ojo: hay más contactos de los que se pudieron leer.' : '');
   }
 
 
@@ -4136,7 +4133,7 @@
     ['goDashboardBtn', 'Dashboard', 'Ver las métricas del mes'],
     ['goRankingBtn', 'Ranking', 'Ranking de closers y setters'],
     ['goHerramientasBtn', 'Herramientas', 'Contadores y utilidades'],
-    ['goMetricasBtn', 'Métricas', 'Cargar los números del día: llamadas, agendadas, no atienden'],
+    ['goMetricasBtn', 'Métricas', 'Cargar los números del día: agendadas, no atienden (las llamadas salen solas de Zoom)'],
     ['goRecursosBtn', 'Recursos', 'Presentaciones y materiales'],
     ['goEntregaBtn', 'Fulfillment', 'Cada alumna y en qué paso va: entrega, psicóloga, vencimientos'],
     ['goSaleAuditBtn', 'Sales Audit', 'Auditoría de las llamadas de venta: score, qué mejorar y coach por closer'],
@@ -6178,7 +6175,7 @@
   // dashboard igual que si lo hubiera cargado alguien a mano ahí. =====
   const METRICAS_NOMBRE_KEY = 'shu_metricas_nombre';
   const METRICAS_ROL_KEY = 'shu_metricas_rol';
-  const METRICAS_CAMPOS_SETTER = ['metricasLlamadas', 'metricasAgendadas', 'metricasNoCalifica', 'metricasNoAtendieron', 'metricasInfoWhatsapp', 'metricasCortaron', 'metricasLlamarTarde', 'metricasShows', 'metricasCierres', 'metricasVentas'];
+  const METRICAS_CAMPOS_SETTER = ['metricasAgendadas', 'metricasNoCalifica', 'metricasNoAtendieron', 'metricasInfoWhatsapp', 'metricasCortaron', 'metricasLlamarTarde', 'metricasShows', 'metricasCierres', 'metricasVentas'];
   const METRICAS_CAMPOS_CLOSER = ['metricasCAgendas', 'metricasCShows', 'metricasCNoShows', 'metricasCCash', 'metricasCCierres'];
   let metricasRol = '';
 
@@ -6278,7 +6275,7 @@
   // ===== Autoguardado: el contador se copia al Worker mientras se cuenta; a la 1:30 PM y a las 8:30 PM (hora de PR)
   // lo que no se envió con el botón se guarda solo en el Tracker y se publica en #setters. =====
   const METRICAS_MAPA = {
-    setter: { metricasLlamadas: 'llamadas', metricasAgendadas: 'agendadas', metricasNoCalifica: 'noCalifica', metricasNoAtendieron: 'noAtendieron', metricasInfoWhatsapp: 'infoWhatsapp', metricasCortaron: 'cortaron', metricasLlamarTarde: 'llamarMasTarde', metricasShows: 'shows', metricasCierres: 'cierres', metricasVentas: 'ventas' },
+    setter: { metricasAgendadas: 'agendadas', metricasNoCalifica: 'noCalifica', metricasNoAtendieron: 'noAtendieron', metricasInfoWhatsapp: 'infoWhatsapp', metricasCortaron: 'cortaron', metricasLlamarTarde: 'llamarMasTarde', metricasShows: 'shows', metricasCierres: 'cierres', metricasVentas: 'ventas' },
     closer: { metricasCAgendas: 'agendas', metricasCShows: 'shows', metricasCNoShows: 'noShows', metricasCCash: 'ventas', metricasCCierres: 'cierres' },
   };
   function inicioBorradorMetricas(){
@@ -6456,7 +6453,7 @@
       if(hayNuevo){
         await escribirLecciones(metricasRol === 'closer'
           ? { action: 'addMetricas', rol: 'closer', closer: nombre, fecha, agendas: dif.agendas, shows: dif.shows, noShows: dif.noShows, ventas: dif.ventas, cierres: dif.cierres }
-          : { action: 'addMetricas', rol: 'setter', setter: nombre, fecha, llamadas: dif.llamadas, agendadas: dif.agendadas, noCalifica: dif.noCalifica, noAtendieron: dif.noAtendieron, infoWhatsapp: dif.infoWhatsapp, cortaron: dif.cortaron, llamarMasTarde: dif.llamarMasTarde, shows: dif.shows, cierres: dif.cierres, ventas: dif.ventas });
+          : { action: 'addMetricas', rol: 'setter', setter: nombre, fecha, agendadas: dif.agendadas, noCalifica: dif.noCalifica, noAtendieron: dif.noAtendieron, infoWhatsapp: dif.infoWhatsapp, cortaron: dif.cortaron, llamarMasTarde: dif.llamarMasTarde, shows: dif.shows, cierres: dif.cierres, ventas: dif.ventas });
         if(closerCerro && dif.cierres > 0){
           try {
             await escribirLecciones({ action: 'addMetricas', rol: 'closer', closer: closerCerro, fecha, agendas: 0, shows: 0, noShows: 0, ventas: dif.ventas, cierres: dif.cierres });
@@ -8079,7 +8076,7 @@
         data.totales.cierres = Math.max(data.totales.cierres, showsTracker.filter(s => s.resultado === 'Cierre').length);
         pintarShows(showsTracker);
       }
-      // Llamadas y agendadas: lo que cargan las setters en Métricas (GHL solo cuenta las tarjetas que alguien movió de etapa y se queda corto).
+      // Llamadas: salen de Zoom (columna Leads del Tracker). Agendadas: lo que cargan las setters en Métricas (GHL solo cuenta las tarjetas que alguien movió de etapa y se queda corto).
       try {
         const filasSetters = ((await filasP) || []).filter(f => f.fecha.getFullYear() === anio && f.fecha.getMonth() === mes);
         if(pedido !== ghlPedidoActual) return;
