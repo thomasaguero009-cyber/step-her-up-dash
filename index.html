@@ -4298,7 +4298,7 @@
     });
     document.querySelectorAll('.sem-bloque[data-sem]').forEach(b => {
       if(b.nextElementSibling && b.nextElementSibling.classList.contains('sem-mes')) return;
-      b.insertAdjacentHTML('afterend', '<div class="sem-titulo sem-mes">El mes (según el mes activo de arriba)</div>');
+      b.insertAdjacentHTML('afterend', '<div class="sem-titulo sem-mes">El mes</div>');
     });
   }
 
