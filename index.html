@@ -6634,7 +6634,9 @@
         + (ventas.some(v => v.closer) ? tarjetas('Cerradas por la closer', (() => { const r = agrupar('closer'); r.orden = r.orden.filter(k => k !== sin); return r; })()) : '')
       : '';
     const celda = (v) => v ? escDesglose(v) : '<span style="color:var(--text-dim)">' + sin + '</span>';
-    document.getElementById('desgloseBody').innerHTML = ventas.map(v =>
+    // La tabla va con lo más reciente arriba (a igual fecha, la fila más abajo en el Tracker va primero).
+    const ventasTabla = ventas.map((v, i) => ({ v, i })).sort((a, b) => fechaOrden(b.v.fecha) - fechaOrden(a.v.fecha) || b.i - a.i).map(x => x.v);
+    document.getElementById('desgloseBody').innerHTML = ventasTabla.map(v =>
       '<tr><td style="white-space:nowrap">' + escDesglose(v.fecha) + '</td><td>' + escDesglose(v.clienta) + '</td><td>' + escDesglose(v.producto) + '</td><td>' + escDesglose(v.pago) +
       '</td><td>' + escDesglose(v.source) + '</td><td style="white-space:nowrap">' + usdDesglose(v.cash) + '</td><td>' + (v.closer ? escDesglose(v.closer) : '<span style="color:var(--text-dim)">—</span>') + '</td><td>' + celda(v.setter || (v.closer ? '—' : '')) + '</td></tr>').join('')
       + (ventas.length ? '<tr><td><strong>Total</strong></td><td></td><td></td><td></td><td></td><td><strong>' + usdDesglose(total) + '</strong></td><td></td><td></td></tr>' : '');
