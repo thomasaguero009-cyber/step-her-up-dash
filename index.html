@@ -1393,6 +1393,39 @@
   .sa2-kv{ font-family:"Playfair Display",Georgia,serif; font-weight:500; font-size:40px; }
   .sa2 .sa2-h{ font-family:"Playfair Display",Georgia,serif; text-transform:none; letter-spacing:0; font-size:20px; font-weight:500; color:var(--cream); }
   .sa2-call-name{ font-family:"Playfair Display",Georgia,serif; font-weight:500; font-size:19px; }
+  /* Página narrativa: secciones con cabecera centrada, banda de números y entrada suave al hacer scroll (como el sitio 3D). */
+  .sa2-rv{ opacity:0; transform:translateY(26px); transition:opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); }
+  .sa2-rv.visto{ opacity:1; transform:none; }
+  .sa2-ancla{ position:sticky; top:0; z-index:40; display:flex; justify-content:center; flex-wrap:wrap; gap:8px; padding:12px 0 22px; margin:6px 0 0; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); background:linear-gradient(180deg, rgba(26,5,9,.95) 62%, rgba(26,5,9,0)); }
+  .sa2-banda{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); margin:22px 0 0; border-top:1px solid var(--au-line); border-bottom:1px solid var(--au-line); }
+  .sa2-k{ padding:26px 12px 22px; text-align:center; border-left:1px solid var(--sa-line); } .sa2-k:first-child{ border-left:0; }
+  .sa2-k-v{ font-family:"Playfair Display",Georgia,serif; font-weight:500; font-size:clamp(34px,4.6vw,56px); line-height:1; color:var(--cream); }
+  .sa2-k-t{ margin-top:12px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--au-2); font-weight:600; }
+  .sa2-k-s{ margin-top:4px; font-size:12.5px; color:var(--text-dim); }
+  .sa2-sec{ margin-top:clamp(64px,10vh,120px); scroll-margin-top:56px; }
+  .sa2-sec-cab{ text-align:center; max-width:660px; margin:0 auto 34px; }
+  .sa2-sec-t{ font-family:"Playfair Display",Georgia,serif; font-weight:500; font-size:clamp(28px,4vw,44px); line-height:1.08; letter-spacing:-.01em; margin:8px 0 0; text-wrap:balance; }
+  .sa2-sec-t em{ font-style:italic; color:var(--au-2); }
+  .sa2-sec-s{ margin:14px auto 0; color:var(--text-dim); font-size:15px; text-wrap:pretty; }
+  .sa2-etgrid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+  .sa2-etc{ padding:22px 22px 20px; }
+  .sa2-num{ display:block; font-family:"Playfair Display",Georgia,serif; font-style:italic; font-size:44px; line-height:1; color:var(--au-2); margin-bottom:10px; }
+  .sa2-etc h4{ font-family:"Playfair Display",Georgia,serif; font-weight:500; font-size:19px; line-height:1.2; margin:0 0 10px; }
+  .sa2-etp{ font-family:"Playfair Display",Georgia,serif; font-size:34px; line-height:1; margin-bottom:12px; }
+  .sa2-trgrid{ display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:16px; align-items:start; }
+  .sa2-trlista{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+  .sa2-trato2{ cursor:pointer; padding:20px 22px; }
+  .sa2-tr-top{ display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+  .sa2-tr-n{ font-family:"Playfair Display",Georgia,serif; font-weight:500; font-size:21px; line-height:1.15; }
+  .sa2-tr-m{ margin-top:4px; font-size:12.5px; color:var(--text-dim); }
+  .sa2-tr-p{ font-family:"Playfair Display",Georgia,serif; font-size:38px; line-height:1; color:var(--au-1); }
+  .sa2-tr-s{ font-size:13.5px; color:var(--cream); }
+  .sa2-motivos{ padding:22px; } .sa2-mt{ font-family:"Playfair Display",Georgia,serif; font-weight:500; font-size:20px; margin:0 0 14px; }
+  .sa2-coach .sa2-av{ width:46px; height:46px; }
+  .sa2-coach .sa2-card > div:first-child > div > div:first-child{ font-family:"Playfair Display",Georgia,serif; font-weight:500 !important; font-size:21px !important; }
+  @media (max-width:1000px){ .sa2-etgrid{ grid-template-columns:repeat(2,minmax(0,1fr)); } .sa2-trgrid{ grid-template-columns:minmax(0,1fr); } .sa2-banda{ grid-template-columns:repeat(3,minmax(0,1fr)); } .sa2-k:nth-child(4){ border-left:0; } .sa2-k:nth-child(n+4){ border-top:1px solid var(--sa-line); } }
+  @media (max-width:620px){ .sa2-trlista{ grid-template-columns:minmax(0,1fr); } .sa2-etc{ padding:16px; } .sa2-num{ font-size:34px; } .sa2-etp{ font-size:28px; } .sa2-k{ padding:18px 6px 16px; } .sa2-k-s{ display:none; } .sa2-sec{ margin-top:56px; } }
+  @media (prefers-reduced-motion:reduce){ .sa2-rv{ opacity:1 !important; transform:none !important; transition:none !important; } }
   @media (prefers-reduced-motion:reduce){ .sa2-aurora, .sa2-title, .sa2-in{ animation:none !important; } .sa2-title{ color:var(--au-1); background:none; -webkit-text-fill-color:var(--au-1); } }
   @media (max-width:1000px){ .sa2-kpis{ grid-template-columns:repeat(3,minmax(0,1fr)); } .sa2-resu{ grid-template-columns:1fr; } }
   @media (max-width:620px){
@@ -3674,34 +3707,27 @@
     const num = valor == null ? '—' : `<span class="sa2-count" data-to="${valor}" data-suf="${suf || ''}">${valor}${suf || ''}</span>`;
     return `<div class="sa2-card sa2-in" style="--i:${i}"><div class="sa2-kl">${t}</div><div class="sa2-kv">${num}${anillo || ''}</div><div class="sa2-ks">${sub}</div></div>`;
   }
-  function saVistaResumen(fil, st){
+  // Sección con cabecera centrada (etiqueta, título en serif con una palabra en cursiva dorada, texto) y entrada suave al hacer scroll.
+  const saSec = (id, etiqueta, titulo, sub, cuerpo) => `<section class="sa2-sec sa2-rv" id="${id}"><div class="sa2-sec-cab"><p class="sa2-eyebrow">${etiqueta}</p><h3 class="sa2-sec-t">${titulo}</h3>${sub ? `<p class="sa2-sec-s">${sub}</p>` : ''}</div>${cuerpo}</section>`;
+  // Banda de números grandes, separados por líneas finas.
+  function saBanda(st){
+    const k = (t, v, sub, suf) => `<div class="sa2-k"><div class="sa2-k-v">${v == null ? '—' : `<span class="sa2-count" data-to="${v}" data-suf="${suf || ''}">${v}${suf || ''}</span>`}</div><div class="sa2-k-t">${t}</div><div class="sa2-k-s">${sub}</div></div>`;
+    return `<div class="sa2-banda sa2-rv">${k('Revisadas', st.total, 'llamadas')}${k('Cerradas', st.cer, 'ventas')}${k('Seguimiento', st.pen, 'esperan decisión')}${k('Perdidas', st.per, 'con motivo')}${k('Cierre', st.tasa, 'cerradas / (cerr. + perd.)', '%')}${k('Score', st.prom, 'promedio')}</div>`;
+  }
+  function saSecEtapas(st){
+    const claves = Object.keys(SA_ETAPAS);
+    if(!claves.some(k => st.et[k] != null)) return '';
+    return saSec('sa-etapas', 'Proceso de venta SHU', 'Dónde se gana o se pierde <em>la llamada</em>', 'Qué tan bien se hizo cada una de las 8 etapas en las llamadas del período.',
+      `<div class="sa2-etgrid">${claves.map((k, i) => { const v = st.et[k], p = v == null ? null : Math.round(v * 100); return `<div class="sa2-card sa2-etc"><span class="sa2-num">${i + 1}</span><h4>${SA_ETAPAS[k]}</h4><div class="sa2-etp">${p == null ? '—' : p + '%'}</div><div class="sa2-track"><div class="sa2-fill${p != null && p < 60 ? ' bajo' : ''}" style="width:${p || 0}%"></div></div></div>`; }).join('')}</div>`);
+  }
+  function saSecTratos(fil){
+    const abiertos = fil.filter(f => saRes(f) === 'pendiente').sort((a, b) => (saProb(b) || 0) - (saProb(a) || 0));
     const motivos = Object.keys(SA_MOTIVOS).map(k => ({ nombre: SA_MOTIVOS[k][0], valor: fil.filter(f => saRes(f) === 'perdida' && saNorm(f.Motivo) === k).length })).filter(x => x.valor > 0);
     const totMot = motivos.reduce((t, x) => t + x.valor, 0);
-    const etapas = Object.keys(SA_ETAPAS).filter(k => st.et[k] != null);
-    const abiertos = fil.filter(f => saRes(f) === 'pendiente').sort((a, b) => (saProb(b) || 0) - (saProb(a) || 0));
-    const idx = f => fil.indexOf(f);
-    return `
-      <div class="sa2-grid sa2-kpis">
-        ${saTarjetaKpi('Revisadas', st.total, 'llamadas en el período', 0)}
-        ${saTarjetaKpi('Cerradas', st.cer, 'ventas en llamada', 1)}
-        ${saTarjetaKpi('Seguimiento', st.pen, 'esperan decisión', 2)}
-        ${saTarjetaKpi('Perdidas', st.per, 'con motivo', 3)}
-        ${saTarjetaKpi('Cierre', st.tasa, 'cerradas / (cerradas + perdidas)', 4, '%')}
-        ${saTarjetaKpi('Score', st.prom, 'promedio de las llamadas', 5, '', st.prom != null ? saAnillo(st.prom, 40) : '')}
-      </div>
-      <div class="sa2-grid sa2-resu">
-        <div class="sa2-card sa2-in" style="--i:6"><h3 class="sa2-h">Dónde se gana o se pierde la llamada</h3>
-          ${etapas.length ? etapas.map(k => { const p = Math.round(st.et[k] * 100); return `<div class="sa2-bar"><div class="sa2-bar-top"><span>${SA_ETAPAS[k]}</span><span>${p}%</span></div><div class="sa2-track"><div class="sa2-fill${p < 60 ? ' bajo' : ''}" style="width:${p}%"></div></div></div>`; }).join('') : '<div class="sa2-ks">Aparece cuando haya llamadas revisadas con el formato nuevo.</div>'}
-        </div>
-        <div class="sa2-col">
-          <div class="sa2-card sa2-in" style="--i:7"><h3 class="sa2-h">Tratos abiertos · los más cerca de cerrar</h3>
-            ${abiertos.length ? `<div class="sa2-lista">${abiertos.map(f => { const p = saProb(f); return `<div class="sa2-trato ${p >= 90 ? 'sa2-hot' : ''}" data-act="abrir" data-i="${idx(f)}"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><b>${saEsc(f.Clienta || '—')}${p >= 90 ? '<span class="sa2-fire">Casi paga</span>' : ''}</b><span style="color:var(--text-dim);font-size:12.5px">${saEsc(f.Closer || '—')} · ${saEsc(saFechaCorta(f.Fecha))}</span></div><div class="sa2-track" style="margin:8px 0 6px"><div class="sa2-fill" style="width:${p == null ? 0 : p}%"></div></div><div style="display:flex;justify-content:space-between;gap:10px;font-size:12.5px"><span>${saEsc(f['Siguiente acción'] || '—')}</span><span style="font-weight:700">${p == null ? '—' : p + '%'}</span></div></div>`; }).join('')}</div>` : '<div class="sa2-ks">No hay tratos abiertos en este período.</div>'}
-          </div>
-          <div class="sa2-card sa2-in" style="--i:8"><h3 class="sa2-h">Por qué se pierden</h3>
-            ${totMot > 0 ? motivos.map(m => { const p = Math.round(m.valor / totMot * 100); return `<div class="sa2-bar"><div class="sa2-bar-top"><span>${m.nombre} · ${m.valor}</span><span>${p}%</span></div><div class="sa2-track"><div class="sa2-fill" style="width:${p}%"></div></div></div>`; }).join('') : '<div class="sa2-ks">No hay llamadas perdidas con motivo en este período.</div>'}
-          </div>
-        </div>
-      </div>`;
+    const trato = f => { const p = saProb(f); return `<div class="sa2-card sa2-trato2${p >= 90 ? ' sa2-hot' : ''}" data-act="abrir" data-i="${fil.indexOf(f)}"><div class="sa2-tr-top"><div><div class="sa2-tr-n">${saEsc(f.Clienta || '—')}${p >= 90 ? '<span class="sa2-fire">Casi paga</span>' : ''}</div><div class="sa2-tr-m">${saEsc(f.Closer || '—')} · ${saEsc(saFechaCorta(f.Fecha))}</div></div><div class="sa2-tr-p">${p == null ? '—' : p + '%'}</div></div><div class="sa2-track" style="margin:12px 0 10px"><div class="sa2-fill" style="width:${p == null ? 0 : p}%"></div></div><div class="sa2-tr-s">${saEsc(f['Siguiente acción'] || '—')}</div></div>`; };
+    const cuerpo = `<div class="sa2-trgrid"><div class="sa2-trlista">${abiertos.length ? abiertos.map(trato).join('') : '<div class="sa2-ks">No hay tratos abiertos en este período.</div>'}</div>
+      <div class="sa2-card sa2-motivos"><h4 class="sa2-mt">Por qué se pierden</h4>${totMot > 0 ? motivos.map(m => { const p = Math.round(m.valor / totMot * 100); return `<div class="sa2-bar"><div class="sa2-bar-top"><span>${m.nombre} · ${m.valor}</span><span>${p}%</span></div><div class="sa2-track"><div class="sa2-fill" style="width:${p}%"></div></div></div>`; }).join('') : '<div class="sa2-ks">No hay llamadas perdidas con motivo en este período.</div>'}</div></div>`;
+    return saSec('sa-tratos', 'Seguimiento', 'Los tratos <em>más cerca de cerrar</em>', 'Los que quedaron pendientes, del más cerca al más lejos. Toca uno para ver su detalle.', cuerpo);
   }
   function saVistaLlamadas(fil){
     const filtros = [['todas', 'Todas', () => true], ['cerrada', 'Cerradas', f => saRes(f) === 'cerrada'], ['pendiente', 'En seguimiento', f => saRes(f) === 'pendiente'], ['perdida', 'Perdidas', f => saRes(f) === 'perdida'], ['caliente', 'Al 90%', f => saRes(f) === 'pendiente' && saProb(f) >= 90], ['revisar', 'Por revisar', saPorRevisar]];
@@ -3724,7 +3750,7 @@
     fil.forEach(f => { const c = String(f.Closer || '').trim() || 'Sin closer'; (por[c] = por[c] || []).push(f); });
     const nombres = Object.keys(por).sort((a, b) => a.localeCompare(b, 'es'));
     if(!nombres.length) return '<div class="sa2-card sa2-vacio"><p>Todavía no hay llamadas para armar el coach de cada closer.</p></div>';
-    return `<p style="margin:0 0 14px;color:var(--text-dim);font-size:14px">Los puntos de mejora de cada closer, sacados de sus propias llamadas revisadas. Con menos de 3 llamadas los porcentajes todavía no dicen mucho.</p><div class="sa2-coach">${nombres.map((c, i) => {
+    return `<div class="sa2-coach">${nombres.map((c, i) => {
       const s = saStats(por[c]), pocas = s.total < 3, base = s.cer + s.per;
       const et = Object.keys(SA_ETAPAS).filter(k => s.et[k] != null).sort((a, b) => s.et[a] - s.et[b]);
       const flojas = et.filter(k => s.et[k] < 0.75).slice(0, 2), fuerte = et.length ? et[et.length - 1] : null;
@@ -3816,7 +3842,9 @@
     const vacio = !saFilas.length && !saEsEjemplo;
     const cuerpo = vacio
       ? `<div class="sa2-card sa2-vacio sa2-in"><div class="sa2-eyebrow">Todavía no llegó ninguna llamada</div><p>Cuando una closer termine una reunión en Fathom, la IA la revisa sola y aparece acá con su score, lo que hizo bien y qué corregir.</p><button type="button" class="sa2-btn" data-act="ejemplo">Ver datos de ejemplo</button></div>`
-      : (saVista === 'llamadas' ? saVistaLlamadas(filC) : saVista === 'coach' ? saVistaCoach(filT) : saVistaResumen(filC, st));
+      : saBanda(st) + saSecEtapas(st) + saSecTratos(filC)
+        + saSec('sa-llamadas', 'Todas las llamadas', 'Cada llamada, <em>con su detalle</em>', 'Toca una para ver qué corregir, lo que hizo bien y cómo seguir con la clienta.', saVistaLlamadas(filC))
+        + saSec('sa-coach', 'Para cada closer', 'En qué <em>mejorar</em>, por closer', 'Sacado de sus propias llamadas revisadas. Con menos de 3 llamadas los porcentajes todavía no dicen mucho.', saVistaCoach(filT));
     raiz.innerHTML = `
       <div class="sa2">
         <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="saGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8f6b22"/><stop offset="0.5" stop-color="#e9c46a"/><stop offset="1" stop-color="#f8e7b0"/></linearGradient></defs></svg>
@@ -3830,12 +3858,17 @@
               </div></div></div>
         </div></section>
         ${saEsEjemplo ? '<div class="sa2-banner"><b>DATOS DE EJEMPLO.</b> Todavía no hay llamadas revisadas; estas filas son inventadas, solo para ver cómo se verá. <button type="button" class="sa2-chip" data-act="salir">Salir del ejemplo</button></div>' : ''}
-        ${vacio ? '' : `<nav class="sa2-tabs">${[['resumen', 'Resumen'], ['llamadas', 'Llamadas · ' + filC.length], ['coach', 'Coach']].map(([k, t]) => `<button type="button" class="sa2-tab${k === saVista ? ' on' : ''}" data-act="vista" data-v="${k}">${t}</button>`).join('')}</nav>
-        ${saVista === 'coach' || cierres.length < 2 ? '' : `<div class="sa2-fila"><span class="sa2-lab">Closer</span><div class="sa2-fscroll">${['Todos'].concat(cierres).map(c => `<button type="button" class="sa2-chip${c === saCloser ? ' on' : ''}" data-act="closer" data-v="${saEsc(c)}">${saEsc(c)}</button>`).join('')}</div></div>`}`}
+        ${vacio ? '' : `<nav class="sa2-ancla">${[['sa-etapas', 'Proceso'], ['sa-tratos', 'Tratos'], ['sa-llamadas', 'Llamadas · ' + filC.length], ['sa-coach', 'Coach']].map(([k, t]) => `<button type="button" class="sa2-chip sm" data-act="ir" data-v="${k}">${t}</button>`).join('')}</nav>
+        ${cierres.length < 2 ? '' : `<div class="sa2-fila"><span class="sa2-lab">Closer</span><div class="sa2-fscroll">${['Todos'].concat(cierres).map(c => `<button type="button" class="sa2-chip${c === saCloser ? ' on' : ''}" data-act="closer" data-v="${saEsc(c)}">${saEsc(c)}</button>`).join('')}</div></div>`}`}
         <div id="saCuerpo">${cuerpo}</div>
       </div>`;
     saEnganchar();
     saOnda(raiz.querySelector('.sa2-wave'));
+    const rvs = raiz.querySelectorAll('.sa2-rv');
+    if(saAnimar && 'IntersectionObserver' in window){
+      const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visto'); io.unobserve(e.target); } }), { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+      rvs.forEach(x => io.observe(x));
+    } else rvs.forEach(x => x.classList.add('visto'));
     if(saAnimar){ saCuenta(raiz); saAnimar = false; }
     else raiz.querySelectorAll('.sa2-in').forEach(e => { e.style.animation = 'none'; });
   }
@@ -3850,14 +3883,14 @@
       if(a === 'rango'){ const p = document.getElementById('saPanel'); if(p) p.hidden = !p.hidden; return; }
       if(a === 'copiar'){ try { await navigator.clipboard.writeText(decodeURIComponent(el.dataset.txt)); el.textContent = 'Copiado ✓'; } catch(_) { el.textContent = 'No se pudo copiar'; } setTimeout(() => { el.textContent = 'Copiar mensaje'; }, 2000); return; }
       if(a === 'reintentar'){ saFilas = null; cargarSaleAudit(true); return; }
-      if(a === 'ejemplo'){ saFilas = SA_EJEMPLO.slice(); saEsEjemplo = true; saRango = { ini: new Date(2026, 10, 1), fin: new Date(2026, 10, 30) }; saVista = 'resumen'; saAnimar = true; saRender(); return; }
+      if(a === 'ejemplo'){ saFilas = SA_EJEMPLO.slice(); saEsEjemplo = true; saRango = { ini: new Date(2026, 10, 1), fin: new Date(2026, 10, 30) }; saAnimar = true; saRender(); return; }
       if(a === 'salir'){ saFilas = null; saEsEjemplo = false; saRango = null; saAnimar = true; cargarSaleAudit(true); return; }
-      if(a === 'vista'){ saVista = v; saAbierta = null; saRender(); return; }
+      if(a === 'ir'){ const t = document.getElementById(v); if(t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
       if(a === 'closer'){ saCloser = v; saRender(); return; }
       if(a === 'filtro'){ saFiltro = v; saVerTodas = false; saRender(); return; }
       if(a === 'mas'){ saVerTodas = !saVerTodas; saRender(); return; }
       if(a === 'llamada'){ saAbierta = saAbierta === el.dataset.clave ? null : el.dataset.clave; saRender(); return; }
-      if(a === 'abrir'){ const f = saEnRango(true)[+el.dataset.i]; if(f){ saVista = 'llamadas'; saFiltro = 'todas'; saAbierta = String(f['ID Fathom'] || f.Fecha + f.Clienta); saRender(); const t = document.querySelector('[data-clave="' + CSS.escape(saAbierta) + '"]'); if(t) t.scrollIntoView({ behavior: 'smooth', block: 'center' }); } return; }
+      if(a === 'abrir'){ const f = saEnRango(true)[+el.dataset.i]; if(f){ saFiltro = 'todas'; saAbierta = String(f['ID Fathom'] || f.Fecha + f.Clienta); saRender(); const t = document.querySelector('[data-clave="' + CSS.escape(saAbierta) + '"]'); if(t) t.scrollIntoView({ behavior: 'smooth', block: 'center' }); } return; }
       if(a === 'preset'){
         const h = saHoy(), lunes = saDias(h, -((h.getDay() + 6) % 7));
         saRango = v === 'hoy' ? { ini: h, fin: h } : v === 'ayer' ? { ini: saDias(h, -1), fin: saDias(h, -1) } : v === 'semana' ? { ini: lunes, fin: saDias(lunes, 6) } : v === 'semanapasada' ? { ini: saDias(lunes, -7), fin: saDias(lunes, -1) } : v === 'todo' ? { ini: new Date(2025, 0, 1), fin: new Date(2099, 11, 31) } : null;
