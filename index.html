@@ -2242,7 +2242,7 @@
         </div>
 
         <!-- Desglose de ventas: cada cobro de la pestaña "Ventas" del Tracker con su closer y setter (solo lectura). -->
-        <div class="section-label" id="ventasDesglose" style="margin-top:44px;">Quién hizo cada venta</div>
+        <div class="section-label" id="ventasDesglose" style="margin-top:44px;">Quién agendó cada venta</div>
         <div class="chart-panel">
           <div class="kpi-grid" id="desgloseResumen" style="margin-bottom:18px;"></div>
           <div id="desgloseGrafico" style="margin-bottom:22px;"></div>
@@ -6630,7 +6630,7 @@
     const tarjetas = (titulo, r) => '<div style="grid-column:1/-1;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);">' + titulo + '</div>'
       + r.orden.map(k => '<div class="kpi-card"><div class="kpi-label">' + escDesglose(k) + '</div><div class="kpi-value">' + usdDesglose(r.g[k].cash) + '</div><div style="font-size:12px;color:var(--text-dim);margin-top:4px;">' + r.g[k].n + (r.g[k].n === 1 ? ' cobro' : ' cobros') + '</div></div>').join('');
     document.getElementById('desgloseResumen').innerHTML = ventas.length
-      ? tarjetas('Por vendedora (la que agendó; se lleva el cash)', agrupar('vendio'))
+      ? tarjetas('Por quien agendó (se lleva el cash)', agrupar('vendio'))
         + (ventas.some(v => v.closer) ? tarjetas('Cerradas por la closer', (() => { const r = agrupar('closer'); r.orden = r.orden.filter(k => k !== sin); return r; })()) : '')
       : '';
     const celda = (v) => v ? escDesglose(v) : '<span style="color:var(--text-dim)">' + sin + '</span>';
@@ -6644,7 +6644,7 @@
     const faltan = ventas.filter(v => !v.vendio).length;
     document.getElementById('statusDesglose').textContent = !ventas.length
       ? (data.message || 'No hay cobros cargados en ese mes.')
-      : (faltan ? faltan + ' de ' + ventas.length + ' cobros todavía sin vendedora: se completan en la pestaña "Ventas" del Tracker, columnas "Closer" y "Setter / Chatter". ' : '') + 'Cash collected del mes: ' + usdDesglose(total) + ' (pestaña ' + (data.hoja || '') + ' del Tracker).';
+      : (faltan ? faltan + ' de ' + ventas.length + ' cobros todavía sin quien agendó: se completan en la pestaña "Ventas" del Tracker, columnas "Closer" y "Setter / Chatter". ' : '') + 'Cash collected del mes: ' + usdDesglose(total) + ' (pestaña ' + (data.hoja || '') + ' del Tracker).';
   }
   document.addEventListener('click', (e) => { if(e.target.closest && e.target.closest('[data-tab="ventas"]')) cargarDesglose(); });
 

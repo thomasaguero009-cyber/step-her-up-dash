@@ -1,7 +1,23 @@
 {
-  "actualizado": "2026-11-13",
-  "nota": "Cifras copiadas de Bulk email stats de GHL (Contactos > Bulk Actions). Una fila por envío. Falta V8 (13-nov, en cola). Los conteos de 1K o más se calcularon con los porcentajes de GHL.",
+  "actualizado": "2026-11-16",
+  "nota": "Cifras copiadas de Bulk email stats de GHL (Contactos > Bulk Actions). Una fila por envío. Los conteos de 1K o más se calcularon con los porcentajes de GHL.",
   "envios": [
+    {
+      "nombre": "VSL no compraron V8 un paso más",
+      "fecha": "2026-11-13",
+      "total": 2110,
+      "aceptados": 2057,
+      "entregados": 1978,
+      "abiertos": 952,
+      "clics": 37,
+      "respuestas": 2,
+      "bajas": 10,
+      "quejas": 0,
+      "rebotados": 79,
+      "fallidos": 0,
+      "omitidos": 53,
+      "nota": "Segmento sin compra, remitente contact@stepherup.com, lotes de 40. Terminó 13-nov 10:59 PM."
+    },
     {
       "nombre": "VSL no compraron V7 depende de ti",
       "fecha": "2026-11-11",
