@@ -1435,6 +1435,7 @@
   .sa2-f-sub{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
   .sa2-f-fila{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
   .sa2-fathom-link{ display:inline-block; text-decoration:none; padding:9px 18px; font-size:13.5px; }
+  .sa2-dia{ display:flex; align-items:center; gap:12px; margin:22px 0 4px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--au-2); font-weight:600; } .sa2-dia::after{ content:""; flex:1; height:1px; background:var(--sa-line); } .sa2-lista > .sa2-dia:first-child{ margin-top:6px; }
   .sa2-fuente{ font-size:11.5px; color:var(--text-dim); max-width:240px; }
   .sa2-resbtns{ display:flex; flex-wrap:wrap; gap:8px; }
   /* Rendimiento: sin desenfoques pesados, fondo fijo en una capa propia y secciones fuera de pantalla sin dibujar. */
@@ -3677,7 +3678,15 @@
   const saNorm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
   const saRes = f => { const r = saNorm(f.Final || f.Resultado); return r === 'cerrada' || r === 'perdida' || r === 'pendiente' ? r : 'pendiente'; };
   const saProb = f => saRes(f) === 'cerrada' ? 100 : saRes(f) === 'perdida' ? 0 : (f.Probabilidad != null && f.Probabilidad !== '' ? Number(f.Probabilidad) || 0 : null);
-  const saFechaCorta = t => { const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2})/.exec(String(t || '')); return m ? (+m[3]) + ' ' + MCORTO2[+m[2] - 1] + ' · ' + m[4] : String(t || '').slice(0, 16); };
+  const SA_DIAS_CORTO = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'], SA_DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const saFechaCorta = t => { const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2})/.exec(String(t || '')); return m ? SA_DIAS_CORTO[new Date(+m[1], +m[2] - 1, +m[3]).getDay()] + ' ' + (+m[3]) + ' ' + MCORTO2[+m[2] - 1] + ' ' + m[1] + ' · ' + m[4] : String(t || '').slice(0, 16); };
+  // Encabezado de cada día en la lista de llamadas: "Hoy · martes 17 de noviembre".
+  function saCabDia(iso){
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso); if(!m) return '';
+    const d = new Date(+m[1], +m[2] - 1, +m[3]), h = saHoy(), dif = Math.round((h - d) / 86400000);
+    const base = SA_DIAS[d.getDay()] + ' ' + d.getDate() + ' de ' + MLARGO2[d.getMonth()].toLowerCase() + (d.getFullYear() !== h.getFullYear() ? ' de ' + d.getFullYear() : '');
+    return `<div class="sa2-dia">${dif === 0 ? 'Hoy · ' : dif === 1 ? 'Ayer · ' : ''}${base}</div>`;
+  }
   // Revisión en formato Slack: *negrita*, saltos de línea y <url|texto>; todo lo demás va escapado.
   function saRevision(t){
     let h = saEsc(t || '').replace(/&lt;(https?:\/\/[^|&>]+)\|([^&>]+)&gt;/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--au-1)">$2</a>');
@@ -3787,11 +3796,13 @@
     const act = (filtros.find(x => x[0] === saFiltro) || filtros[0])[2];
     const lista = fil.filter(act).sort((a, b) => String(b.Fecha).localeCompare(String(a.Fecha)));
     const tope = saVerTodas ? lista.length : 20;
+    let diaPrev = '';
     return `
       <div class="sa2-fila"><span class="sa2-lab">Estado</span><div class="sa2-fscroll">${filtros.map(x => `<button type="button" class="sa2-chip sm${x[0] === saFiltro ? ' on' : ''}" data-act="filtro" data-v="${x[0]}">${x[1]} · ${fil.filter(x[2]).length}</button>`).join('')}</div></div>
       <div class="sa2-lista" style="margin-top:14px">${lista.slice(0, tope).map((f, i) => {
         const k = saRes(f), p = saProb(f), clave = String(f['ID Fathom'] || f.Fecha + f.Clienta), abierta = saAbierta === clave, mot = SA_MOTIVOS[saNorm(f.Motivo)];
-        return `<div class="sa2-card sa2-call sa2-in${k === 'pendiente' && p >= 90 ? ' sa2-hot' : ''}" style="--i:${Math.min(i, 8)}" data-clave="${saEsc(clave)}"><div class="sa2-call-top" data-act="llamada" data-clave="${saEsc(clave)}">
+        const dia = String(f.Fecha || '').slice(0, 10), cab = dia !== diaPrev ? saCabDia(dia) : ''; diaPrev = dia;
+        return cab + `<div class="sa2-card sa2-call sa2-in${k === 'pendiente' && p >= 90 ? ' sa2-hot' : ''}" style="--i:${Math.min(i, 8)}" data-clave="${saEsc(clave)}"><div class="sa2-call-top" data-act="llamada" data-clave="${saEsc(clave)}">
           ${saScoreAnillo(f.Score) || '<div style="width:56px"></div>'}
           <div class="sa2-call-main"><div class="sa2-call-name">${saEsc(f.Clienta || '—')}${k === 'pendiente' && p >= 90 ? '<span class="sa2-fire">Casi paga</span>' : ''}</div><div class="sa2-call-meta">${saEsc(f.Closer || '—')} · ${saEsc(saFechaCorta(f.Fecha))}</div><div class="sa2-call-next">${saEsc(f['Siguiente acción'] || '—')}</div></div>
           <div class="sa2-call-side"><span class="sa2-pill ${k}">${k === 'cerrada' ? 'Cerrada' : k === 'perdida' ? 'Perdida' + (mot ? ' · ' + mot[0] : '') : 'Seguimiento'}</span>${k === 'pendiente' && p != null ? `<span>Prob. ${p}%</span>` : ''}${saPorRevisar(f) ? '<span style="color:#f5a3a3">Por revisar</span>' : ''}${f.FinalFuente ? `<span class="sa2-fuente">${saEsc(saFuente(f))}</span>` : ''}</div>
