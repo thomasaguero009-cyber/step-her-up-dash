@@ -1297,7 +1297,7 @@
   @media (max-width:620px){ .tabla-campanas{ font-size:12px; } .tabla-campanas th{ font-size:9px; letter-spacing:0; padding:8px 3px; white-space:normal; } .tabla-campanas td{ padding:9px 3px; white-space:normal; } .tabla-campanas th:first-child, .tabla-campanas td:first-child{ min-width:0; width:34%; padding-left:8px; } .estado-ads{ padding:1px 5px; font-size:9px; } }
   .estado-ads{ display:inline-block; padding:2px 10px; border-radius:99px; font-size:11px; font-weight:600; border:1px solid var(--border); color:var(--text-dim); }
   .estado-ads.verde{ color:#7fe0a8; border-color:rgba(127,224,168,.5); background:rgba(127,224,168,.1); }
-  /* ===== Sale Audit: sección propia con acento dorado. Todo va dentro del panel, no toca la paleta del resto del dash. =====
+  /* ===== Sales Audit: sección propia con acento dorado. Todo va dentro del panel, no toca la paleta del resto del dash. =====
      El dorado es solo acento: título, pestaña activa, chip activo, barras y la tarjeta "casi paga". Lo demás es neutro. */
   #saleAuditScreen{ --au-1:#f8e7b0; --au-2:#e9c46a; --au-3:#cfa24a; --au-4:#8f6b22; --au-line:rgba(233,196,106,.45); --sa-line:rgba(255,255,255,.10); }
   .sa2{ position:relative; padding-bottom:24px; }
@@ -1383,7 +1383,7 @@
   .sa2-rev{ font-size:13.5px; line-height:1.55; max-width:860px; }
   .sa2-in{ animation:sa2In .6s cubic-bezier(.2,.7,.2,1) both; animation-delay:calc(var(--i,0) * 70ms); }
   @keyframes sa2In{ from{ opacity:0; transform:translateY(12px); } to{ opacity:1; transform:none; } }
-  /* Estilo del sitio 3D del Sale Audit: títulos y números en serif, hero con la onda de audio dorada. */
+  /* Estilo del sitio 3D del Sales Audit: títulos y números en serif, hero con la onda de audio dorada. */
   .sa2-hero{ padding:28px 30px 22px; min-height:230px; overflow:visible; }
   .sa2-fondo{ position:absolute; inset:0; overflow:hidden; border-radius:inherit; pointer-events:none; }
   .sa2-hero-in{ flex-direction:column; align-items:flex-start; justify-content:space-between; min-height:180px; gap:22px; }
@@ -1434,6 +1434,7 @@
   .sa2-f-lista{ margin-top:10px; border-top:1px solid var(--sa-line); padding-top:10px; font-size:13px; }
   .sa2-f-sub{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
   .sa2-f-fila{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
+  .sa2-fathom-link{ display:inline-block; text-decoration:none; padding:9px 18px; font-size:13.5px; }
   .sa2-fuente{ font-size:11.5px; color:var(--text-dim); max-width:240px; }
   .sa2-resbtns{ display:flex; flex-wrap:wrap; gap:8px; }
   /* Rendimiento: sin desenfoques pesados, fondo fijo en una capa propia y secciones fuera de pantalla sin dibujar. */
@@ -1603,7 +1604,7 @@
         </button>
         <button type="button" class="entry-option" id="goSaleAuditBtn">
           <span class="entry-option-text">
-            <span class="entry-option-title">Sale Audit</span>
+            <span class="entry-option-title">Sales Audit</span>
             <span class="entry-option-sub">Auditoría de las llamadas de venta</span>
           </span>
         </button>
@@ -2745,12 +2746,12 @@
     </div>
   </section>
 
-  <!-- ===================== Sale Audit: auditoría de las llamadas de venta. Pantalla propia (como Fulfillment o Métricas).
+  <!-- ===================== Sales Audit: auditoría de las llamadas de venta. Pantalla propia (como Fulfillment o Métricas).
        Las llamadas las revisa el Worker (cada closer conecta su Fathom a /auditoria/fathom) y acá se leen con la contraseña de la plataforma. ===================== -->
   <section class="screen" id="saleAuditScreen">
     <div class="wrap">
       <header class="dash-header">
-        <div class="section-label" style="margin:0;">Sale Audit</div>
+        <div class="section-label" style="margin:0;">Sales Audit</div>
         <div class="dash-header-right">
           <div class="section-switcher" id="sectionSwitcherSaleAudit">
             <button type="button" class="ghost-link-btn" id="sectionSwitcherBtnSaleAudit">Secciones ▾</button>
@@ -3314,7 +3315,7 @@
   document.getElementById('goEntregaBtn').addEventListener('click', entrarAEntrega);
 
   function entrarASaleAudit(){
-    cambiarDeSeccion(saleAuditScreen, 'Sale Audit', () => cargarSaleAudit());
+    cambiarDeSeccion(saleAuditScreen, 'Sales Audit', () => cargarSaleAudit());
   }
   document.getElementById('goSaleAuditBtn').addEventListener('click', entrarASaleAudit);
 
@@ -3338,7 +3339,7 @@
     { id: 'metricas', label: 'Métricas', activa: () => metricasScreen.classList.contains('active'), ir: entrarAMetricas },
     { id: 'recursos', label: 'Recursos', activa: () => recursosScreen.classList.contains('active'), ir: entrarARecursos },
     { id: 'entrega', label: 'Fulfillment', activa: () => entregaScreen.classList.contains('active'), ir: entrarAEntrega },
-    { id: 'saleaudit', label: 'Sale Audit', activa: () => saleAuditScreen.classList.contains('active'), ir: entrarASaleAudit },
+    { id: 'saleaudit', label: 'Sales Audit', activa: () => saleAuditScreen.classList.contains('active'), ir: entrarASaleAudit },
   ];
 
   function cerrarSwitchersSecciones(){
@@ -3651,7 +3652,7 @@
   }
 
 
-  // ===== Sale Audit: sección propia. El Worker revisa cada llamada de Fathom con IA (cada closer conecta su Fathom a /auditoria/fathom)
+  // ===== Sales Audit: sección propia. El Worker revisa cada llamada de Fathom con IA (cada closer conecta su Fathom a /auditoria/fathom)
   // y acá se leen con la contraseña de la plataforma. Nada de datos de clientas va en este archivo: los ejemplos son inventados. =====
   const SA_MOTIVOS = { lead: ['Lead', '#f8e7b0'], setting: ['Setting', '#cfa24a'], oferta: ['Oferta', '#a98a52'], cierre: ['Cierre', '#f08a8a'] };
   const SA_ETAPAS = { romper_barrera: 'Romper la barrera', fact_finding: 'Fact finding', resumen_espejo: 'Resumen espejo', demo: 'Demo', test_close: 'Test close', close: 'Close', objeciones: 'Objeciones', siguiente_paso: 'Próximo paso con fecha' };
@@ -3735,6 +3736,7 @@
     const min = m => m ? `<span class="sa2-min">${saEsc(m)}</span>` : '';
     let h = '';
     const pasos = arr(f.Pasos), mej = arr(f.Mejorar), bien = arr(f.Bien);
+    if(/^https:\/\//.test(String(f.Enlace || ''))) h += `<div class="sa2-bloque"><a class="sa2-btn sa2-fathom-link" href="${saEsc(f.Enlace)}" target="_blank" rel="noopener">Ver la llamada en Fathom ↗</a></div>`;
     if(f['ID Fathom']){
       const act = saRes(f), id = saEsc(f['ID Fathom']);
       h += `<div class="sa2-bloque"><h4>Resultado real</h4><div class="sa2-resbtns">${['cerrada', 'pendiente', 'perdida'].map(k => `<button type="button" class="sa2-chip sm${act === k ? ' on' : ''}" data-act="marcar" data-id="${id}" data-v="${k}">${SA_RES_TXT[k]}</button>`).join('')}${f.Manual ? `<button type="button" class="sa2-chip sm" data-act="marcar" data-id="${id}" data-v="">Quitar marca</button>` : ''}</div><p class="sa2-ks" style="margin-top:8px">${saEsc(saFuente(f))}. Si no es correcto, márcalo tú y queda guardado.</p></div>`;
@@ -3815,7 +3817,7 @@
   }
 
   function saPintarError(msg){
-    document.getElementById('saleAuditRoot').innerHTML = `<div class="sa2"><div class="sa2-card sa2-vacio"><div class="sa2-eyebrow">Sale Audit</div><p>${msg || 'No se pudo leer la auditoría.'}</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button type="button" class="sa2-btn" data-act="reintentar">Reintentar</button><button type="button" class="sa2-chip" data-act="ejemplo">Ver datos de ejemplo</button></div></div></div>`;
+    document.getElementById('saleAuditRoot').innerHTML = `<div class="sa2"><div class="sa2-card sa2-vacio"><div class="sa2-eyebrow">Sales Audit</div><p>${msg || 'No se pudo leer la auditoría.'}</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button type="button" class="sa2-btn" data-act="reintentar">Reintentar</button><button type="button" class="sa2-chip" data-act="ejemplo">Ver datos de ejemplo</button></div></div></div>`;
     saEnganchar();
   }
   async function cargarSaleAudit(forzar){
@@ -3920,7 +3922,7 @@
       <div class="sa2">
         <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="saGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8f6b22"/><stop offset="0.5" stop-color="#e9c46a"/><stop offset="1" stop-color="#f8e7b0"/></linearGradient></defs></svg>
         <section class="sa2-hero"><div class="sa2-fondo"><div class="sa2-aurora"></div><canvas class="sa2-wave" aria-hidden="true"></canvas></div><div class="sa2-hero-in">
-          <div><div class="sa2-eyebrow">Sale Audit · Auditoría de llamadas</div><h2 class="sa2-title">Cada llamada de venta, <em>auditada</em> con IA</h2><p class="sa2-sub">La IA revisa cada llamada de venta y te dice qué corregir.</p></div>
+          <div><div class="sa2-eyebrow">Sales Audit · Auditoría de llamadas</div><h2 class="sa2-title">Cada llamada de venta, <em>auditada</em> con IA</h2><p class="sa2-sub">La IA revisa cada llamada de venta y te dice qué corregir.</p></div>
           <div class="sa2-hero-r"><span class="sa2-tag"><i></i>IA activa</span><span class="sa2-tag">${saEsc(saResumenLog())}</span>
             <div class="sa2-sel"><button type="button" class="sa2-chip" data-act="fathom">Conectar Fathom ▾</button>
               <div class="sa2-pop sa2-pop-f" id="saFathom" hidden>
@@ -4121,7 +4123,7 @@
     ['goMetricasBtn', 'Métricas', 'Cargar los números del día: llamadas, agendadas, no atienden'],
     ['goRecursosBtn', 'Recursos', 'Presentaciones y materiales'],
     ['goEntregaBtn', 'Fulfillment', 'Cada alumna y en qué paso va: entrega, psicóloga, vencimientos'],
-    ['goSaleAuditBtn', 'Sale Audit', 'Auditoría de las llamadas de venta: score, qué mejorar y coach por closer'],
+    ['goSaleAuditBtn', 'Sales Audit', 'Auditoría de las llamadas de venta: score, qué mejorar y coach por closer'],
   ];
   const AYUDA_TABS = {
     general: 'Resumen del mes: llamadas, agendadas, shows, cierres, cash y meta del mes',
@@ -9486,7 +9488,7 @@
   function ir(btnId, luego, espera) { var b = $(btnId); if (b) b.click(); if (luego) setTimeout(luego, espera || 700); }
   function construir() {
     items = [];
-    [['goOnboardingBtn', 'Onboarding'], ['goDashboardBtn', 'Dashboard'], ['goRankingBtn', 'Ranking'], ['goHerramientasBtn', 'Herramientas'], ['goMetricasBtn', 'Métricas'], ['goRecursosBtn', 'Recursos'], ['goSaleAuditBtn', 'Sale Audit']]
+    [['goOnboardingBtn', 'Onboarding'], ['goDashboardBtn', 'Dashboard'], ['goRankingBtn', 'Ranking'], ['goHerramientasBtn', 'Herramientas'], ['goMetricasBtn', 'Métricas'], ['goRecursosBtn', 'Recursos'], ['goSaleAuditBtn', 'Sales Audit']]
       .forEach(function (x) { items.push({ t: x[1], k: 'Pantalla', f: function () { ir(x[0]); } }); });
     document.querySelectorAll('.quick-nav-btn[data-tab]').forEach(function (b) {
       items.push({ t: b.textContent.trim(), k: 'Dashboard', f: function () { var d = $('dashboardScreen'); if (d && d.classList.contains('active')) b.click(); else ir('goDashboardBtn', function () { b.click(); }, 900); } });
