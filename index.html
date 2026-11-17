@@ -4333,8 +4333,7 @@
     }
     el = cuerpo('ventas');
     if(el){
-      const f = dias.map((d, i) => { const x = R(d); return '<tr><td>' + nom(d, i) + '</td><td>' + dinero(sumaDe(x, 'monto')) + '</td><td>' + x.filter(r => r.monto > 0).length + '</td></tr>'; }).join('');
-      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado hoy', dinero(sumaDe(R(dias[0]), 'monto')), '') + '</div>' + tablaSem(['Día','Cash cobrado','Pagos'], f, '');
+      el.innerHTML = '<div class="sem-kpis">' + kpiSem('Cash cobrado hoy', dinero(sumaDe(R(dias[0]), 'monto')), '') + '</div>';
     }
     el = cuerpo('leads');
     if(el){
