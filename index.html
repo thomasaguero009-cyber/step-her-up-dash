@@ -1473,7 +1473,7 @@
     width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center;
     font-weight:800; font-size:13px; background:rgba(255,255,255,0.08); color:var(--text-dim);
   }
-  .rank-badge.g1{ background:#e8b64a; color:#2a1a02; }
+  .rank-badge.g1{ background:#e9c46a; color:#2a1a02; }
   .rank-badge.g2{ background:#c7cad3; color:#20222a; }
   .rank-badge.g3{ background:#c97a4a; color:#2a1204; }
   .ranking-name{ font-weight:600; }
@@ -2079,7 +2079,7 @@
           <div class="chart-status" id="statusFunnel">Conectando con GHL…</div>
         </div>
         <div class="chart-legend" style="display:flex; gap:18px; flex-wrap:wrap; margin-top:10px; font-size:12px; color:var(--text-dim);">
-          <span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffd166;margin-right:6px;"></i>Leads</span>
+          <span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e9c46a;margin-right:6px;"></i>Leads</span>
           <span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#5b8def;margin-right:6px;"></i>Llamadas</span>
           <span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#a78bfa;margin-right:6px;"></i>Agendadas</span>
           <span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#fb7185;margin-right:6px;"></i>Shows</span>
@@ -2516,7 +2516,7 @@
               <defs>
                 <linearGradient id="gaugeGradMes" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stop-color="#f0716c"></stop>
-                  <stop offset="50%" stop-color="#e8b64a"></stop>
+                  <stop offset="50%" stop-color="#e9c46a"></stop>
                   <stop offset="100%" stop-color="#5fd39a"></stop>
                 </linearGradient>
               </defs>
@@ -2537,7 +2537,7 @@
               <defs>
                 <linearGradient id="gaugeGradDia" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stop-color="#f0716c"></stop>
-                  <stop offset="50%" stop-color="#e8b64a"></stop>
+                  <stop offset="50%" stop-color="#e9c46a"></stop>
                   <stop offset="100%" stop-color="#5fd39a"></stop>
                 </linearGradient>
               </defs>
@@ -3642,7 +3642,7 @@
       const transcurridos = [0,1,2,3,4,5,6].filter(i => masDias(L, i) <= hoy).length || 0;
       const dias7 = [0,1,2,3,4,5,6].map(i => ({ i, n: tot(masDias(L, i)), fut: masDias(L, i) > hoy }));
       const mejor = dias7.reduce((m, x) => x.n > m.n ? x : m, { n: 0, i: -1 });
-      const barras = semanas.map((x, idx) => '<tr><td>' + fCorta(x.l) + ' – ' + fCorta(masDias(x.l, 6)) + (idx === 4 ? ' <b>(la que ves)</b>' : '') + '</td><td>' + x.n.toLocaleString('es-AR') + '</td><td style="width:45%"><div class="sem-barra" style="min-width:160px;"><i style="width:' + Math.round(x.n / max * 100) + '%;background:#ffd166"></i></div></td></tr>').join('');
+      const barras = semanas.map((x, idx) => '<tr><td>' + fCorta(x.l) + ' – ' + fCorta(masDias(x.l, 6)) + (idx === 4 ? ' <b>(la que ves)</b>' : '') + '</td><td>' + x.n.toLocaleString('es-AR') + '</td><td style="width:45%"><div class="sem-barra" style="min-width:160px;"><i style="width:' + Math.round(x.n / max * 100) + '%;background:#e9c46a"></i></div></td></tr>').join('');
       const porDia = dias7.map(x => '<tr><td>' + DIAS_ES[x.i] + ' ' + masDias(L, x.i).getDate() + '</td><td>' + (x.fut ? '–' : x.n.toLocaleString('es-AR')) + '</td></tr>').join('');
       el.innerHTML = '<div class="sem-kpis">' + kpiSem('Leads de la semana', act.toLocaleString('es-AR'), delta(act, ant)) + kpiSem('Promedio por día', transcurridos ? f1(act / transcurridos) : '–', transcurridos ? 'en ' + transcurridos + ' día' + (transcurridos > 1 ? 's' : '') : '') + kpiSem('Mejor día', mejor.n > 0 ? mejor.n.toLocaleString('es-AR') : '–', mejor.n > 0 ? DIAS_ES[mejor.i] + ' ' + masDias(L, mejor.i).getDate() : '') + '</div>' +
         tablaSem(['Últimas 5 semanas','Leads',''], barras, '') + tablaSem(['Día','Leads'], porDia, '') +
@@ -6582,7 +6582,7 @@
       + '.dg-detalle{min-height:44px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--card);font-size:13.5px;line-height:1.45;}'
       + '@media(max-width:640px){.dg-fila{grid-template-columns:1fr;gap:6px;}}'
       ;
-  const COLOR_PRODUCTO = { 'SHU PROGRAM': '#f0a8be', 'Step Her Up premium': '#d8b57a', 'Coaching 1:1': '#5fd39a' };
+  const COLOR_PRODUCTO = { 'SHU PROGRAM': '#f0a8be', 'Step Her Up premium': '#e9c46a', 'Coaching 1:1': '#5fd39a' };
   const colorProducto = (p) => COLOR_PRODUCTO[p] || '#b9a9b4';
   function fechaOrden(f){ const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(f || ''); return m ? +m[3] * 10000 + +m[2] * 100 + +m[1] : 0; }
   function pintarGraficoDesglose(ventas, sin){
@@ -7156,7 +7156,7 @@
     const d = adsTabDatos;
     if(!d) return;
     const vacio = SHEET_ADS_CSV_URL ? 'Sin gasto cargado este mes' : 'Falta conectar la pestaña "Ads" del Sheet';
-    drawChart('chartAds', 'tooltipAds', d.gastoPorDia.slice(0, d.diasAMostrar), '#f0c674', d.anio, d.mes, { prefijo: '$', vacio });
+    drawChart('chartAds', 'tooltipAds', d.gastoPorDia.slice(0, d.diasAMostrar), '#e9c46a', d.anio, d.mes, { prefijo: '$', vacio });
     const dinero = n => '$' + Math.round(n).toLocaleString('es-AR');
     document.getElementById('adsTabGasto').textContent = d.huboDatosAds ? dinero(d.totGastoAds) : '–';
     document.getElementById('adsTabPromedio').textContent = d.huboDatosAds && d.diasAMostrar > 0 ? dinero(d.totGastoAds / d.diasAMostrar) : '–';
@@ -7241,7 +7241,7 @@
     { valor: 'cortaron', texto: 'Cortaron / colgaron', color: '#e6a1c9' },
     { valor: 'llamarMasTarde', texto: 'Llamar más tarde', color: '#f4b860' },
     { valor: 'shows', texto: 'Shows', color: '#5fd39a' },
-    { valor: 'cierres', texto: 'Cierres', color: '#f0c674' },
+    { valor: 'cierres', texto: 'Cierres', color: '#e9c46a' },
   ];
   // Los setters del equipo aparecen siempre (aunque todavía no hayan cargado nada).
   const SETTERS_FIJOS = ['Paula', 'Mia', 'Belen'];
@@ -7249,7 +7249,7 @@
   // anteriores siguen en el Sheet y en los totales del mes; solo se ocultan como persona.
   const SETTERS_INACTIVOS = ['paola'];
   const esSetterInactivo = n => SETTERS_INACTIVOS.includes(String(n || '').trim().toLowerCase());
-  const COLORES_SETTER = { Paula: '#f0a8be', Mia: '#f0c674', Belen: '#8fb8f0', Gianie: '#5fd39a' };
+  const COLORES_SETTER = { Paula: '#f0a8be', Mia: '#e9c46a', Belen: '#8fb8f0', Gianie: '#5fd39a' };
   const COLORES_EXTRA = ['#5fd39a', '#d9b4ff', '#ffb08a'];
   const colorDeSetter = (nombre, i) => COLORES_SETTER[nombre] || COLORES_EXTRA[i % COLORES_EXTRA.length];
   const nombresSetters = () => [...new Set([...SETTERS_FIJOS, ...datosSetters.keys()])].filter(n => !esSetterInactivo(n));
@@ -7381,7 +7381,7 @@
     { valor: 'agendas', texto: 'Agendas', color: '#d9b4ff' },
     { valor: 'shows', texto: 'Shows', color: '#5fd39a' },
     { valor: 'noShows', texto: 'No shows', color: '#ff9b9b' },
-    { valor: 'cierres', texto: 'Cierres', color: '#f0c674' },
+    { valor: 'cierres', texto: 'Cierres', color: '#e9c46a' },
   ];
   let datosClosers = new Map(), closerMetrica = 'cash', closerFiltro = 'Comparar', closerMetricaElegida = false;
   function renderGraficoClosers(){
@@ -7585,7 +7585,7 @@
     }
     const total = serie.reduce((a, b) => a + b, 0);
     const mejor = Math.max(0, ...serie);
-    drawChart('chartLeads', 'tooltipLeads', serie, '#ffd166', anio, mes, { conteo: true, vacio: 'Sin leads este mes' });
+    drawChart('chartLeads', 'tooltipLeads', serie, '#e9c46a', anio, mes, { conteo: true, vacio: 'Sin leads este mes' });
     fijarValorNumero('leadsTotal', total.toLocaleString('es-AR'));
     fijarValorNumero('leadsPromedio', diasAMostrar > 0 ? (total / diasAMostrar).toLocaleString('es-AR', { maximumFractionDigits: 1 }) : '–');
     fijarValorNumero('leadsMejor', mejor > 0 ? `${mejor} · día ${serie.indexOf(mejor) + 1}` : '–');
@@ -7802,7 +7802,7 @@
       ).join('') || '<div style="opacity:.6;">Sin datos todavía.</div>';
       const ORIGENES = [
         { nombre: 'Ads (Meta)', color: '#f0a8be', claves: ['ig', 'fb', 'an', 'th', 'msg'] },
-        { nombre: 'Orgánico (Instagram)', color: '#C9A56A', claves: ['instagram'] },
+        { nombre: 'Orgánico (Instagram)', color: '#e9c46a', claves: ['instagram'] },
         { nombre: 'Email', color: '#5fd39a', claves: ['email'] }
       ];
       const origenes = ORIGENES.map(o => ({ ...o, v: 0 }));
@@ -7860,13 +7860,13 @@
         serie.forEach((x, i) => {
           const h = x.v / tope * ph, bx = L + i * bw + bw * 0.14, w = bw * 0.72;
           const esWeb = x.k === diaWeb;
-          const color = esWeb ? '#C9A56A' : '#f0a8be';
+          const color = esWeb ? '#e9c46a' : '#f0a8be';
           svg += `<g><rect x="${bx}" y="${T}" width="${w}" height="${ph}" fill="transparent"></rect>` +
             (x.v ? `<rect x="${bx}" y="${yDe(x.v)}" width="${w}" height="${h}" rx="2" fill="${color}" opacity="${x.futuro ? 0.3 : 0.92}"></rect>` : '') +
             (x.v && bw > 14 ? `<text x="${bx + w / 2}" y="${yDe(x.v) - 4}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.8)">${x.v}</text>` : '') +
             `<title>${x.dia}/${String(mm).padStart(2, '0')}${esWeb ? ' · día del webinar' : ''}: ${n(x.v)} inscriptas</title></g>`;
           if(diasMes <= 16 || x.dia === 1 || x.dia % 2 === 1 || esWeb)
-            svg += `<text x="${bx + w / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="${esWeb ? '#C9A56A' : 'rgba(255,255,255,0.55)'}"${esWeb ? ' font-weight="700"' : ''}>${x.dia}</text>`;
+            svg += `<text x="${bx + w / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="${esWeb ? '#e9c46a' : 'rgba(255,255,255,0.55)'}"${esWeb ? ' font-weight="700"' : ''}>${x.dia}</text>`;
         });
         grafico.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:100%;display:block;" role="img" aria-label="Inscriptas por día del mes">${svg}</svg>` +
           `<div style="opacity:.55;font-size:12px;margin-top:4px;">Días del mes, hora de Puerto Rico · en dorado, el día del webinar</div>`;
@@ -7956,7 +7956,7 @@
       return null;
     }
   }
-  const COLOR_RESULTADO = { 'Cierre': '#5fd39a', 'Seguimiento': '#d8b57a', 'No cierra': '#b9a9b4' };
+  const COLOR_RESULTADO = { 'Cierre': '#5fd39a', 'Seguimiento': '#e9c46a', 'No cierra': '#b9a9b4' };
   function pintarShows(shows){
     const cont = document.getElementById('showsGrafico');
     if(!cont) return;
@@ -8182,7 +8182,7 @@
   // recalculan las series al vuelo según el filtro de pipeline elegido,
   // así cambiar de chip no pide de nuevo al Worker. =====
   const SERIES_FUNNEL = [
-    { key: 'leads', texto: 'Leads', color: '#ffd166' },
+    { key: 'leads', texto: 'Leads', color: '#e9c46a' },
     { key: 'llamadas', texto: 'Llamadas', color: '#5b8def' },
     { key: 'agendadas', texto: 'Agendadas', color: '#a78bfa' },
     { key: 'shows', texto: 'Shows', color: '#fb7185' },
@@ -8636,10 +8636,10 @@
   // ¿De dónde vienen los leads? Por canal: si entró por un anuncio de pago (UTM de Meta) y por qué funnel (viejo o dorado).
   // El Worker manda `porCanal` por día; si todavía no lo manda, se usa el origen que guarda GHL (Instagram, Calendario…).
   const COLOR_ORIGEN = {
-    'Anuncio de pago · Funnel viejo': '#f0a8be', 'Anuncio de pago · Funnel dorado': '#ffd166', 'Anuncio de pago · Otro funnel': '#fb923c',
+    'Anuncio de pago · Funnel viejo': '#f0a8be', 'Anuncio de pago · Funnel dorado': '#e9c46a', 'Anuncio de pago · Otro funnel': '#fb923c',
     'Sin anuncio · Funnel viejo': '#5b8def', 'Sin anuncio · Funnel dorado': '#38bdf8', 'Sin anuncio · Otro funnel': '#8d7b86',
     'Instagram DM (orgánico)': '#e879f9', 'Otro / manual': '#8d7b86',
-    Instagram: '#f0a8be', Facebook: '#5b8def', Calendar: '#a78bfa', Manual: '#ffd166', Otro: '#8d7b86',
+    Instagram: '#f0a8be', Facebook: '#5b8def', Calendar: '#a78bfa', Manual: '#e9c46a', Otro: '#8d7b86',
   };
   const COLORES_ORIGEN_EXTRA = ['#5fd39a', '#e879f9', '#a78bfa', '#facc15'];
   const NOMBRE_ORIGEN = { Otro: 'Otro / sin origen', Calendar: 'Calendario (agendó directo)', Manual: 'Manual (cargado a mano)' };
@@ -8737,7 +8737,7 @@
     const box = document.createElement('div'); box.id = 'adsV2';
     box.innerHTML = `
       <div class="section-label" style="margin-top:28px;">Análisis diario de rentabilidad</div>
-      <div class="chart-panel"><div class="chart-legend" style="display:flex; gap:18px; flex-wrap:wrap; margin:0 0 10px 6px; font-size:12px; color:var(--text-dim);"><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#5fd39a;margin-right:6px;"></i>Facturación</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#fb7185;margin-right:6px;"></i>Inversión</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffd166;margin-right:6px;"></i>Profit</span></div><div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartRent"></svg><div class="chart-tooltip" id="tooltipRent"></div></div><div class="chart-status" id="statusRent">Cargando…</div></div>
+      <div class="chart-panel"><div class="chart-legend" style="display:flex; gap:18px; flex-wrap:wrap; margin:0 0 10px 6px; font-size:12px; color:var(--text-dim);"><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#5fd39a;margin-right:6px;"></i>Facturación</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#fb7185;margin-right:6px;"></i>Inversión</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e9c46a;margin-right:6px;"></i>Profit</span></div><div class="chart-wrap"><svg class="chart" viewBox="0 0 1000 280" preserveAspectRatio="none" id="chartRent"></svg><div class="chart-tooltip" id="tooltipRent"></div></div><div class="chart-status" id="statusRent">Cargando…</div></div>
       <div class="vz-grid" style="margin-top:28px;">
         <div class="chart-panel" style="padding:18px 20px;"><p class="vz-titulo" style="margin-top:0;">Cash por fuente</p><div id="tortaAds"></div></div>
         <div class="chart-panel" style="padding:18px 20px;"><p class="vz-titulo" style="margin-top:0;" id="top5Titulo">Top 5 anuncios</p><div class="chart-chips" id="top5Chips" style="margin-bottom:10px;"></div><div id="top5Ads"></div></div>
@@ -8801,11 +8801,11 @@
     const fact = d.cashPorDia || new Array(dias).fill(0), inv = d.gastoPorDia || new Array(dias).fill(0);
     const datos = { fact, inv, profit: fact.map((v, i) => v - (inv[i] || 0)) };
     const roas = (f, i) => i > 0 ? (f / i).toFixed(2) + 'x' : '–', roi = (f, i) => i > 0 ? Math.round((f - i) / i * 100) + '%' : '–';
-    dibujarLineas('chartRent', 'tooltipRent', [{ key: 'fact', color: '#5fd39a' }, { key: 'inv', color: '#fb7185' }, { key: 'profit', color: '#ffd166' }], datos, n, {
+    dibujarLineas('chartRent', 'tooltipRent', [{ key: 'fact', color: '#5fd39a' }, { key: 'inv', color: '#fb7185' }, { key: 'profit', color: '#e9c46a' }], datos, n, {
       vacio: 'Cargá el gasto en la hoja Ads y las ventas en Ventas para ver la rentabilidad',
       fmtEje: (v) => '$' + Math.round(v).toLocaleString('es-AR'),
       eje: (i) => (i % 5 === 0 || i === n - 1) ? String(i + 1) : '',
-      tt: (i) => `<div class="tt-day">Día ${i + 1}</div><div class="tt-val" style="color:#5fd39a">Facturación: ${usdEq(fact[i])}</div><div class="tt-val" style="color:#fb7185">Inversión: ${usdEq(inv[i])}</div><div class="tt-val" style="color:#ffd166">Profit: ${usdEq(datos.profit[i])}</div><div class="tt-val">ROI: ${roi(fact[i], inv[i])} · ROAS: ${roas(fact[i], inv[i])}</div>`,
+      tt: (i) => `<div class="tt-day">Día ${i + 1}</div><div class="tt-val" style="color:#5fd39a">Facturación: ${usdEq(fact[i])}</div><div class="tt-val" style="color:#fb7185">Inversión: ${usdEq(inv[i])}</div><div class="tt-val" style="color:#e9c46a">Profit: ${usdEq(datos.profit[i])}</div><div class="tt-val">ROI: ${roi(fact[i], inv[i])} · ROAS: ${roas(fact[i], inv[i])}</div>`,
     });
     const tF = fact.slice(0, n).reduce((a, b) => a + b, 0), tI = inv.slice(0, n).reduce((a, b) => a + b, 0);
     document.getElementById('statusRent').textContent = `Mes: facturación ${usdEq(tF)} · inversión ${usdEq(tI)} · profit ${usdEq(tF - tI)} · ROI ${roi(tF, tI)} · ROAS ${roas(tF, tI)}`;
