@@ -1436,6 +1436,13 @@
   .sa2-f-fila{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
   .sa2-fuente{ font-size:11.5px; color:var(--text-dim); max-width:240px; }
   .sa2-resbtns{ display:flex; flex-wrap:wrap; gap:8px; }
+  /* Rendimiento: sin desenfoques pesados, fondo fijo en una capa propia y secciones fuera de pantalla sin dibujar. */
+  .sa2-aurora{ filter:none !important; animation:none !important; opacity:.5; }
+  .sa2-ancla{ backdrop-filter:none !important; -webkit-backdrop-filter:none !important; background:linear-gradient(180deg, rgba(26,5,9,.97) 62%, rgba(26,5,9,0)) !important; }
+  .sa2-sec{ content-visibility:auto; contain-intrinsic-size:auto 700px; }
+  html.sa-activo{ background:var(--wine-1); }
+  html.sa-activo body{ background:none; }
+  html.sa-activo::before{ content:""; position:fixed; inset:0; z-index:-3; pointer-events:none; background:radial-gradient(ellipse 1100px 700px at 82% 0%, rgba(90,22,38,0.5), transparent 55%), radial-gradient(ellipse 900px 600px at 15% 60%, rgba(90,22,38,0.35), transparent 55%), linear-gradient(180deg, var(--wine-2) 0%, var(--wine-1) 40%); }
   @media (prefers-reduced-motion:reduce){ .sa2-rv{ opacity:1 !important; transform:none !important; transition:none !important; } }
   @media (prefers-reduced-motion:reduce){ .sa2-aurora, .sa2-title, .sa2-in{ animation:none !important; } .sa2-title{ color:var(--au-1); background:none; -webkit-text-fill-color:var(--au-1); } }
   @media (max-width:1000px){ .sa2-kpis{ grid-template-columns:repeat(3,minmax(0,1fr)); } .sa2-resu{ grid-template-columns:1fr; } }
@@ -2791,6 +2798,7 @@
   function showScreen(el){
     [loadingScreen, onboardingScreen, transitionScreen, dashboardScreen, rankingScreen, toolsScreen, metricasScreen, recursosScreen, entregaScreen, saleAuditScreen, estrategiasScreen].forEach(s => s.classList.remove('active'));
     el.classList.add('active');
+    document.documentElement.classList.toggle('sa-activo', el === saleAuditScreen);
   }
 
   // ===== Mes actual, calculado solo — el dashboard entra directo en
@@ -3849,29 +3857,38 @@
     cancelAnimationFrame(saOndaRaf);
     if(!cv) return;
     const ctx = cv.getContext('2d'), reducido = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    let mx = 0.5, w = 0, h = 0;
-    const ajustar = () => { const r = cv.getBoundingClientRect(); w = r.width; h = r.height; cv.width = Math.max(1, Math.round(w * dpr)); cv.height = Math.max(1, Math.round(h * dpr)); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+    const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    let mx = 0.5, w = 0, h = 0, visible = true, ultimo = 0, pintado = false, grad = null;
+    const ajustar = () => {
+      const r = cv.getBoundingClientRect(); w = r.width; h = r.height;
+      cv.width = Math.max(1, Math.round(w * dpr)); cv.height = Math.max(1, Math.round(h * dpr)); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      grad = ctx.createLinearGradient(0, 0, w, 0); grad.addColorStop(0, '#b8892b'); grad.addColorStop(0.5, '#fff1c7'); grad.addColorStop(1, '#cfa24a');
+      pintado = false;
+    };
     ajustar();
     if(window.ResizeObserver) new ResizeObserver(ajustar).observe(cv);
-    cv.parentElement.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(); mx = Math.min(1, Math.max(0, (e.clientX - r.left) / Math.max(1, r.width))); });
+    // Solo se dibuja mientras se ve (no al bajar por la página ni en otra pestaña) y a unos 30 cuadros por segundo.
+    if(window.IntersectionObserver) new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(cv);
+    cv.parentElement.parentElement.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(); mx = Math.min(1, Math.max(0, (e.clientX - r.left) / Math.max(1, r.width))); }, { passive: true });
     const t0 = performance.now();
     const pintar = now => {
       if(!document.body.contains(cv)) return;
-      if(!w || !saleAuditScreen.classList.contains('active')){ if(!w) ajustar(); saOndaRaf = requestAnimationFrame(pintar); return; }
-      const t = reducido ? 0.4 : (now - t0) / 1000, n = w < 420 ? 40 : 72;
+      saOndaRaf = requestAnimationFrame(pintar);
+      if(document.hidden || !visible || !saleAuditScreen.classList.contains('active')) return;
+      if(!w){ ajustar(); if(!w) return; }
+      if(reducido ? pintado : now - ultimo < 33) return;
+      ultimo = now; pintado = true;
+      const t = reducido ? 0.4 : (now - t0) / 1000, n = w < 420 ? 40 : 72, sep = w / n, ancho = Math.max(1.6, sep * 0.34), r = ancho / 2;
       ctx.clearRect(0, 0, w, h);
-      const g = ctx.createLinearGradient(0, 0, w, 0); g.addColorStop(0, '#b8892b'); g.addColorStop(0.5, '#fff1c7'); g.addColorStop(1, '#cfa24a');
-      ctx.fillStyle = g; ctx.shadowColor = 'rgba(233,196,106,.45)'; ctx.shadowBlur = 10;
-      const sep = w / n, ancho = Math.max(1.6, sep * 0.34), r = ancho / 2;
-      for(let i = 0; i < n; i++){
-        const u = i / (n - 1) * 2 - 1, env = Math.exp(-Math.pow(u * 1.15, 2));
-        const voz = 0.5 + 0.5 * Math.sin(t * 1.9 + i * 0.62), aire = 0.6 + 0.4 * Math.sin(t * 0.7 + i * 0.21);
-        const bump = reducido ? 0 : 0.28 * Math.exp(-Math.pow((i / (n - 1) - mx) / 0.12, 2));
-        const alto = (0.05 + env * (0.2 + 0.3 * voz * aire) + bump) * h * 0.9, x = i * sep + sep / 2;
-        ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x - r, h / 2 - alto / 2, ancho, alto, r); else ctx.rect(x - r, h / 2 - alto / 2, ancho, alto); ctx.fill();
-      }
-      if(!reducido) saOndaRaf = requestAnimationFrame(pintar);
+      const alto = i => { const u = i / (n - 1) * 2 - 1, env = Math.exp(-Math.pow(u * 1.15, 2)), voz = 0.5 + 0.5 * Math.sin(t * 1.9 + i * 0.62), aire = 0.6 + 0.4 * Math.sin(t * 0.7 + i * 0.21), bump = reducido ? 0 : 0.28 * Math.exp(-Math.pow((i / (n - 1) - mx) / 0.12, 2)); return (0.05 + env * (0.2 + 0.3 * voz * aire) + bump) * h * 0.9; };
+      ctx.fillStyle = grad;
+      // halo: las mismas barras más anchas y muy tenues (sin sombras, que son lo que más pesa en el canvas)
+      ctx.globalAlpha = 0.16; ctx.beginPath();
+      for(let i = 0; i < n; i++){ const a = alto(i), x = i * sep + sep / 2; ctx.rect(x - ancho * 1.5, h / 2 - a / 2, ancho * 3, a); }
+      ctx.fill();
+      ctx.globalAlpha = 1; ctx.beginPath();
+      for(let i = 0; i < n; i++){ const a = alto(i), x = i * sep + sep / 2; if(ctx.roundRect) ctx.roundRect(x - r, h / 2 - a / 2, ancho, a, r); else ctx.rect(x - r, h / 2 - a / 2, ancho, a); }
+      ctx.fill();
     };
     saOndaRaf = requestAnimationFrame(pintar);
   }
@@ -3914,6 +3931,7 @@
                 <button type="button" class="sa2-btn" data-act="fathomConectar" style="padding:8px 18px">Conectar</button>
                 <p id="saFMsg" class="sa2-f-msg"></p>
                 <div class="sa2-f-lista" id="saFLista"></div>
+                <button type="button" class="sa2-chip sm" data-act="fathomAhora" style="margin-top:6px">Revisar llamadas ahora</button>
               </div></div>
             <div class="sa2-sel"><button type="button" class="sa2-chip" data-act="rango">Período · ${saEsc(etiqueta)} ▾</button>
               <div class="sa2-pop" id="saPanel" hidden>
@@ -3939,7 +3957,8 @@
   // Un solo manejador para todo el panel (el contenido se vuelve a pintar con cada filtro).
   function saEnganchar(){
     const raiz = document.getElementById('saleAuditRoot'); if(!raiz || raiz._sa2) return; raiz._sa2 = true;
-    raiz.addEventListener('mousemove', e => { const c = e.target.closest && e.target.closest('.sa2-card'); if(!c) return; const b = c.getBoundingClientRect(); c.style.setProperty('--mx', (e.clientX - b.left) + 'px'); c.style.setProperty('--my', (e.clientY - b.top) + 'px'); });
+    let rafM = 0, ultM = null;
+    raiz.addEventListener('mousemove', e => { ultM = e; if(rafM) return; rafM = requestAnimationFrame(() => { rafM = 0; const c = ultM.target.closest && ultM.target.closest('.sa2-card'); if(!c) return; const b = c.getBoundingClientRect(); c.style.setProperty('--mx', (ultM.clientX - b.left) + 'px'); c.style.setProperty('--my', (ultM.clientY - b.top) + 'px'); }); }, { passive: true });
     raiz.addEventListener('click', async e => {
       const el = e.target.closest('[data-act]'); if(!el) return;
       const a = el.dataset.act, v = el.dataset.v;
@@ -3976,6 +3995,11 @@
           else { document.getElementById('saFKey').value = ''; document.getElementById('saFNombre').value = ''; msg.textContent = 'Conectado. Las llamadas de los últimos 30 días van apareciendo en unos minutos.'; saFathomLista(); setTimeout(() => { if(saleAuditScreen.classList.contains('active')) cargarSaleAudit(true); }, 45000); }
         } catch(err){ msg.textContent = 'No se pudo conectar. Prueba de nuevo.'; }
         el.disabled = false; return;
+      }
+      if(a === 'fathomAhora'){
+        const msg = document.getElementById('saFMsg'); el.disabled = true; msg.textContent = 'Revisando… las llamadas nuevas aparecen en 1 o 2 minutos.';
+        try { await fetch(`${WORKER_URL}/auditoria/sincronizar`, { method: 'POST', headers: { 'X-Site-Key': claveDePlataforma() } }); } catch(err){ msg.textContent = 'No se pudo pedir la revisión.'; }
+        setTimeout(() => { el.disabled = false; saFathomLista(); if(saleAuditScreen.classList.contains('active')) cargarSaleAudit(true); }, 60000); return;
       }
       if(a === 'fathomDesconectar'){
         el.disabled = true;
