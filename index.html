@@ -8056,6 +8056,8 @@
     const t = setTimeout(() => ctrl.abort(), 20000);
     // El cash real (pestaña Ventas del Tracker) se pide desde ya, en paralelo, y se muestra directo: así el número no pasa por el de GHL antes de llegar al final.
     const cashRealP = cashRealDelMes(anio, mes);
+    // Los Shows y el Tracker también se piden desde ya, en paralelo con GHL (antes esperaban a que GHL respondiera para empezar).
+    const showsP = leerShows(anio, mes), filasP = obtenerFilasTracker().catch(() => null);
     try {
       const res = await fetch(`${WORKER_URL}/leads-summary?start=${start}&end=${end}`, { signal: ctrl.signal });
       const data = await res.json();
@@ -8063,9 +8065,12 @@
       // Si mientras tanto se cambió de mes (o se disparó otro pedido), esta
       // respuesta ya es vieja: no pisar lo que se ve.
       if(pedido !== ghlPedidoActual) return;
+      // Las campañas y el Top de anuncios salen de lo que ya llegó de GHL: se pintan ya, sin esperar a los Shows, el Tracker ni el cash.
+      utmResumen = data.utm || null;
+      try { renderCampanas(); pintarTopAnuncios(); } catch(e){}
 
       // Shows y cierres: el mayor entre GHL y la pestaña "Shows" del Tracker (GHL solo cuenta lo que el equipo mueve de etapa).
-      const showsTracker = await leerShows(anio, mes);
+      const showsTracker = await showsP;
       if(pedido !== ghlPedidoActual) return;
       showsTabActual = showsTracker ? { anio, mes, filas: showsTracker } : null;
       if(funnelPorDiaDatos) renderFunnelChart();
@@ -8076,7 +8081,7 @@
       }
       // Llamadas y agendadas: lo que cargan las setters en Métricas (GHL solo cuenta las tarjetas que alguien movió de etapa y se queda corto).
       try {
-        const filasSetters = (await obtenerFilasTracker()).filter(f => f.fecha.getFullYear() === anio && f.fecha.getMonth() === mes);
+        const filasSetters = ((await filasP) || []).filter(f => f.fecha.getFullYear() === anio && f.fecha.getMonth() === mes);
         if(pedido !== ghlPedidoActual) return;
         if(filasSetters.length){
           data.totales.llamadas = filasSetters.reduce((a, f) => a + f.llamadas, 0);
