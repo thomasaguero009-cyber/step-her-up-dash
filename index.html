@@ -843,6 +843,7 @@
   /* ===== Métricas: formulario donde cada setter/closer carga sus
      números del día — a diferencia de Herramientas, esto se sube al
      Sheet y sí se comparte/refleja en el dashboard. ===== */
+  #saleAuditScreen .wrap{ max-width:1180px; padding-top:26px; padding-bottom:64px; }
   /* ===== Entrega de alumnas: mismo look oscuro del dashboard (vino, rosa, crema) ===== */
   #entregaScreen .wrap{ max-width:1180px; padding-top:26px; padding-bottom:64px; }
   .en-sub{ margin:-6px 0 20px; font-size:14px; color:var(--text-dim); }
@@ -1298,7 +1299,7 @@
   .estado-ads.verde{ color:#7fe0a8; border-color:rgba(127,224,168,.5); background:rgba(127,224,168,.1); }
   /* ===== Sale Audit: sección propia con acento dorado. Todo va dentro del panel, no toca la paleta del resto del dash. =====
      El dorado es solo acento: título, pestaña activa, chip activo, barras y la tarjeta "casi paga". Lo demás es neutro. */
-  [data-tab-panel="saleaudit"]{ --au-1:#f8e7b0; --au-2:#e9c46a; --au-3:#cfa24a; --au-4:#8f6b22; --au-line:rgba(233,196,106,.45); --sa-line:rgba(255,255,255,.10); }
+  #saleAuditScreen{ --au-1:#f8e7b0; --au-2:#e9c46a; --au-3:#cfa24a; --au-4:#8f6b22; --au-line:rgba(233,196,106,.45); --sa-line:rgba(255,255,255,.10); }
   .sa2{ position:relative; padding-bottom:24px; }
   .sa2-hero{ position:relative; overflow:hidden; border:1px solid var(--sa-line); border-radius:18px; padding:16px 22px; margin-bottom:16px; background:linear-gradient(135deg, rgba(233,196,106,.10), rgba(255,255,255,.03) 55%, rgba(233,196,106,.04)); }
   .sa2-aurora{ position:absolute; inset:-40%; pointer-events:none; filter:blur(64px); opacity:.3; background:radial-gradient(40% 35% at 25% 30%, rgba(233,196,106,.5), transparent 70%), radial-gradient(35% 40% at 78% 65%, rgba(207,162,74,.38), transparent 70%); animation:sa2Aurora 16s ease-in-out infinite alternate; }
@@ -1537,6 +1538,12 @@
           <span class="entry-option-text">
             <span class="entry-option-title">Fulfillment</span>
             <span class="entry-option-sub">Cada alumna y en qué paso va</span>
+          </span>
+        </button>
+        <button type="button" class="entry-option" id="goSaleAuditBtn">
+          <span class="entry-option-text">
+            <span class="entry-option-title">Sale Audit</span>
+            <span class="entry-option-sub">Auditoría de las llamadas de venta</span>
           </span>
         </button>
       </div>
@@ -1828,7 +1835,6 @@
         <button type="button" class="quick-nav-btn" data-tab="matematica">Matemática del éxito</button>
         <button type="button" class="quick-nav-btn" data-tab="setters">Setters</button>
         <button type="button" class="quick-nav-btn" data-tab="closers">Closers</button>
-        <button type="button" class="quick-nav-btn" data-tab="saleaudit">Sale Audit</button>
         <button type="button" class="quick-nav-btn" data-tab="utm">Campañas (UTM)</button>
         <button type="button" class="quick-nav-btn" data-tab="webinar">Webinar</button>
         <button type="button" class="quick-nav-btn" data-tab="email">Email</button>
@@ -2328,10 +2334,6 @@
       <!-- Campañas (UTM): de dónde vienen los leads, las agendas y las ventas.
            Sale de las etiquetas src-/med-/camp-/cont- que el Worker le pone a
            cada contacto en GHL según las UTMs del link por el que entró. -->
-      <div class="tab-panel" data-tab-panel="saleaudit">
-        <div id="saleAuditRoot"><div class="chart-status">Abre esta pestaña para cargar la auditoría de llamadas.</div></div>
-      </div>
-
       <div class="tab-panel" data-tab-panel="utm">
         <div class="section-label" id="utm">De dónde vienen los leads y las agendas</div>
         <div class="chart-panel">
@@ -2682,6 +2684,23 @@
     </div>
   </section>
 
+  <!-- ===================== Sale Audit: auditoría de las llamadas de venta. Pantalla propia (como Fulfillment o Métricas).
+       Las llamadas las revisa el Worker (cada closer conecta su Fathom a /auditoria/fathom) y acá se leen con la contraseña de la plataforma. ===================== -->
+  <section class="screen" id="saleAuditScreen">
+    <div class="wrap">
+      <header class="dash-header">
+        <div class="section-label" style="margin:0;">Sale Audit</div>
+        <div class="dash-header-right">
+          <div class="section-switcher" id="sectionSwitcherSaleAudit">
+            <button type="button" class="ghost-link-btn" id="sectionSwitcherBtnSaleAudit">Secciones ▾</button>
+            <div class="month-list" id="sectionSwitcherListSaleAudit"></div>
+          </div>
+        </div>
+      </header>
+      <div id="saleAuditRoot"><div class="chart-status">Cargando la auditoría de llamadas…</div></div>
+    </div>
+  </section>
+
   <!-- ===================== Estrategias de alumnas (solo Admin) — hoy
        con datos de EJEMPLO; todavía no está conectada a las respuestas
        reales del formulario ni a la IA. ===================== -->
@@ -2713,9 +2732,10 @@
   const recursosScreen = document.getElementById('recursosScreen');
   const estrategiasScreen = document.getElementById('estrategiasScreen');
   const entregaScreen = document.getElementById('entregaScreen');
+  const saleAuditScreen = document.getElementById('saleAuditScreen');
 
   function showScreen(el){
-    [loadingScreen, onboardingScreen, transitionScreen, dashboardScreen, rankingScreen, toolsScreen, metricasScreen, recursosScreen, entregaScreen, estrategiasScreen].forEach(s => s.classList.remove('active'));
+    [loadingScreen, onboardingScreen, transitionScreen, dashboardScreen, rankingScreen, toolsScreen, metricasScreen, recursosScreen, entregaScreen, saleAuditScreen, estrategiasScreen].forEach(s => s.classList.remove('active'));
     el.classList.add('active');
   }
 
@@ -3231,6 +3251,11 @@
   }
   document.getElementById('goEntregaBtn').addEventListener('click', entrarAEntrega);
 
+  function entrarASaleAudit(){
+    cambiarDeSeccion(saleAuditScreen, 'Sale Audit', () => cargarSaleAudit());
+  }
+  document.getElementById('goSaleAuditBtn').addEventListener('click', entrarASaleAudit);
+
   function entrarAMetricas(){
     cambiarDeSeccion(metricasScreen, 'Métricas', () => {
       prepararPantallaMetricas();
@@ -3251,6 +3276,7 @@
     { id: 'metricas', label: 'Métricas', activa: () => metricasScreen.classList.contains('active'), ir: entrarAMetricas },
     { id: 'recursos', label: 'Recursos', activa: () => recursosScreen.classList.contains('active'), ir: entrarARecursos },
     { id: 'entrega', label: 'Fulfillment', activa: () => entregaScreen.classList.contains('active'), ir: entrarAEntrega },
+    { id: 'saleaudit', label: 'Sale Audit', activa: () => saleAuditScreen.classList.contains('active'), ir: entrarASaleAudit },
   ];
 
   function cerrarSwitchersSecciones(){
@@ -3291,6 +3317,7 @@
   inicializarSwitcherSecciones('sectionSwitcherMetricas', 'sectionSwitcherBtnMetricas', 'sectionSwitcherListMetricas');
   inicializarSwitcherSecciones('sectionSwitcherRecursos', 'sectionSwitcherBtnRecursos', 'sectionSwitcherListRecursos');
   inicializarSwitcherSecciones('sectionSwitcherEntrega', 'sectionSwitcherBtnEntrega', 'sectionSwitcherListEntrega');
+  inicializarSwitcherSecciones('sectionSwitcherSaleAudit', 'sectionSwitcherBtnSaleAudit', 'sectionSwitcherListSaleAudit');
 
   // ===== Herramientas: contadores tipo "tally counter" — cada setter/
   // closer los usa para llevar cuentas propias (ej. llamadas hechas en
@@ -3442,7 +3469,6 @@
       if(tab === 'general'){ renderEsencial(); renderEmbudo(); pintarCambiosMes(); }
       if(['leads','setters','closers','ventas','llamadas'].indexOf(tab) > -1) renderSemanas();
       if(tab === 'matematica') iniciarMiMatematica();
-      if(tab === 'saleaudit') cargarSaleAudit();
     });
   });
 
@@ -3808,7 +3834,6 @@
     ['Resumen', ['general', 'ghl']],
     ['Marketing', ['leads', 'ads', 'organico', 'utm', 'webinar', 'email']],
     ['Ventas', ['llamadas', 'setters', 'closers', 'ventas', 'matematica']],
-    ['Sale Audit', ['saleaudit']],
   ];
   function iniciarGruposDash(){
     const nav = document.getElementById('dashTabNav');
@@ -3899,6 +3924,7 @@
     ['goMetricasBtn', 'Métricas', 'Cargar los números del día: llamadas, agendadas, no atienden'],
     ['goRecursosBtn', 'Recursos', 'Presentaciones y materiales'],
     ['goEntregaBtn', 'Fulfillment', 'Cada alumna y en qué paso va: entrega, psicóloga, vencimientos'],
+    ['goSaleAuditBtn', 'Sale Audit', 'Auditoría de las llamadas de venta: score, qué mejorar y coach por closer'],
   ];
   const AYUDA_TABS = {
     general: 'Resumen del mes: llamadas, agendadas, shows, cierres, cash y meta del mes',
@@ -9263,7 +9289,7 @@
   function ir(btnId, luego, espera) { var b = $(btnId); if (b) b.click(); if (luego) setTimeout(luego, espera || 700); }
   function construir() {
     items = [];
-    [['goOnboardingBtn', 'Onboarding'], ['goDashboardBtn', 'Dashboard'], ['goRankingBtn', 'Ranking'], ['goHerramientasBtn', 'Herramientas'], ['goMetricasBtn', 'Métricas'], ['goRecursosBtn', 'Recursos']]
+    [['goOnboardingBtn', 'Onboarding'], ['goDashboardBtn', 'Dashboard'], ['goRankingBtn', 'Ranking'], ['goHerramientasBtn', 'Herramientas'], ['goMetricasBtn', 'Métricas'], ['goRecursosBtn', 'Recursos'], ['goSaleAuditBtn', 'Sale Audit']]
       .forEach(function (x) { items.push({ t: x[1], k: 'Pantalla', f: function () { ir(x[0]); } }); });
     document.querySelectorAll('.quick-nav-btn[data-tab]').forEach(function (b) {
       items.push({ t: b.textContent.trim(), k: 'Dashboard', f: function () { var d = $('dashboardScreen'); if (d && d.classList.contains('active')) b.click(); else ir('goDashboardBtn', function () { b.click(); }, 900); } });
