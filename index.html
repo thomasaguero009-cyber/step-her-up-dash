@@ -3901,7 +3901,7 @@
       const res = await fetch(`${WORKER_URL}/auditoria/conexiones`, { headers: { 'X-Site-Key': claveDePlataforma() } });
       const d = await res.json(); if(!res.ok || !d.ok) throw new Error('x');
       const hace = t => { if(!t) return 'todavía sin revisar'; const m = Math.round((Date.now() - Date.parse(t)) / 60000); return m < 1 ? 'hace un momento' : m < 60 ? 'hace ' + m + ' min' : 'hace ' + Math.round(m / 60) + ' h'; };
-      caja.innerHTML = d.conexiones.length ? '<div class="sa2-f-sub">Fathom conectados</div>' + d.conexiones.map(c => `<div class="sa2-f-fila"><span>${c.error ? '⚠' : '✓'} <b>${saEsc(c.nombre)}</b> · ${saEsc(c.error ? c.error : 'última revisión ' + hace(c.ultimo))}</span><button type="button" class="sa2-chip sm" data-act="fathomDesconectar" data-nombre="${saEsc(c.nombre)}">Quitar</button></div>`).join('') : '<div class="sa2-f-sub">Todavía no hay ningún Fathom conectado.</div>';
+      caja.innerHTML = d.conexiones.length ? '<div class="sa2-f-sub">Fathom conectados</div>' + d.conexiones.map(c => `<div class="sa2-f-fila"><span>${c.error ? '⚠' : '✓'} <b>${saEsc(c.nombre)}</b> · ${saEsc(c.error ? c.error : 'última revisión ' + hace(c.ultimo))}</span></div>`).join('') : '<div class="sa2-f-sub">Todavía no hay ningún Fathom conectado.</div>';
     } catch(e){ caja.textContent = 'No se pudo leer la lista.'; }
   }
   function saRender(){
@@ -4002,11 +4002,6 @@
         const msg = document.getElementById('saFMsg'); el.disabled = true; msg.textContent = 'Revisando… las llamadas nuevas aparecen en 1 o 2 minutos.';
         try { await fetch(`${WORKER_URL}/auditoria/sincronizar`, { method: 'POST', headers: { 'X-Site-Key': claveDePlataforma() } }); } catch(err){ msg.textContent = 'No se pudo pedir la revisión.'; }
         setTimeout(() => { el.disabled = false; saFathomLista(); if(saleAuditScreen.classList.contains('active')) cargarSaleAudit(true); }, 60000); return;
-      }
-      if(a === 'fathomDesconectar'){
-        el.disabled = true;
-        try { await fetch(`${WORKER_URL}/auditoria/desconectar`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Site-Key': claveDePlataforma() }, body: JSON.stringify({ nombre: el.dataset.nombre }) }); } catch(err){}
-        saFathomLista(); return;
       }
       if(a === 'ir'){ const t = document.getElementById(v); if(t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
       if(a === 'closer'){ saCloser = v; saRender(); return; }
