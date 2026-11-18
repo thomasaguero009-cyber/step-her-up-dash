@@ -634,6 +634,9 @@
   select.es-input{ width:auto; padding-right:28px; }
   textarea.es-input{ min-height:280px; resize:vertical; line-height:1.6; font-size:13.5px; }
   #estrBuscar{ margin-bottom:10px; }
+  #estrFiltro{ margin-bottom:10px; }
+  .es-estado-campo{ display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--es-mute); }
+  .es-estado-campo select{ width:auto; }
   .es-list{ display:flex; flex-direction:column; gap:2px; }
   .es-item{
     width:100%; text-align:left; background:transparent; border:0; border-left:3px solid transparent;
@@ -2732,6 +2735,13 @@
       <div class="es-layout">
         <aside>
           <input type="search" id="estrBuscar" class="es-input" placeholder="Buscar alumna" autocomplete="off">
+          <select id="estrFiltro" class="es-input" aria-label="Filtrar por estado">
+            <option value="">Todas</option>
+            <option value="recibido">Formularios recibidos</option>
+            <option value="borrador">Borrador listo</option>
+            <option value="revision">En revisión</option>
+            <option value="entregada">Entregada</option>
+          </select>
           <div class="es-list" id="estrList"></div>
         </aside>
         <section class="es-main" id="estrDetail"></section>
@@ -5081,6 +5091,7 @@
   }
   let estrTab = 'estrategia';
   let estrBusqueda = '';
+  let estrFiltro = '';          // '' = todas; si no, un estado
   let estrEditando = null;      // 'alumna:seccion' en edición
   let estrTextoEdicion = '';
   let estrRegenAbierto = null;  // 'alumna:seccion' con el panel "Regenerar" abierto
@@ -5189,15 +5200,15 @@
   function renderListaEstr(){
     const lista = document.getElementById('estrList');
     const q = estrBusqueda.trim().toLowerCase();
-    const visibles = ESTR_ALUMNAS.filter(a => !q || (a.nombre + ' ' + a.negocio).toLowerCase().includes(q));
-    document.getElementById('estrCount').textContent = estrListaCargada ? ESTR_ALUMNAS.length + (ESTR_ALUMNAS.length === 1 ? ' alumna' : ' alumnas') : '';
+    const visibles = ESTR_ALUMNAS.filter(a => (!q || (a.nombre + ' ' + a.negocio).toLowerCase().includes(q)) && (!estrFiltro || a.estado === estrFiltro));
+    document.getElementById('estrCount').textContent = !estrListaCargada ? '' : (estrFiltro || q) ? visibles.length + ' de ' + ESTR_ALUMNAS.length : ESTR_ALUMNAS.length + (ESTR_ALUMNAS.length === 1 ? ' alumna' : ' alumnas');
     if(!estrListaCargada) lista.innerHTML = '<div class="es-vacio">' + escapeHtml(estrListaError || 'Cargando…') + '</div>';
     else lista.innerHTML = visibles.length ? visibles.map(a => `
       <button type="button" class="es-item${a.id === estrSeleccion ? ' active' : ''}" data-id="${a.id}">
         <div class="es-item-name">${escapeHtml(a.nombre)}</div>
         <div class="es-item-sub">${escapeHtml(a.negocio)}</div>
         <div class="es-estado"><span class="es-dot ${a.estado}"></span>${escapeHtml(estrEtiquetaItem(a))}</div>
-      </button>`).join('') : '<div class="es-vacio">' + (ESTR_ALUMNAS.length ? 'No hay alumnas con ese nombre.' : 'Todavía no hay formularios recibidos.') + '</div>';
+      </button>`).join('') : '<div class="es-vacio">' + (ESTR_ALUMNAS.length ? 'No hay alumnas con ese filtro.' : 'Todavía no hay formularios recibidos.') + '</div>';
     lista.querySelectorAll('.es-item').forEach(b => b.addEventListener('click', () => {
       estrSeleccion = b.dataset.id; estrEditando = null; estrRegenAbierto = null; estrMsgTexto = ''; estrConfirmarNueva = false;
       estrAbrirAlumna(b.dataset.id);
@@ -5347,9 +5358,11 @@
           <h2>${escapeHtml(a.nombre)}</h2>
           <p>${escapeHtml(a.negocio)}</p>
         </div>
-        <select id="estrEstado" class="es-input" aria-label="Estado">
-          ${Object.keys(ESTR_ESTADOS).map(k => `<option value="${k}"${a.estado === k ? ' selected' : ''}>${ESTR_ESTADOS[k]}</option>`).join('')}
-        </select>
+        <label class="es-estado-campo">Estado de esta alumna
+          <select id="estrEstado" class="es-input" aria-label="Estado de esta alumna">
+            ${Object.keys(ESTR_ESTADOS).map(k => `<option value="${k}"${a.estado === k ? ' selected' : ''}>${ESTR_ESTADOS[k]}</option>`).join('')}
+          </select>
+        </label>
       </div>
       <div class="es-tabs">
         ${tabs.map(([k, t]) => `<button type="button" class="es-tab${estrTab === k ? ' active' : ''}" data-tab="${k}">${t}</button>`).join('')}
@@ -5407,6 +5420,7 @@
     renderDocumento(a);
   }
   document.getElementById('estrBuscar').addEventListener('input', (e) => { estrBusqueda = e.target.value; renderListaEstr(); });
+  document.getElementById('estrFiltro').addEventListener('change', (e) => { estrFiltro = e.target.value; renderListaEstr(); });
   // Mientras la pantalla está abierta, la lista se actualiza sola cada 15 segundos (las estrategias se escriben en segundo plano).
   async function estrSondear(){
     if(!estrategiasScreen.classList.contains('active')){ clearInterval(estrTimer); estrTimer = null; return; }
