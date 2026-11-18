@@ -1893,7 +1893,6 @@
 
       <div class="quick-nav-row" id="dashTabNav">
         <button type="button" class="quick-nav-btn active" data-tab="general">Vista General</button>
-        <button type="button" class="quick-nav-btn" data-tab="ghl">GHL en vivo</button>
         <button type="button" class="quick-nav-btn" data-tab="leads">Leads</button>
         <button type="button" class="quick-nav-btn" data-tab="ads">Ads</button>
         <button type="button" class="quick-nav-btn" data-tab="organico">Orgánico</button>
@@ -2395,6 +2394,8 @@
           </div>
         </div>
         <div class="chart-status" id="statusUtm" style="margin-bottom:18px;">Cargando desde GHL…</div>
+        <div class="section-label" style="margin-top:8px;">Campañas de ads · gráficos</div>
+        <div class="chart-panel" id="utmAdsGraficos" style="margin-bottom:26px;"></div>
         <div class="section-label" style="margin-top:8px;">Clics a PDF (según el mes activo)</div>
         <div class="chart-panel" style="margin-bottom:44px;">
           <div class="utm-wrap">
@@ -3988,7 +3989,7 @@
 
   // ===== Menú por secciones (Resumen / Marketing / Ventas) y orden de cada pestaña: día → semana → mes =====
   const GRUPOS_DASH = [
-    ['Resumen', ['general', 'ghl']],
+    ['Resumen', ['general']],
     ['Marketing', ['leads', 'ads', 'organico', 'utm', 'email']],
     ['Ventas', ['llamadas', 'setters', 'closers', 'ventas', 'matematica']],
   ];
@@ -7656,6 +7657,53 @@
     const t = slug.replace(/-/g, ' ');
     return t.charAt(0).toUpperCase() + t.slice(1);
   }
+  // Campañas de ads con gráficos: solo anuncios de Meta (código numérico largo en la UTM). Junta los que tienen el mismo nombre
+  // (ej. los dos "FLYER #1") y dibuja, por campaña, el embudo Leads → Agendadas → Shows → Cierres y las ventas en dólares.
+  const CA_ETAPAS = [['l', 'Leads', '#f0a8be'], ['a', 'Agendadas', '#e9c46a'], ['s', 'Shows', '#7fd1c2'], ['c', 'Cierres', '#5fd39a']];
+  const CA_CSS = '.ca-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}'
+    + '.ca-tile{border:1px solid var(--border);border-radius:12px;padding:10px 14px;background:rgba(255,255,255,0.03);}.ca-tile span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);}.ca-tile b{font-size:22px;font-variant-numeric:tabular-nums;}'
+    + '.ca-leyenda{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 14px;font-size:12px;color:var(--text-dim);}.ca-leyenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;}'
+    + '.ca-camp{padding:14px 0;border-top:1px solid var(--border);}.ca-camp:first-of-type{border-top:0;}'
+    + '.ca-cab{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px;font-size:14px;}.ca-cab b{font-weight:700;}.ca-cab span{color:var(--text-dim);font-size:12.5px;}'
+    + '.ca-fila{display:grid;grid-template-columns:86px 1fr 52px;gap:10px;align-items:center;margin:4px 0;font-size:12.5px;}.ca-fila>span:first-child{color:var(--text-dim);}'
+    + '.ca-pista{height:12px;border-radius:6px;background:rgba(255,255,255,0.06);overflow:hidden;}.ca-pista i{display:block;height:100%;border-radius:6px;min-width:2px;}.ca-num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}'
+    + '.ca-sub{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin:18px 0 6px;}'
+    + '@media(max-width:560px){.ca-fila{grid-template-columns:70px 1fr 44px;}}';
+  function renderCampanasAds(){
+    const cont = document.getElementById('utmAdsGraficos');
+    if(!cont) return;
+    if(!utmResumen){ cont.innerHTML = ''; return; }
+    const dimK = utmDimension === 'cont' ? 'cont' : 'camp';
+    const ventasPor = utmResumen[dimK] || {};
+    const leadsPor = (leadsData && leadsData.utmLeads && leadsData.utmLeads[dimK]) || {};
+    const grupos = {};
+    new Set([...Object.keys(ventasPor), ...Object.keys(leadsPor)]).forEach(k => {
+      if(!/^\d{12,}$/.test(k)) return;
+      const v = ventasPor[k] || {}, nombre = utmNombreLindo(k);
+      const g = grupos[nombre] || (grupos[nombre] = { nombre, l: 0, a: 0, s: 0, c: 0, v: 0 });
+      g.l += leadsPor[k] || 0; g.a += v.agendadas || 0; g.s += v.shows || 0; g.c += v.cierres || 0; g.v += v.ventas || 0;
+    });
+    const camps = Object.values(grupos).filter(g => g.l || g.a || g.s || g.c || g.v).sort((x, y) => y.a - x.a || y.l - x.l || y.v - x.v);
+    const n = x => Math.round(x).toLocaleString('es-AR');
+    if(!camps.length){
+      cont.innerHTML = '<div class="utm-vacio">Todavía no hay campañas de ads con datos este mes. Cuando entren leads por anuncios de Meta aparecen acá.</div>';
+      return;
+    }
+    const tot = camps.reduce((t, g) => ({ l: t.l + g.l, a: t.a + g.a, s: t.s + g.s, c: t.c + g.c, v: t.v + g.v }), { l: 0, a: 0, s: 0, c: 0, v: 0 });
+    const maxL = Math.max(1, ...camps.map(g => Math.max(g.l, g.a, g.s, g.c)));
+    const maxV = Math.max(1, ...camps.map(g => g.v));
+    const tiles = [['Leads de ads', n(tot.l)], ['Agendadas', n(tot.a)], ['Shows', n(tot.s)], ['Cierres', n(tot.c)], ['Ventas', '$' + n(tot.v)], ['Lead → agenda', tot.l ? (tot.a / tot.l * 100).toFixed(1) + '%' : '–']]
+      .map(t => '<div class="ca-tile"><span>' + t[0] + '</span><b>' + t[1] + '</b></div>').join('');
+    const leyenda = CA_ETAPAS.map(e => '<span><i style="background:' + e[2] + '"></i>' + e[1] + '</span>').join('');
+    const bloques = camps.map(g => {
+      const filas = CA_ETAPAS.map(e => '<div class="ca-fila"><span>' + e[1] + '</span><div class="ca-pista"><i style="width:' + (g[e[0]] / maxL * 100).toFixed(1) + '%;background:' + e[2] + '"></i></div><span class="ca-num">' + n(g[e[0]]) + '</span></div>').join('');
+      return '<div class="ca-camp"><div class="ca-cab"><b>' + escapeHtml(g.nombre) + '</b><span>' + (g.l ? 'Lead → agenda ' + (g.a / g.l * 100).toFixed(1) + '%' : 'Sin leads registrados') + (g.v ? ' · $' + n(g.v) + ' en ventas' : '') + '</span></div>' + filas + '</div>';
+    }).join('');
+    const ventas = camps.filter(g => g.v > 0).sort((x, y) => y.v - x.v).map(g => '<div class="ca-fila" style="grid-template-columns:150px 1fr 70px;"><span style="color:var(--cream)">' + escapeHtml(g.nombre) + '</span><div class="ca-pista"><i style="width:' + (g.v / maxV * 100).toFixed(1) + '%;background:#e9c46a"></i></div><span class="ca-num">$' + n(g.v) + '</span></div>').join('');
+    cont.innerHTML = '<style>' + CA_CSS + '</style><div class="ca-tiles">' + tiles + '</div><div class="ca-leyenda">' + leyenda + '</div>' + bloques
+      + (ventas ? '<div class="ca-sub">Ventas por campaña</div>' + ventas : '')
+      + '<div class="chart-status" style="margin:14px 0 0;">Solo anuncios de Meta (' + (dimK === 'cont' ? 'por anuncio / contenido' : 'por campaña') + '). Los leads y agendas sin UTM no se pueden atribuir a un anuncio.</div>';
+  }
   function renderCampanas(){
     const chips = document.getElementById('utmDimension');
     if(!chips) return;
@@ -7692,6 +7740,7 @@
         : 'Sin datos este mes todavía.';
     }
     try { renderEmbudo(); } catch(e){}
+    try { renderCampanasAds(); } catch(e){}
     const totalAg = filas.reduce((a, f) => a + f.agendadas, 0);
     const agConUtm = conUtm.reduce((a, f) => a + f.agendadas, 0);
     status.textContent = totalAg > 0
