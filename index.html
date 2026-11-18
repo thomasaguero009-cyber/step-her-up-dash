@@ -1903,7 +1903,6 @@
         <button type="button" class="quick-nav-btn" data-tab="setters">Setters</button>
         <button type="button" class="quick-nav-btn" data-tab="closers">Closers</button>
         <button type="button" class="quick-nav-btn" data-tab="utm">Campañas (UTM)</button>
-        <button type="button" class="quick-nav-btn" data-tab="webinar">Webinar</button>
         <button type="button" class="quick-nav-btn" data-tab="email">Email</button>
       </div>
 
@@ -2410,33 +2409,6 @@
 
       <!-- Webinar: inscripciones de la clase del 21 de octubre. Sale del pipeline "STEP HER UP - WEBINAR" de GHL
            (una oportunidad por inscripta) y de las etiquetas lp-/src- del contacto. -->
-      <div class="tab-panel" data-tab-panel="webinar">
-        <div class="section-label" id="webinar">Webinar del 21 de octubre</div>
-        <div class="breakdown-grid" id="webinarCards"></div>
-        <div class="chart-panel" style="margin-top:18px;">
-          <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:4px;">Leads por día en el mes</div>
-          <div id="webinarDiasResumen" style="opacity:.7;font-size:13px;margin-bottom:10px;"></div>
-          <div id="webinarDiasGrafico"></div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr; gap:18px; margin-top:18px;">
-          <div class="chart-panel">
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">De dónde vienen las inscriptas</div>
-            <div id="webinarTorta" style="display:flex;flex-wrap:wrap;align-items:center;gap:28px;"></div>
-          </div>
-          <div class="chart-panel">
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Desglose</div>
-            <div class="utm-wrap"><table class="utm-table"><thead><tr><th>Fuente</th><th>Inscriptas</th><th>%</th></tr></thead><tbody id="webinarFuentes"></tbody></table></div>
-          </div>
-          <div class="chart-panel">
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:600;color:var(--blush);margin-bottom:10px;">Etapas en GHL</div>
-            <div id="webinarEtapas"></div>
-          </div>
-        </div>
-        <div class="chart-status" id="statusWebinar" style="margin-bottom:44px;">Cargando desde GHL…</div>
-      </div>
-
-      <!-- Email: resultados de cada envío masivo de GHL. Salen de email-envios.json (una fila por envío,
-           copiada de "Bulk email stats"). -->
       <div class="tab-panel" data-tab-panel="email">
         <div class="section-label" id="email">Email marketing</div>
         <div class="breakdown-grid" id="emailCards"></div>
@@ -4017,7 +3989,7 @@
   // ===== Menú por secciones (Resumen / Marketing / Ventas) y orden de cada pestaña: día → semana → mes =====
   const GRUPOS_DASH = [
     ['Resumen', ['general', 'ghl']],
-    ['Marketing', ['leads', 'ads', 'organico', 'utm', 'webinar', 'email']],
+    ['Marketing', ['leads', 'ads', 'organico', 'utm', 'email']],
     ['Ventas', ['llamadas', 'setters', 'closers', 'ventas', 'matematica']],
   ];
   function iniciarGruposDash(){
