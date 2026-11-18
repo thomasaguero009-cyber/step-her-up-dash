@@ -5063,27 +5063,30 @@
   }
 
   // ----- Estado, guardado en el navegador y utilidades -----
-  // ----- Llamadas al Worker (todas con la clave de Admin) -----
+  // ----- Llamadas al servidor de Estrategias: Google Apps Script (hoja privada de Thomas), con la clave de Admin en el cuerpo -----
+  // Igual que el script del Tracker: POST con Content-Type text/plain (así no hay preflight) y respuesta JSON.
+  const ESTR_URL = 'https://script.google.com/macros/s/PENDIENTE_URL_DEL_SCRIPT/exec';
   async function estrApi(ruta, opt){
+    if(ESTR_URL.indexOf('PENDIENTE') >= 0) throw new Error('Falta conectar el servidor de Estrategias (la dirección del script).');
     let clave = '';
     try { clave = sessionStorage.getItem('shu_estr_key') || ''; } catch(e){}
     const o = opt || {};
+    const partes = String(ruta).split('?');
+    const cuerpo = { ruta: partes[0], clave };
+    if(partes[1]) new URLSearchParams(partes[1]).forEach((v, k) => { cuerpo[k] = v; });
+    Object.assign(cuerpo, o.body || {});
     let res;
     try {
-      res = await fetch(`${WORKER_URL}/estrategia/${ruta}`, {
-        method: o.method || 'GET',
-        headers: { 'Content-Type': 'application/json', 'X-Admin-Key': clave },
-        body: o.body ? JSON.stringify(o.body) : undefined
-      });
+      res = await fetch(ESTR_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(cuerpo) });
     } catch(e){ throw new Error('No se pudo conectar con el servidor. Revisá tu internet e intentá de nuevo.'); }
     const data = await res.json().catch(() => ({}));
-    if(res.status === 401){
+    if(data.error === 'unauthorized'){
       try { sessionStorage.removeItem('shu_estr_key'); sessionStorage.removeItem('shu_admin_utm_ok'); } catch(e){}
       const err = new Error('El servidor no aceptó la contraseña de Admin. Salí y volvé a entrar a Admin.'); err.auth = true; throw err;
     }
-    if(!res.ok || !data.ok){
+    if(!data.ok){
       const err = new Error(data.error === 'en_cola' ? 'Esta estrategia se está escribiendo sola en segundo plano. Esperá a que termine o cancelá esa escritura.'
-        : data.error === 'not_configured' ? 'Falta configurar el servidor (clave de OpenAI o de Admin).'
+        : data.error === 'not_configured' ? 'Falta configurar el servidor (la clave de OpenAI o la de Admin en el script).'
         : 'No se pudo completar (' + (data.error || res.status) + ').');
       err.codigo = data.error; throw err;
     }
