@@ -4933,10 +4933,25 @@
   let estrTimer = null;
 
   // ----- Markdown simple -> bloques (títulos, listas, tablas, párrafos) -----
+  // Una fila de tabla partida en varias líneas (saltos reales dentro de la celda) se junta con <br>.
+  function estrArreglarTablas(texto){
+    const lineas = String(texto).split('\n'), out = [];
+    let i = 0;
+    while(i < lineas.length){
+      const l = lineas[i];
+      if(/^\s*\|/.test(l) && !/\|\s*$/.test(l)){
+        let acum = l, j = i + 1;
+        while(j < lineas.length && !/\|\s*$/.test(acum)){ acum += '<br>' + lineas[j].trim(); j++; }
+        if(/\|\s*$/.test(acum)){ out.push(acum); i = j; continue; }
+      }
+      out.push(l); i++;
+    }
+    return out.join('\n');
+  }
   function estrBloques(texto){
     const bloques = [];
     let tabla = null;
-    String(texto).split('\n').forEach(linea => {
+    estrArreglarTablas(texto).split('\n').forEach(linea => {
       const l = linea.trim();
       if(l.startsWith('|')){
         const celdas = l.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
@@ -5155,7 +5170,7 @@
     estrRefrescar(a);
     try {
       a.secciones[secId] = await estrPedirSeccion(a, secId, extra);
-      if(a.estado === 'recibido') a.estado = 'borrador';
+      if(a.estado === 'recibido' && ESTR_SECCIONES.every(s => a.secciones[s.id])) a.estado = 'borrador'; // solo con las 8 secciones
       estrSincronizarLista(a);
       delete est[secId];
     } catch(e){
