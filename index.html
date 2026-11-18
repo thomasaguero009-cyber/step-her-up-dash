@@ -9004,9 +9004,10 @@
     (ventasMes || []).forEach(v => {
       huboDatosCloserActual = true; huboDatosSetterActual = true;
       totalMes += v.cash || 0;
-      const c = v.closer || 'Sin closer asignado', st = v.setter || 'Sin setter asignada';
+      const c = v.closer || 'Sin closer asignado';
       porCloserActual.set(c, (porCloserActual.get(c) || 0) + (v.cash || 0));
-      porSetterVentasActual.set(st, (porSetterVentasActual.get(st) || 0) + (v.cash || 0));
+      // Las ventas sin setter (ej. las de Gianie por DM) no entran al ranking de setters; el cash del mes y del día las sigue contando.
+      if(v.setter) porSetterVentasActual.set(v.setter, (porSetterVentasActual.get(v.setter) || 0) + (v.cash || 0));
     });
     (ventasHoy || []).forEach(v => { const f = parseFechaSheet(v.fecha); if(f && mismoDia(f, hoy)) totalDia += v.cash || 0; });
     { const respaldo = await cashRankingDelMes(anio, mes); if(respaldo && respaldo > totalMes) totalMes = respaldo; }   // el mayor entre "Ventas" y lo que cargaron los closers
