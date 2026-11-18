@@ -5065,7 +5065,7 @@
   // ----- Estado, guardado en el navegador y utilidades -----
   // ----- Llamadas al servidor de Estrategias: Google Apps Script (hoja privada de Thomas), con la clave de Admin en el cuerpo -----
   // Igual que el script del Tracker: POST con Content-Type text/plain (así no hay preflight) y respuesta JSON.
-  const ESTR_URL = 'https://script.google.com/macros/s/PENDIENTE_URL_DEL_SCRIPT/exec';
+  const ESTR_URL = 'https://script.google.com/macros/s/AKfycbzz54SHmzzl6S6HBg51531bb1gFAqR52-6a_xtzsFDxNtPOUU_PsxPEcal6NOkHCq59/exec';
   async function estrApi(ruta, opt){
     if(ESTR_URL.indexOf('PENDIENTE') >= 0) throw new Error('Falta conectar el servidor de Estrategias (la dirección del script).');
     let clave = '';
