@@ -2730,7 +2730,7 @@
     <div class="wrap">
       <header class="es-top">
         <h1 class="es-title">Estrategias<span class="es-count" id="estrCount"></span></h1>
-        <button type="button" class="es-link" id="estrVolverBtn">← Volver</button>
+        <span><button type="button" class="es-link" id="estrActualizar">Actualizar</button> <button type="button" class="es-link" id="estrVolverBtn">← Volver</button></span>
       </header>
       <div class="es-layout">
         <aside>
@@ -5261,6 +5261,7 @@
         const d = await estrApi('cola', { method: 'POST', body: { id: a.id, accion: cancelar ? 'cancelar' : 'encolar' } });
         a.gen = d.gen; estrMsgTexto = cancelar ? 'Escritura en segundo plano cancelada.' : 'En cola: se escribe sola en los próximos minutos.';
         const it = ESTR_ALUMNAS.find(x => x.id === a.id); if(it) it.gen = d.gen.estado;
+        estrProgramarSondeo();
       } catch(e){ estrMsgTexto = e.message; }
       estrRefrescar(a);
     });
@@ -5421,23 +5422,38 @@
   }
   document.getElementById('estrBuscar').addEventListener('input', (e) => { estrBusqueda = e.target.value; renderListaEstr(); });
   document.getElementById('estrFiltro').addEventListener('change', (e) => { estrFiltro = e.target.value; renderListaEstr(); });
-  // Mientras la pantalla está abierta, la lista se actualiza sola cada 15 segundos (las estrategias se escriben en segundo plano).
+  // La lista se actualiza sola SOLO mientras algo se está escribiendo en segundo plano, cada 60 segundos y con la pestaña a la vista.
+  // (El KV gratis de Cloudflare tiene un tope diario de operaciones: antes se consultaba cada 15 segundos con la pantalla abierta.)
+  const estrHayEscritura = () => ESTR_ALUMNAS.some(a => a.gen === 'cola' || a.gen === 'generando');
+  function estrProgramarSondeo(){
+    clearTimeout(estrTimer); estrTimer = null;
+    if(!estrategiasScreen.classList.contains('active') || document.hidden || !estrHayEscritura()) return;
+    estrTimer = setTimeout(estrSondear, 60000);
+  }
   async function estrSondear(){
-    if(!estrategiasScreen.classList.contains('active')){ clearInterval(estrTimer); estrTimer = null; return; }
+    estrTimer = null;
+    if(!estrategiasScreen.classList.contains('active') || document.hidden) return;
     await estrCargarLista();
     const a = estrCache[estrSeleccion], it = ESTR_ALUMNAS.find(x => x.id === estrSeleccion);
     // Solo se vuelve a traer y dibujar la alumna abierta si algo cambió en el servidor (así no se pierde lo que se está escribiendo).
     if(a && it && !estrOcupada(a) && (it.ts !== ((a.gen && a.gen.ts) || 0) || it.estado !== a.estado || it.gen !== ((a.gen && a.gen.estado) || 'idle'))) await estrAbrirAlumna(a.id, true);
+    estrProgramarSondeo();
   }
+  document.addEventListener('visibilitychange', () => { if(!document.hidden && estrategiasScreen.classList.contains('active') && estrListaCargada) estrSondear(); });
   function entrarAEstrategias(){
     cambiarDeSeccion(estrategiasScreen, 'Estrategias', async () => {
       renderEstrategias();
       await estrCargarLista();
       if(estrSeleccion) await estrAbrirAlumna(estrSeleccion, true);
       estrCargarPrompt();
-      if(!estrTimer) estrTimer = setInterval(estrSondear, 15000);
+      estrProgramarSondeo();
     });
   }
+  document.getElementById('estrActualizar').addEventListener('click', async () => {
+    await estrCargarLista();
+    if(estrSeleccion) await estrAbrirAlumna(estrSeleccion, true);
+    estrProgramarSondeo();
+  });
   document.getElementById('estrVolverBtn').addEventListener('click', () => showScreen(loadingScreen));
   utmBuilderClose.addEventListener('click', () => utmBuilderOverlay.classList.remove('open'));
   utmBuilderOverlay.addEventListener('click', (e) => { if(e.target === utmBuilderOverlay) utmBuilderOverlay.classList.remove('open'); });
