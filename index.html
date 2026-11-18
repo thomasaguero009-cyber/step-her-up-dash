@@ -683,6 +683,7 @@
   .es-regen{ display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; }
   .es-regen .es-input{ flex:1 1 260px; width:auto; }
   .es-sec-error{ margin:0; padding:6px 0; font-size:14px; color:#b3261e; }
+  .es-sec-aviso{ margin:0 0 8px; padding:8px 12px; font-size:13.5px; color:#7a4b00; background:#fff4d6; border-radius:8px; }
   textarea.es-edit{ min-height:340px; font-size:14px; }
   .es-draft{ font-size:16px; line-height:1.75; }
   .es-draft h5{ margin:14px 0 4px; font-size:14px; font-weight:700; }
@@ -5207,7 +5208,7 @@
     if(!silencioso){ renderEstrategias(); }
     try {
       const d = await estrApi('alumna?id=' + encodeURIComponent(id));
-      estrCache[id] = { id, nombre: d.meta.nombre, negocio: d.meta.negocio, estado: d.meta.estado, gen: d.gen || { estado: 'idle', pend: [] }, respuestas: d.respuestas || [], secciones: d.secciones || {} };
+      estrCache[id] = { id, nombre: d.meta.nombre, negocio: d.meta.negocio, estado: d.meta.estado, gen: d.gen || { estado: 'idle', pend: [] }, respuestas: d.respuestas || [], secciones: d.secciones || {}, avisos: d.avisos || {} };
       const it = ESTR_ALUMNAS.find(x => x.id === id); if(it) estrSincronizarLista(estrCache[id]);
     } catch(e){ estrMsgTexto = e.message; }
     if(estrSeleccion === id) renderEstrategias();
@@ -5306,7 +5307,8 @@
         ? `<span class="es-sec-acciones"><button type="button" class="es-mini" data-act="editar" data-sec="${s.id}">Editar</button><button type="button" class="es-mini" data-act="regenerar" data-sec="${s.id}">Regenerar</button></span>` : '';
       const regen = estrRegenAbierto === clave
         ? `<div class="es-regen"><input type="text" class="es-input" data-sec="${s.id}" placeholder="Qué querés cambiar (opcional). Ej: más corto, agregá ejemplos de reels" maxlength="500"><button type="button" class="es-btn" data-act="regen-ok" data-sec="${s.id}">Regenerar</button><button type="button" class="es-btn es-btn-ghost" data-act="cancelar" data-sec="${s.id}">Cancelar</button></div>` : '';
-      return `<article class="es-sec"><div class="es-sec-bar"><span class="es-sec-nombre">${texto && !st ? '' : escapeHtml(s.titulo)}</span>${acciones}</div>${regen}${cuerpo}</article>`;
+      const aviso = (a.avisos && a.avisos[s.id] && a.avisos[s.id].length && texto && !st && !editando) ? `<p class="es-sec-aviso"><strong>Para revisar:</strong> ${escapeHtml(a.avisos[s.id].join(' · '))}</p>` : '';
+      return `<article class="es-sec"><div class="es-sec-bar"><span class="es-sec-nombre">${texto && !st ? '' : escapeHtml(s.titulo)}</span>${acciones}</div>${aviso}${regen}${cuerpo}</article>`;
     }).join('');
 
     cont.querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', () => {
@@ -5316,7 +5318,7 @@
       else if(act === 'guardar'){
         const textoNuevo = estrTextoEdicion;
         estrApi('seccion', { method: 'POST', body: { id: a.id, seccion: secId, texto: textoNuevo } })
-          .then(() => { a.secciones[secId] = textoNuevo; estrEditando = null; estrMsgTexto = ''; estrSincronizarLista(a); estrRefrescar(a); })
+          .then(() => { a.secciones[secId] = textoNuevo; if(a.avisos) delete a.avisos[secId]; estrEditando = null; estrMsgTexto = ''; estrSincronizarLista(a); estrRefrescar(a); })
           .catch(e => { estrMsgTexto = 'No se guardó: ' + e.message; estrRefrescar(a); });
       }
       else if(act === 'regenerar'){ estrRegenAbierto = clave; estrEditando = null; renderDocumento(a); const i = cont.querySelector('.es-regen input'); if(i) i.focus(); }
