@@ -2361,24 +2361,6 @@
           <div class="chart-status" id="statusProyeccion">Sin datos todavía — se va a conectar a un Google Sheet</div>
         </div>
         <div class="chart-status" id="statusMatematica" style="margin-bottom:44px;">Sin datos todavía — se va a conectar a un Google Sheet</div>
-        <div class="chart-panel" id="miMate" style="margin-top:26px;margin-bottom:44px;">
-          <div class="section-label" style="margin-bottom:10px;">Mi matemática del éxito</div>
-          <div class="mim-nota">Elige tu nombre, escribe cuánto quieres ganar de comisión al mes y el dashboard calcula hacia atrás cuántas ventas, shows, agendas y llamadas necesitas, con tu propio ritmo de las últimas 4 semanas. Juega con los números.</div>
-          <div class="mim-grid">
-            <div class="metricas-field"><label for="mimNombre">Quién eres</label><select id="mimNombre"></select></div>
-            <div class="metricas-field"><label for="mimComision">Comisión que quiero al mes ($)</label><input id="mimComision" type="number" min="0" step="100" value="3000"></div>
-            <div class="metricas-field"><label for="mimPct">Mi comisión por venta (%)</label><input id="mimPct" type="number" min="0" step="0.5" value="10"></div>
-            <div class="metricas-field"><label for="mimTicket">Ticket promedio ($)</label><input id="mimTicket" type="number" min="0" step="50" value="3000"></div>
-            <div class="metricas-field"><label for="mimShow">De agendadas a show (%)</label><input id="mimShow" type="number" min="1" max="100" step="1" value="60"></div>
-            <div class="metricas-field"><label for="mimCierre">De show a venta (%)</label><input id="mimCierre" type="number" min="1" max="100" step="1" value="30"></div>
-            <div class="metricas-field"><label for="mimAgenda">Mi % de llamadas a agenda</label><input id="mimAgenda" type="number" min="0.1" max="100" step="0.1" value="2"></div>
-            <div class="metricas-field"><label for="mimDias">Días que trabajo al mes</label><input id="mimDias" type="number" min="1" max="31" step="1" value="22"></div>
-          </div>
-          <div class="mim-frase" id="mimFrase"></div>
-          <div class="mim-res" id="mimRes"></div>
-          <div class="mim-frase" id="mimCompara"></div>
-          <div class="mim-nota" id="mimNotaDatos"></div>
-        </div>
       </div>
 
       <div class="tab-panel" data-tab-panel="setters">
@@ -4136,7 +4118,7 @@
     ads: 'Gasto en anuncios, costo por lead y ROAS',
     ventas: 'Cash cobrado y ventas por día y por semana',
     llamadas: 'Llamadas, agendadas y no atienden por día y por semana',
-    matematica: 'Tasas de conversión y calculadora "Mi matemática del éxito": cuántas llamadas necesito para ganar una cantidad',
+    matematica: 'Tasas de conversión: agendado, show y cierre',
     setters: 'Rendimiento de cada setter por día y por semana, con la escalera de metas',
     closers: 'Rendimiento de cada closer: cash, shows y cierres',
     utm: 'De qué campaña o anuncio vienen los leads y las agendas',
@@ -4451,6 +4433,7 @@
   }
   function mimPonerRitmo(){ const mi = mimRitmo(document.getElementById('mimNombre').value); if(mi.pctAg > 0) document.getElementById('mimAgenda').value = f1(mi.pctAg).replace(',', '.'); }
   async function iniciarMiMatematica(){
+    if(!document.getElementById('miMate')) return;   // el bloque "Mi matemática del éxito" se quitó del dash
     if(mimListo) return; mimListo = true;
     const [filas, ranking] = await Promise.all([obtenerFilasTracker(), obtenerFilasRanking()]);
     const nombres = [...new Set(filas.filter(r => r.fecha >= masDias(lunesDe(new Date()), -28) && r.llamadas > 0).map(r => r.setter))].filter(n => n !== 'Sin asignar').sort();
