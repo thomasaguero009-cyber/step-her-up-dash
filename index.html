@@ -691,6 +691,8 @@
   .es-cap-datos{ margin:0 0 10px; display:grid; grid-template-columns:max-content 1fr; gap:3px 14px; font-size:13.5px; }
   .es-cap-datos dt{ font-weight:700; color:#5a1626; }
   .es-cap-datos dd{ margin:0; overflow-wrap:anywhere; }
+  .es-portada{ text-align:center; margin:0 0 18px; }
+  .es-portada img{ max-width:100%; width:520px; border-radius:8px; border:1px solid #d9cfcc; }
   .es-cap-imgs{ display:flex; flex-wrap:wrap; gap:10px; }
   .es-cap-imgs img{ max-width:100%; width:260px; border-radius:8px; border:1px solid #d9cfcc; }
   .es-sec-aviso{ margin:0 0 8px; padding:8px 12px; font-size:13.5px; color:#7a4b00; background:#fff4d6; border-radius:8px; }
@@ -5086,7 +5088,7 @@
     return null;
   }
   function estrDibujoXml(n, rid, cx, cy){
-    return `<w:p><w:pPr><w:spacing w:after="160"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${n}" name="Captura ${n}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${n}" name="captura${n}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+    return `<w:p><w:pPr><w:spacing w:after="160"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${n}" name="Captura ${n}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${n}" name="captura${n}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
   }
   // imagenes = [{ mime, datos: Uint8Array }]; van donde esté la línea [[CAPTURAS]] del texto.
   function estrDocxBlob(titulo, subtitulo, markdown, imagenes){
@@ -5094,24 +5096,28 @@
     const parrafo = (estilo, texto, extra) => `<w:p><w:pPr><w:pStyle w:val="${estilo}"/>${extra || ''}</w:pPr>${estrRuns(texto)}</w:p>`;
     let cuerpo = parrafo('Title', titulo);
     const archivosImg = [];
+    let nDibujos = 0;
+    // Dibuja la imagen i (0 = captura del encabezado del perfil). Cada archivo se guarda una sola vez aunque salga en dos lugares.
+    const dibujar = (i) => {
+      const im = (imagenes || [])[i];
+      if(!im) return '';
+      const ext = im.mime === 'image/png' ? 'png' : (im.mime === 'image/jpeg' ? 'jpg' : '');
+      const t = ext && estrTamanoImagen(im.datos, im.mime);
+      if(!t || !t.w || !t.h) return ''; // formato que Word no abre bien (p. ej. webp): se ve en el dashboard
+      if(!im._rid){ im._rid = 'rId' + (11 + archivosImg.length); archivosImg.push({ nombre: `word/media/captura${archivosImg.length + 1}.${ext}`, datos: im.datos, ext, rid: im._rid }); }
+      let cx = 5900000, cy = Math.round(cx * t.h / t.w); // casi el ancho de la página, como las capturas de Gianie
+      if(cy > 7000000){ cy = 7000000; cx = Math.round(cy * t.w / t.h); }
+      return estrDibujoXml(++nDibujos, im._rid, cx, cy);
+    };
     if(subtitulo) cuerpo += parrafo('Subtitle', subtitulo);
+    cuerpo += dibujar(0); // portada: captura del perfil
     estrBloques(markdown).forEach(b => {
       if(b.t === 'li') cuerpo += parrafo('ListParagraph', b.texto, '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>');
       else if(b.t === 'ol') cuerpo += parrafo('ListParagraph', b.n + '. ' + b.texto, '<w:ind w:left="720" w:hanging="360"/>');
       else if(b.t === 'h') cuerpo += parrafo(b.n <= 2 ? 'Heading1' : b.n === 3 ? 'Heading2' : 'Heading3', b.texto);
       else if(b.t === 'tabla') cuerpo += estrTablaXml(b.filas);
-      else if(b.t === 'p' && b.texto === '[[CAPTURAS]]'){
-        (imagenes || []).forEach(im => {
-          const ext = im.mime === 'image/png' ? 'png' : (im.mime === 'image/jpeg' ? 'jpg' : '');
-          const t = ext && estrTamanoImagen(im.datos, im.mime);
-          if(!t || !t.w || !t.h) return; // formato que Word no abre bien (p. ej. webp): se ve en el dashboard
-          const k = archivosImg.length + 1;
-          let cx = 4800000, cy = Math.round(cx * t.h / t.w); // 4,8 millones de EMU = unos 13 cm de ancho
-          if(cy > 7000000){ cy = 7000000; cx = Math.round(cy * t.w / t.h); }
-          archivosImg.push({ nombre: `word/media/captura${k}.${ext}`, datos: im.datos, ext, rid: 'rId' + (10 + k) });
-          cuerpo += estrDibujoXml(k, 'rId' + (10 + k), cx, cy);
-        });
-      }
+      else if(b.t === 'p' && b.texto === '[[CAPTURAS]]') cuerpo += dibujar(0);
+      else if(b.t === 'p' && b.texto === '[[CAPTURAS_EXTRA]]'){ for(let i = 1; i < (imagenes || []).length; i++) cuerpo += dibujar(i); }
       else cuerpo += parrafo('Normal', b.texto);
     });
     const estilo = (id, nombre, rpr, ppr, extra) => `<w:style w:type="paragraph" w:styleId="${id}"${id === 'Normal' ? ' w:default="1"' : ''}><w:name w:val="${nombre}"/>${extra || ''}<w:qFormat/><w:pPr>${ppr}</w:pPr><w:rPr>${rpr}</w:rPr></w:style>`;
@@ -5185,9 +5191,12 @@
   function estrMarkdownCompleto(a, conMarcadorCapturas){
     return ESTR_SECCIONES.filter(s => a.secciones[s.id]).map(s => {
       let t = a.secciones[s.id].trim();
-      if(conMarcadorCapturas && s.id === 'perfil'){ // las capturas van justo después del título de la sección
-        const i = t.indexOf('\n');
-        t = i < 0 ? t + '\n[[CAPTURAS]]' : t.slice(0, i) + '\n[[CAPTURAS]]' + t.slice(i);
+      if(conMarcadorCapturas && s.id === 'perfil'){
+        // la captura del perfil va después de la introducción y antes de "Qué depurar y arreglar"; las demás, al final de la sección
+        const m = /^#{1,4}\s+.*qué depurar.*$/im.exec(t);
+        if(m) t = t.slice(0, m.index) + '[[CAPTURAS]]\n' + t.slice(m.index);
+        else { const i = t.indexOf('\n'); t = i < 0 ? t + '\n[[CAPTURAS]]' : t.slice(0, i) + '\n[[CAPTURAS]]' + t.slice(i); }
+        t += '\n[[CAPTURAS_EXTRA]]';
       }
       return t;
     }).join('\n\n');
@@ -5206,6 +5215,16 @@
     const bin = atob(b64), u = new Uint8Array(bin.length);
     for(let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
     return u;
+  }
+  // Captura del perfil arriba de todo (como la portada del documento de Gianie). Se pide sola, una vez.
+  function estrPortadaHtml(a){
+    if(!a.capturas || !a.capturas.length) return '';
+    const im = estrImagenes[a.id + ':' + a.capturas[0].n];
+    if(!im){
+      estrPedirCaptura(a, a.capturas[0].n).then(() => { if(estrSeleccion === a.id) renderDocumento(a); }).catch(() => {});
+      return '';
+    }
+    return `<div class="es-portada"><img src="data:${escapeHtml(im.mime)};base64,${im.b64}" alt="Captura del perfil de Instagram"></div>`;
   }
   function estrPerfilHtml(a){
     const p = a.perfil, caps = a.capturas || [];
@@ -5424,7 +5443,8 @@
     const cont = document.getElementById('estrDoc');
     if(!cont) return;
     const est = estrEstadoSec[a.id] || {};
-    cont.innerHTML = ESTR_SECCIONES.map(s => {
+    const portada = estrPortadaHtml(a);
+    cont.innerHTML = portada + ESTR_SECCIONES.map(s => {
       const clave = a.id + ':' + s.id;
       const texto = a.secciones[s.id];
       const st = est[s.id];
