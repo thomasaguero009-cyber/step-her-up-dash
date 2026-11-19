@@ -1299,6 +1299,15 @@
   .tabla-campanas th:first-child, .tabla-campanas td:first-child{ text-align:left; white-space:normal; min-width:180px; font-weight:600; }
   .tabla-campanas tfoot td{ font-weight:700; }
   @media (max-width:620px){ .tabla-campanas{ font-size:12px; } .tabla-campanas th{ font-size:9px; letter-spacing:0; padding:8px 3px; white-space:normal; } .tabla-campanas td{ padding:9px 3px; white-space:normal; } .tabla-campanas th:first-child, .tabla-campanas td:first-child{ min-width:0; width:34%; padding-left:8px; } .estado-ads{ padding:1px 5px; font-size:9px; } }
+  .ma-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:12px; }
+  .ma-tabla{ border-collapse:collapse; width:100%; font-size:13px; font-variant-numeric:tabular-nums; }
+  .ma-tabla th, .ma-tabla td{ padding:8px 12px; text-align:right; white-space:nowrap; border-top:1px solid var(--border); }
+  .ma-tabla th:first-child, .ma-tabla td:first-child{ text-align:left; position:sticky; left:0; background:var(--card, #2a0b14); z-index:1; }
+  .ma-tabla thead th{ border-top:0; font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--text-dim); vertical-align:bottom; }
+  .ma-tabla .ma-grupo td{ text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--blush); background:rgba(255,255,255,.04); padding:6px 12px; }
+  .ma-tabla .ma-total{ font-weight:700; background:rgba(255,255,255,.05); }
+  .ma-mejor{ color:#7fe0a8; font-weight:700; }
+  .ma-tabla td.ma-vacio{ color:var(--text-dim); }
   .rk-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:26px; padding:16px 20px; }
   .rk-tit{ margin:0 0 8px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); }
   .rk-fila{ display:grid; grid-template-columns:minmax(80px,34%) 1fr auto auto; gap:10px; align-items:center; margin:8px 0; font-size:13px; }
@@ -2210,6 +2219,7 @@
           </div>
         </div>
         <div id="adsNiveles"></div>
+        <div id="adsMetricasAnuncio"></div>
         <div class="chart-status" id="adsCampanasVacio" style="margin-bottom:44px;">Cargá filas en la pestaña "Ads" del Tracker (con Campaña, Conjunto de anuncios y Anuncio) para ver el gasto de cada uno.</div>
       </div>
 
@@ -6890,12 +6900,14 @@
   }
 
   let filasAdsCache = null;
+  let filasAdsCrudas = [];
   async function obtenerFilasAds(){
     if(filasAdsCache) return filasAdsCache;
     if(!SHEET_ADS_CSV_URL){ filasAdsCache = []; return filasAdsCache; }
     try {
       const texto = await fetchTextConTimeout(SHEET_ADS_CSV_URL, 8000);
       const filas = parseCSVSheet(texto);
+      filasAdsCrudas = filas; // el bloque "Métricas por anuncio" (columnas AA a AX) se lee de las mismas filas
       const header = (filas[0] || []).map(normalizarEncabezado);
       const idx = { fecha: header.indexOf('fecha'), gasto: header.indexOf('gasto'), imp: header.indexOf('impresiones'), clics: header.indexOf('clics'), leads: header.indexOf('leads'), res: header.indexOf('resultados'), camp: Math.max(header.indexOf('campaña'), header.indexOf('campana')), conj: header.indexOf('conjunto de anuncios'), anun: header.indexOf('anuncio') };
       const datos = [];
@@ -7278,6 +7290,66 @@
       if(vacioEl) vacioEl.hidden = hayAlgo;
     }
     try { renderAdsV2(d); renderOrganicoV2(d); } catch(e){ console.warn('Ads/Orgánico v2', e); }
+    try { renderMetricasAnuncio(); } catch(e){ console.warn('Métricas por anuncio', e); }
+  }
+  // "Métricas por anuncio": bloque de la pestaña Ads del Tracker (columnas AA a AX, filas 1 a 10): fila 1 título, fila 2 encabezados,
+  // una fila por anuncio, la fila TOTAL y una nota de fuente. Se muestra con los anuncios en columnas y las métricas en filas.
+  const MA_COL0 = 26; // columna AA
+  const maNorm = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const maNum = (v) => { let t = String(v == null ? '' : v).replace(/[^0-9,.\-]/g, ''); if(!t) return null; if(t.includes(',')) t = t.replace(/\./g, '').replace(',', '.'); const n = parseFloat(t); return isFinite(n) ? n : null; };
+  // tipo: $ dinero, % tasa (0,02 = 2%), n cantidad, f decimal; mejor: 'min' (más bajo es mejor) o 'max'.
+  const MA_METRICAS = [
+    ['Inversión y alcance', [['gasto', '$'], ['alcance', 'n'], ['impresiones', 'n'], ['frecuencia', 'f']]],
+    ['Clics y visitas', [['clics en el enlace', 'n', 'max'], ['ctr enlace', '%', 'max'], ['cpc enlace', '$', 'min'], ['visitas a la pagina', 'n', 'max'], ['costo por visita', '$', 'min'], ['visitas / clics', '%', 'max']]],
+    ['Leads y agendas', [['leads meta', 'n', 'max'], ['cpl meta', '$', 'min'], ['leads ghl', 'n', 'max'], ['agendas ghl', 'n', 'max'], ['costo por agenda', '$', 'min'], ['cierres ghl', 'n', 'max']]],
+    ['Video', [['thruplays 15 s', 'n', 'max'], ['thruplay / impresiones', '%', 'max'], ['video hasta 25 %', 'n'], ['video hasta 50 %', 'n'], ['video hasta 75 %', 'n'], ['video hasta 95 %', 'n'], ['retencion 25 a 95 %', '%', 'max']]],
+  ];
+  function renderMetricasAnuncio(){
+    const cont = document.getElementById('adsMetricasAnuncio');
+    if(!cont) return;
+    const filas = filasAdsCrudas || [];
+    const bloque = filas.slice(0, 14).map(r => (r || []).slice(MA_COL0));
+    const iEnc = bloque.findIndex(r => maNorm(r[0]) === 'anuncio');
+    if(iEnc < 0){ cont.innerHTML = ''; return; }
+    const enc = bloque[iEnc].map(maNorm);
+    const titulo = (bloque[0] && bloque[0][0]) || 'Métricas por anuncio';
+    let nota = '';
+    const datos = [];
+    for(let i = iEnc + 1; i < bloque.length; i++){
+      const r = bloque[i], nombre = String(r[0] || '').trim();
+      if(!nombre) continue;
+      if(/^fuente/i.test(nombre)){ nota = nombre; continue; }
+      datos.push({ nombre, total: /^total/i.test(nombre), r });
+    }
+    if(!datos.length){ cont.innerHTML = ''; return; }
+    const anuncios = datos.filter(x => !x.total), total = datos.find(x => x.total);
+    const cols = total ? [...anuncios, total] : anuncios;
+    const fmt = (v, tipo) => {
+      const n = maNum(v);
+      if(n == null) return '–';
+      if(tipo === '$') return '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if(tipo === '%') return (n * 100).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '%';
+      if(tipo === 'f') return n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return Math.round(n).toLocaleString('es-AR');
+    };
+    const cab = '<th>Métrica</th>' + cols.map(x => '<th>' + escapeHtml(x.nombre.replace(/\s*\(.*\)\s*$/, '')) + (x.total ? '' : botonVerAnuncio(idMetaPorNombre(x.nombre.replace(/\s*\(.*\)\s*$/, '')))) + (/\(.*\)/.test(x.nombre) ? '<br><small style="text-transform:none;letter-spacing:0;">' + escapeHtml((x.nombre.match(/\((.*)\)/) || [])[1] || '') + '</small>' : '') + '</th>').join('');
+    let cuerpo = '';
+    MA_METRICAS.forEach(([grupo, mets]) => {
+      const filasGrupo = mets.map(([clave, tipo, mejor]) => {
+        const j = enc.indexOf(clave);
+        if(j < 0) return '';
+        const valores = cols.map(x => maNum(x.r[j]));
+        // El mejor entre los anuncios (no cuenta el TOTAL) se marca en verde.
+        const cand = anuncios.map((x, k) => ({ k, v: valores[k] })).filter(o => o.v != null && (mejor !== 'min' || o.v > 0));
+        const mejorV = mejor && cand.length > 1 ? (mejor === 'min' ? Math.min(...cand.map(o => o.v)) : Math.max(...cand.map(o => o.v))) : null;
+        const celdas = cols.map((x, k) => { const esMejor = mejorV != null && !x.total && valores[k] === mejorV; return '<td class="' + (valores[k] == null ? 'ma-vacio' : esMejor ? 'ma-mejor' : '') + (x.total ? ' ma-total' : '') + '">' + fmt(x.r[j], tipo) + '</td>'; }).join('');
+        return '<tr><td>' + escapeHtml(String((bloque[iEnc] || [])[j] || clave)) + '</td>' + celdas + '</tr>';
+      }).join('');
+      if(filasGrupo) cuerpo += '<tr class="ma-grupo"><td colspan="' + (cols.length + 1) + '">' + grupo + '</td></tr>' + filasGrupo;
+    });
+    cont.innerHTML = '<div class="section-label" style="margin-top:36px;">' + escapeHtml(titulo) + '</div><div class="ma-wrap"><table class="ma-tabla"><thead><tr>' + cab + '</tr></thead><tbody>' + cuerpo + '</tbody></table></div>'
+      + (nota ? '<div class="chart-status" style="margin-top:10px;">' + escapeHtml(nota) + '</div>' : '')
+      + '<div class="chart-status" style="margin-top:6px;">En verde, el mejor anuncio de cada fila (costo más bajo o tasa más alta).</div>';
   }
 
   // ===== Gráficos con filtros (chips): Setters, Closers y Leads por día.
