@@ -3837,7 +3837,8 @@
       let d, res; try { res = await fetch(`${WORKER_URL}/auditoria/lista?log=1`, { headers: { 'X-Site-Key': claveDePlataforma() }, signal: ctrl.signal }); d = await res.json(); } finally { clearTimeout(cortar); }
       if(!res.ok || !Array.isArray(d.filas)) throw new Error(d && d.error === 'unauthorized' ? 'La contraseña de la plataforma no es válida' : ((d && (d.error || d.message)) || 'sin respuesta'));
       saLog = Array.isArray(d.log) ? d.log : [];
-      saFilas = d.filas; saEsEjemplo = false; saAnimar = true;
+      // Thomas no es closer: sus llamadas no cuentan ni aparece en el filtro.
+      saFilas = d.filas.filter(f => !/^\s*thomas\b/i.test(String(f.Closer || ''))); saEsEjemplo = false; saAnimar = true;
       await saCruzarVentas(saFilas);
       saRender();
     } catch(e){
