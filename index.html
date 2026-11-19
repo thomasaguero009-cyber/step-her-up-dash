@@ -693,6 +693,9 @@
   .es-cap-datos dd{ margin:0; overflow-wrap:anywhere; }
   .es-portada{ text-align:center; margin:0 0 18px; }
   .es-portada img{ max-width:100%; width:520px; border-radius:8px; border:1px solid #d9cfcc; }
+  .es-cap-subir{ margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .es-cap-file{ cursor:pointer; }
+  .es-cap-una{ display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
   .es-cap-imgs{ display:flex; flex-wrap:wrap; gap:10px; }
   .es-cap-imgs img{ max-width:100%; width:260px; border-radius:8px; border:1px solid #d9cfcc; }
   .es-sec-aviso{ margin:0 0 8px; padding:8px 12px; font-size:13.5px; color:#7a4b00; background:#fff4d6; border-radius:8px; }
@@ -5204,6 +5207,33 @@
   // ----- Capturas del perfil de Instagram (se guardan en Drive; acá se piden de a una, solo cuando se necesitan) -----
   const estrImagenes = {};      // { 'alumna:n': { mime, b64 } }
   const estrCapAbierto = {};    // { alumna: true } si se muestran las capturas
+  // Achica la imagen (máx. 1600 px, JPEG) para que entre sin problema y la sube como captura a mano.
+  function estrAchicarImagen(archivo){
+    return new Promise((ok, mal) => {
+      const url = URL.createObjectURL(archivo), img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        ok(c.toDataURL('image/jpeg', 0.85).split(',')[1]);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); mal(new Error('No se pudo leer la imagen.')); };
+      img.src = url;
+    });
+  }
+  async function estrSubirPanel(a, archivo, msg){
+    try {
+      msg.textContent = 'Subiendo…';
+      const b64 = await estrAchicarImagen(archivo);
+      await estrApi('subir_captura', { method: 'POST', body: { id: a.id, mime: 'image/jpeg', base64: b64 } });
+      Object.keys(estrImagenes).forEach(k => { if(k.indexOf(a.id + ':') === 0) delete estrImagenes[k]; });
+      estrCapAbierto[a.id] = true;
+      await estrAbrirAlumna(a.id, true);
+      const nueva = estrCache[a.id];
+      if(nueva) (nueva.capturas || []).forEach(c => estrPedirCaptura(nueva, c.n).then(() => { if(estrSeleccion === a.id) renderDocumento(nueva); }).catch(() => {}));
+    } catch(e){ msg.textContent = 'No se pudo subir: ' + e.message; }
+  }
   async function estrPedirCaptura(a, n){
     const k = a.id + ':' + n;
     if(estrImagenes[k]) return estrImagenes[k];
@@ -5237,11 +5267,12 @@
       if(estrCapAbierto[a.id]){
         imgs = '<div class="es-cap-imgs">' + caps.map(c => {
           const im = estrImagenes[a.id + ':' + c.n];
-          return im ? `<img src="data:${escapeHtml(im.mime)};base64,${im.b64}" alt="Captura del perfil ${c.n + 1}">` : '<p class="es-cap-nota">Cargando captura…</p>';
+          return im ? `<div class="es-cap-una"><img src="data:${escapeHtml(im.mime)};base64,${im.b64}" alt="Captura del perfil ${c.n + 1}">${c.manual ? `<button type="button" class="es-mini" data-act="quitar-captura" data-n="${c.n}">Quitar</button>` : ''}</div>` : '<p class="es-cap-nota">Cargando captura…</p>';
         }).join('') + '</div>';
       } else imgs = `<button type="button" class="es-mini" data-act="ver-capturas">Ver capturas (${caps.length})</button>`;
     }
-    return `<div class="es-cap">${lista}${imgs}</div>`;
+    const subir = `<div class="es-cap-subir"><label class="es-mini es-cap-file">Agregar captura del panel profesional<input type="file" accept="image/*" data-subir-panel hidden></label><span class="es-cap-nota" data-subir-msg></span></div>`;
+    return `<div class="es-cap">${lista}${imgs}${subir}</div>`;
   }
   async function estrDescargarDocx(a){
     const caps = a.capturas || [];
@@ -5486,10 +5517,19 @@
         estrGenerarUna(a, secId, { instruccion: instr || 'Escríbela de nuevo con otro enfoque, igual de concreta.', textoActual: a.secciones[secId] });
       }
       else if(act === 'reintentar') estrGenerarUna(a, secId, {});
+      else if(act === 'quitar-captura'){
+        estrApi('subir_captura', { method: 'POST', body: { id: a.id, quitar: Number(btn.dataset.n) } })
+          .then(() => { Object.keys(estrImagenes).forEach(k => { if(k.indexOf(a.id + ':') === 0) delete estrImagenes[k]; }); return estrAbrirAlumna(a.id, true); })
+          .catch(e => { estrMsgTexto = 'No se pudo quitar: ' + e.message; renderDocumento(a); });
+      }
       else if(act === 'ver-capturas'){
         estrCapAbierto[a.id] = true; renderDocumento(a);
         (a.capturas || []).reduce((p, c) => p.then(() => estrPedirCaptura(a, c.n).then(() => { if(estrSeleccion === a.id) renderDocumento(a); }).catch(e => { estrMsgTexto = 'No se pudo cargar una captura: ' + e.message; })), Promise.resolve());
       }
+    }));
+    cont.querySelectorAll('input[data-subir-panel]').forEach(inp => inp.addEventListener('change', () => {
+      const f = inp.files && inp.files[0];
+      if(f) estrSubirPanel(a, f, cont.querySelector('[data-subir-msg]') || {});
     }));
     cont.querySelectorAll('textarea.es-edit').forEach(t => t.addEventListener('input', () => { estrTextoEdicion = t.value; }));
     cont.querySelectorAll('.es-regen input').forEach(i => i.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ cont.querySelector('[data-act="regen-ok"]').click(); } }));
