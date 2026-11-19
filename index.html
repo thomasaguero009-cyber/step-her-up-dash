@@ -1299,6 +1299,15 @@
   .tabla-campanas th:first-child, .tabla-campanas td:first-child{ text-align:left; white-space:normal; min-width:180px; font-weight:600; }
   .tabla-campanas tfoot td{ font-weight:700; }
   @media (max-width:620px){ .tabla-campanas{ font-size:12px; } .tabla-campanas th{ font-size:9px; letter-spacing:0; padding:8px 3px; white-space:normal; } .tabla-campanas td{ padding:9px 3px; white-space:normal; } .tabla-campanas th:first-child, .tabla-campanas td:first-child{ min-width:0; width:34%; padding-left:8px; } .estado-ads{ padding:1px 5px; font-size:9px; } }
+  .rk-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:26px; padding:16px 20px; }
+  .rk-tit{ margin:0 0 8px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); }
+  .rk-fila{ display:grid; grid-template-columns:minmax(80px,34%) 1fr auto auto; gap:10px; align-items:center; margin:8px 0; font-size:13px; }
+  .rk-nom{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rk-pista{ height:14px; border-radius:7px; background:rgba(255,255,255,.07); overflow:hidden; }
+  .rk-pista i{ display:block; height:100%; border-radius:7px; }
+  .rk-val{ font-variant-numeric:tabular-nums; font-weight:600; text-align:right; white-space:nowrap; }
+  .rk-nota{ margin:10px 0 0; font-size:12px; color:var(--text-dim); }
+  @media(max-width:560px){ .rk-fila{ grid-template-columns:1fr auto auto; } .rk-pista{ grid-column:1 / -1; order:3; } }
   .estado-ads{ display:inline-block; padding:2px 10px; border-radius:99px; font-size:11px; font-weight:600; border:1px solid var(--border); color:var(--text-dim); }
   .estado-ads.verde{ color:#7fe0a8; border-color:rgba(127,224,168,.5); background:rgba(127,224,168,.1); }
   /* ===== Sales Audit: sección propia con acento dorado. Todo va dentro del panel, no toca la paleta del resto del dash. =====
@@ -2248,6 +2257,8 @@
         <div class="chart-panel">
           <div class="kpi-grid" id="desgloseResumen" style="margin-bottom:18px;"></div>
           <div id="desgloseGrafico" style="margin-bottom:22px;"></div>
+          <p class="vz-titulo" style="margin:6px 0 10px;">Orgánico vs anuncios</p>
+          <div id="desgloseGraficoFuente" style="margin-bottom:22px;"></div>
           <div class="utm-wrap">
             <table class="utm-table">
               <thead><tr><th>Fecha</th><th>Clienta</th><th>Producto</th><th>Pago</th><th>Fuente</th><th>Cobrado</th><th>Closer</th><th>Setter</th></tr></thead>
@@ -6623,13 +6634,15 @@
   const COLOR_PRODUCTO = { 'SHU PROGRAM': '#f0a8be', 'Step Her Up premium': '#e9c46a', 'Coaching 1:1': '#5fd39a' };
   const colorProducto = (p) => COLOR_PRODUCTO[p] || '#b9a9b4';
   function fechaOrden(f){ const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(f || ''); return m ? +m[3] * 10000 + +m[2] * 100 + +m[1] : 0; }
-  function pintarGraficoDesglose(ventas, sin){
-    const cont = document.getElementById('desgloseGrafico');
+  // contId: dónde se dibuja; agrupa(v): a qué fila va cada venta; ordenFijo: filas en ese orden (aunque estén vacías no se muestran).
+  function pintarGraficoDesglose(ventas, sin, contId, agrupa, ordenFijo){
+    const cont = document.getElementById(contId || 'desgloseGrafico');
     if(!cont) return;
     if(!ventas.length){ cont.innerHTML = ''; return; }
+    agrupa = agrupa || ((v) => v.vendio || sin);
     const grupos = {};
-    ventas.forEach((v, i) => { const k = v.vendio || sin; (grupos[k] = grupos[k] || { total: 0, items: [] }); grupos[k].total += v.cash; grupos[k].items.push(Object.assign({ i }, v)); });
-    const nombres = Object.keys(grupos).sort((a, b) => (a === sin) - (b === sin) || grupos[b].total - grupos[a].total);
+    ventas.forEach((v, i) => { const k = agrupa(v); (grupos[k] = grupos[k] || { total: 0, items: [] }); grupos[k].total += v.cash; grupos[k].items.push(Object.assign({ i }, v)); });
+    const nombres = ordenFijo ? ordenFijo.filter(n => grupos[n]) : Object.keys(grupos).sort((a, b) => (a === sin) - (b === sin) || grupos[b].total - grupos[a].total);
     const max = Math.max(...nombres.map(n => grupos[n].total));
     const productos = [...new Set(ventas.map(v => v.producto || 'Otro'))];
     const filas = nombres.map(n => {
@@ -6643,8 +6656,8 @@
     }).join('');
     const leyenda = productos.map(p => '<span class="dg-chip"><i style="background:' + colorProducto(p) + '"></i>' + escDesglose(p) + '</span>').join('');
     cont.innerHTML = '<style>' + DG_CSS + '</style>' + filas + '<div class="dg-leyenda">' + leyenda + '<span>Cada tramo es una venta; el ancho es lo cobrado.</span></div>'
-      + '<div class="dg-detalle" id="desgloseDetalle">Pasa el mouse o toca una venta para ver los datos de la clienta.</div>';
-    const detalle = document.getElementById('desgloseDetalle');
+      + '<div class="dg-detalle">Pasa el mouse o toca una venta para ver los datos de la clienta.</div>';
+    const detalle = cont.querySelector('.dg-detalle');
     const mostrar = (b) => {
       const v = ventas[+b.dataset.i];
       cont.querySelectorAll('.dg-tramo.on').forEach(x => x.classList.remove('on')); b.classList.add('on');
@@ -6678,6 +6691,9 @@
       '</td><td>' + escDesglose(v.source) + '</td><td style="white-space:nowrap">' + usdDesglose(v.cash) + '</td><td>' + (v.closer ? escDesglose(v.closer) : '<span style="color:var(--text-dim)">—</span>') + '</td><td>' + celda(v.setter || (v.closer ? '—' : '')) + '</td></tr>').join('')
       + (ventas.length ? '<tr><td><strong>Total</strong></td><td></td><td></td><td></td><td></td><td><strong>' + usdDesglose(total) + '</strong></td><td></td><td></td></tr>' : '');
     pintarGraficoDesglose(ventas, sin);
+    // Orgánico vs anuncios: el mismo gráfico, una fila por fuente (cada tramo es una venta; mismo detalle al tocar).
+    const fuenteDe = (v) => { const c = claseFuente(v.source); return c === 'ads' ? 'Anuncios' : c === 'org' ? 'Orgánico' : 'Sin atribuir'; };
+    pintarGraficoDesglose(ventas, sin, 'desgloseGraficoFuente', fuenteDe, ['Anuncios', 'Orgánico', 'Sin atribuir']);
     const faltan = ventas.filter(v => !v.vendio).length;
     document.getElementById('statusDesglose').textContent = !ventas.length
       ? (data.message || 'No hay cobros cargados en ese mes.')
@@ -7242,7 +7258,22 @@
         };
         const fila = (f) => { const [txt, col] = estado(f); return '<tr><td>' + escapeHtml(f.n) + '</td><td>' + dec(f.c.gasto) + '</td><td>' + (f.r || '–') + '</td><td>' + (f.r > 0 ? dec(f.c.gasto / f.r) : '–') + '</td><td>' + pct(f.c.clics, f.c.imp) + '</td><td><span class="estado-ads ' + col + '">' + txt + '</span></td></tr>'; };
         const total = '<tr style="font-weight:700;"><td>Total</td><td>' + dec(gT) + '</td><td>' + (rT || '–') + '</td><td>' + (rT > 0 ? dec(gT / rT) : '–') + '</td><td>' + pct(filas.reduce((a, f) => a + f.c.clics, 0), filas.reduce((a, f) => a + f.c.imp, 0)) + '</td><td></td></tr>';
-        return '<div class="section-label" style="margin-top:28px;">' + titulo + '</div><div class="ranking-table" style="overflow-x:auto;"><table class="tabla-campanas"><thead><tr><th>' + sing + '</th><th>Gasto</th><th>Result.</th><th>CPR</th><th>CTR</th><th>Estado</th></tr></thead><tbody>' + filas.map(fila).join('') + (filas.length > 1 ? total : '') + '</tbody></table></div>';
+        // Gráficos de barras ordenados (se lee de un vistazo qué rinde más): gasto de mayor a menor y costo por resultado de menor (mejor) a mayor.
+        const TOPE_BARRAS = 10;
+        const porGasto = [...filas].sort((a, b) => b.c.gasto - a.c.gasto);
+        const conRes = filas.filter(f => f.r > 0).sort((a, b) => (a.c.gasto / a.r) - (b.c.gasto / b.r));
+        const sinRes = filas.filter(f => !(f.r > 0)).sort((a, b) => b.c.gasto - a.c.gasto);
+        const maxG = Math.max(1, ...porGasto.map(f => f.c.gasto)), maxC = Math.max(1, ...conRes.map(f => f.c.gasto / f.r));
+        const chip = (f) => { const [txt, col] = estado(f); return '<span class="estado-ads ' + col + '">' + txt + '</span>'; };
+        const barra = (f, valor, max, color, texto) => '<div class="rk-fila"><span class="rk-nom" title="' + escapeHtml(f.n) + '">' + escapeHtml(f.n) + '</span><div class="rk-pista"><i style="width:' + Math.max(2, valor / max * 100).toFixed(1) + '%;background:' + color + ';"></i></div><span class="rk-val">' + texto + '</span>' + chip(f) + '</div>';
+        const colorCpr = (f) => { const col = estado(f)[1]; return col === 'verde' ? '#5fd39a' : col === 'rojo' ? '#ff9b9b' : '#f0a8be'; };
+        const graficos = '<div class="chart-panel rk-grid">'
+          + '<div><p class="rk-tit">Gasto (de mayor a menor)</p>' + porGasto.slice(0, TOPE_BARRAS).map(f => barra(f, f.c.gasto, maxG, '#e9c46a', dec(f.c.gasto))).join('') + '</div>'
+          + '<div><p class="rk-tit">Costo por resultado (el más barato primero)</p>' + (conRes.length ? conRes.slice(0, TOPE_BARRAS).map(f => barra(f, f.c.gasto / f.r, maxC, colorCpr(f), dec(f.c.gasto / f.r))).join('') : '<p class="chart-status" style="margin:0;">Ninguno tiene resultados todavía.</p>')
+          + (sinRes.length ? '<p class="rk-nota">Sin resultados: ' + sinRes.length + ' (gasto ' + dec(sinRes.reduce((a, f) => a + f.c.gasto, 0)) + ')</p>' : '') + '</div>'
+          + (porGasto.length > TOPE_BARRAS ? '<p class="rk-nota" style="grid-column:1/-1;">Se muestran los ' + TOPE_BARRAS + ' primeros; abajo está la tabla completa.</p>' : '')
+          + '</div>';
+        return '<div class="section-label" style="margin-top:28px;">' + titulo + '</div>' + graficos + '<details class="mas-metricas" style="margin-top:10px;"><summary>Ver tabla de ' + titulo.toLowerCase() + '</summary><div class="ranking-table" style="overflow-x:auto;"><table class="tabla-campanas"><thead><tr><th>' + sing + '</th><th>Gasto</th><th>Result.</th><th>CPR</th><th>CTR</th><th>Estado</th></tr></thead><tbody>' + filas.map(fila).join('') + (filas.length > 1 ? total : '') + '</tbody></table></div></details>';
       }).join('');
       if(vacioEl) vacioEl.hidden = hayAlgo;
     }
