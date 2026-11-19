@@ -686,6 +686,13 @@
   .es-regen{ display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; }
   .es-regen .es-input{ flex:1 1 260px; width:auto; }
   .es-sec-error{ margin:0; padding:6px 0; font-size:14px; color:#b3261e; }
+  .es-cap{ margin:0 0 14px; padding:12px 14px; background:#faf5f6; border-radius:8px; }
+  .es-cap-nota{ margin:0 0 12px; font-size:13.5px; color:#6b5e61; }
+  .es-cap-datos{ margin:0 0 10px; display:grid; grid-template-columns:max-content 1fr; gap:3px 14px; font-size:13.5px; }
+  .es-cap-datos dt{ font-weight:700; color:#5a1626; }
+  .es-cap-datos dd{ margin:0; overflow-wrap:anywhere; }
+  .es-cap-imgs{ display:flex; flex-wrap:wrap; gap:10px; }
+  .es-cap-imgs img{ max-width:100%; width:260px; border-radius:8px; border:1px solid #d9cfcc; }
   .es-sec-aviso{ margin:0 0 8px; padding:8px 12px; font-size:13.5px; color:#7a4b00; background:#fff4d6; border-radius:8px; }
   textarea.es-edit{ min-height:340px; font-size:14px; }
   .es-draft{ font-size:16px; line-height:1.75; }
@@ -5034,7 +5041,7 @@
     const partes = [], central = [];
     let offset = 0;
     archivos.forEach(f => {
-      const nom = enc.encode(f.nombre), dat = enc.encode(f.texto), crc = estrCrc32(dat);
+      const nom = enc.encode(f.nombre), dat = f.datos || enc.encode(f.texto), crc = estrCrc32(dat);
       const comun = [...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(crc), ...u32(dat.length), ...u32(dat.length), ...u16(nom.length), ...u16(0)];
       partes.push(new Uint8Array([0x50, 0x4b, 3, 4, ...u16(20), ...comun]), nom, dat);
       central.push(new Uint8Array([0x50, 0x4b, 1, 2, ...u16(20), ...u16(20), ...comun, ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(offset)]), nom);
@@ -5062,16 +5069,49 @@
     }).join('') + '</w:tr>').join('');
     return `<w:tbl><w:tblPr><w:tblW w:w="9360" w:type="dxa"/><w:tblBorders>${bordes}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="60" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${Array(n).fill(`<w:gridCol w:w="${ancho}"/>`).join('')}</w:tblGrid>${filasXml}</w:tbl><w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>`;
   }
-  function estrDocxBlob(titulo, subtitulo, markdown){
+  // Tamaño en píxeles de un PNG o JPEG (para poner la captura con su proporción en el Word). Si no se puede leer, null.
+  function estrTamanoImagen(b, mime){
+    try {
+      if(mime === 'image/png' && b.length > 24) return { w: ((b[16] << 24) | (b[17] << 16) | (b[18] << 8) | b[19]) >>> 0, h: ((b[20] << 24) | (b[21] << 16) | (b[22] << 8) | b[23]) >>> 0 };
+      if(mime === 'image/jpeg'){
+        let i = 2;
+        while(i + 9 < b.length){
+          if(b[i] !== 0xFF){ i++; continue; }
+          const m = b[i + 1];
+          if(m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC) return { h: (b[i + 5] << 8) | b[i + 6], w: (b[i + 7] << 8) | b[i + 8] };
+          i += 2 + ((b[i + 2] << 8) | b[i + 3]);
+        }
+      }
+    } catch(e){}
+    return null;
+  }
+  function estrDibujoXml(n, rid, cx, cy){
+    return `<w:p><w:pPr><w:spacing w:after="160"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${n}" name="Captura ${n}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${n}" name="captura${n}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+  }
+  // imagenes = [{ mime, datos: Uint8Array }]; van donde esté la línea [[CAPTURAS]] del texto.
+  function estrDocxBlob(titulo, subtitulo, markdown, imagenes){
     const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
     const parrafo = (estilo, texto, extra) => `<w:p><w:pPr><w:pStyle w:val="${estilo}"/>${extra || ''}</w:pPr>${estrRuns(texto)}</w:p>`;
     let cuerpo = parrafo('Title', titulo);
+    const archivosImg = [];
     if(subtitulo) cuerpo += parrafo('Subtitle', subtitulo);
     estrBloques(markdown).forEach(b => {
       if(b.t === 'li') cuerpo += parrafo('ListParagraph', b.texto, '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>');
       else if(b.t === 'ol') cuerpo += parrafo('ListParagraph', b.n + '. ' + b.texto, '<w:ind w:left="720" w:hanging="360"/>');
       else if(b.t === 'h') cuerpo += parrafo(b.n <= 2 ? 'Heading1' : b.n === 3 ? 'Heading2' : 'Heading3', b.texto);
       else if(b.t === 'tabla') cuerpo += estrTablaXml(b.filas);
+      else if(b.t === 'p' && b.texto === '[[CAPTURAS]]'){
+        (imagenes || []).forEach(im => {
+          const ext = im.mime === 'image/png' ? 'png' : (im.mime === 'image/jpeg' ? 'jpg' : '');
+          const t = ext && estrTamanoImagen(im.datos, im.mime);
+          if(!t || !t.w || !t.h) return; // formato que Word no abre bien (p. ej. webp): se ve en el dashboard
+          const k = archivosImg.length + 1;
+          let cx = 4800000, cy = Math.round(cx * t.h / t.w); // 4,8 millones de EMU = unos 13 cm de ancho
+          if(cy > 7000000){ cy = 7000000; cx = Math.round(cy * t.w / t.h); }
+          archivosImg.push({ nombre: `word/media/captura${k}.${ext}`, datos: im.datos, ext, rid: 'rId' + (10 + k) });
+          cuerpo += estrDibujoXml(k, 'rId' + (10 + k), cx, cy);
+        });
+      }
       else cuerpo += parrafo('Normal', b.texto);
     });
     const estilo = (id, nombre, rpr, ppr, extra) => `<w:style w:type="paragraph" w:styleId="${id}"${id === 'Normal' ? ' w:default="1"' : ''}><w:name w:val="${nombre}"/>${extra || ''}<w:qFormat/><w:pPr>${ppr}</w:pPr><w:rPr>${rpr}</w:rPr></w:style>`;
@@ -5086,15 +5126,16 @@
       + estilo('TableText', 'Table Text', '<w:sz w:val="20"/>', '<w:spacing w:after="40" w:line="260" w:lineRule="auto"/>', '<w:basedOn w:val="Normal"/>')
       + '</w:styles>';
     const numbering = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ${W}><w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`;
-    const documento = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${W}><w:body>${cuerpo}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    const documento = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${W} xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${cuerpo}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`;
     const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
     return estrZip([
-      { nombre: '[Content_Types].xml', texto: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>' },
+      { nombre: '[Content_Types].xml', texto: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' + (archivosImg.some(f => f.ext === 'png') ? '<Default Extension="png" ContentType="image/png"/>' : '') + (archivosImg.some(f => f.ext === 'jpg') ? '<Default Extension="jpg" ContentType="image/jpeg"/>' : '') + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>' },
       { nombre: '_rels/.rels', texto: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${R}/officeDocument" Target="word/document.xml"/></Relationships>` },
-      { nombre: 'word/_rels/document.xml.rels', texto: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${R}/styles" Target="styles.xml"/><Relationship Id="rId2" Type="${R}/numbering" Target="numbering.xml"/></Relationships>` },
+      { nombre: 'word/_rels/document.xml.rels', texto: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${R}/styles" Target="styles.xml"/><Relationship Id="rId2" Type="${R}/numbering" Target="numbering.xml"/>${archivosImg.map(f => `<Relationship Id="${f.rid}" Type="${R}/image" Target="media/${f.nombre.split('/').pop()}"/>`).join('')}</Relationships>` },
       { nombre: 'word/document.xml', texto: documento },
       { nombre: 'word/styles.xml', texto: styles },
       { nombre: 'word/numbering.xml', texto: numbering },
+      ...archivosImg.map(f => ({ nombre: f.nombre, datos: f.datos })),
     ]);
   }
 
@@ -5141,11 +5182,55 @@
 
   const estrTieneTexto = (a) => ESTR_SECCIONES.some(s => a.secciones[s.id]);
   const estrOcupada = (a) => Object.values(estrEstadoSec[a.id] || {}).some(v => v === 'espera' || v === 'cargando');
-  function estrMarkdownCompleto(a){
-    return ESTR_SECCIONES.filter(s => a.secciones[s.id]).map(s => a.secciones[s.id].trim()).join('\n\n');
+  function estrMarkdownCompleto(a, conMarcadorCapturas){
+    return ESTR_SECCIONES.filter(s => a.secciones[s.id]).map(s => {
+      let t = a.secciones[s.id].trim();
+      if(conMarcadorCapturas && s.id === 'perfil'){ // las capturas van justo después del título de la sección
+        const i = t.indexOf('\n');
+        t = i < 0 ? t + '\n[[CAPTURAS]]' : t.slice(0, i) + '\n[[CAPTURAS]]' + t.slice(i);
+      }
+      return t;
+    }).join('\n\n');
   }
-  function estrDescargarDocx(a){
-    const blob = estrDocxBlob('Estrategia de Marca Personal', 'Preparada para ' + a.nombre + ' · ' + a.negocio, estrMarkdownCompleto(a));
+  // ----- Capturas del perfil de Instagram (se guardan en Drive; acá se piden de a una, solo cuando se necesitan) -----
+  const estrImagenes = {};      // { 'alumna:n': { mime, b64 } }
+  const estrCapAbierto = {};    // { alumna: true } si se muestran las capturas
+  async function estrPedirCaptura(a, n){
+    const k = a.id + ':' + n;
+    if(estrImagenes[k]) return estrImagenes[k];
+    const d = await estrApi('captura', { method: 'POST', body: { id: a.id, n } });
+    estrImagenes[k] = { mime: d.mime, b64: d.base64 };
+    return estrImagenes[k];
+  }
+  function estrBytes(b64){
+    const bin = atob(b64), u = new Uint8Array(bin.length);
+    for(let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    return u;
+  }
+  function estrPerfilHtml(a){
+    const p = a.perfil, caps = a.capturas || [];
+    if(!p && !caps.length) return '<p class="es-cap-nota">Todavía no hay datos ni capturas del Instagram de esta alumna.</p>';
+    if(p && p.sin) return '<p class="es-cap-nota">Sin Instagram para capturar: ' + escapeHtml(p.sin) + '</p>';
+    const datos = p ? [['Usuario', p.usuario ? '@' + String(p.usuario).replace(/^@/, '') : ''], ['Seguidores', p.seguidores], ['Seguidos', p.seguidos], ['Publicaciones', p.publicaciones], ['Categoría', p.categoria], ['Bio', p.bio], ['Enlace', p.enlace], ['Destacadas', (p.destacadas || []).join(', ')], ['Capturado el', p.fecha]].filter(x => x[1]) : [];
+    const lista = datos.length ? '<dl class="es-cap-datos">' + datos.map(x => '<dt>' + x[0] + '</dt><dd>' + escapeHtml(String(x[1])) + '</dd>').join('') + '</dl>' : '';
+    let imgs = '';
+    if(caps.length){
+      if(estrCapAbierto[a.id]){
+        imgs = '<div class="es-cap-imgs">' + caps.map(c => {
+          const im = estrImagenes[a.id + ':' + c.n];
+          return im ? `<img src="data:${escapeHtml(im.mime)};base64,${im.b64}" alt="Captura del perfil ${c.n + 1}">` : '<p class="es-cap-nota">Cargando captura…</p>';
+        }).join('') + '</div>';
+      } else imgs = `<button type="button" class="es-mini" data-act="ver-capturas">Ver capturas (${caps.length})</button>`;
+    }
+    return `<div class="es-cap">${lista}${imgs}</div>`;
+  }
+  async function estrDescargarDocx(a){
+    const caps = a.capturas || [];
+    const imagenes = [];
+    for(const c of caps){
+      try { const im = await estrPedirCaptura(a, c.n); imagenes.push({ mime: im.mime, datos: estrBytes(im.b64) }); } catch(e){ /* sin esa captura: el Word sale igual */ }
+    }
+    const blob = estrDocxBlob('Estrategia de Marca Personal', 'Preparada para ' + a.nombre + ' · ' + a.negocio, estrMarkdownCompleto(a, imagenes.length > 0), imagenes);
     const nombre = ('Estrategia - ' + a.nombre).replace(/[\\/:*?"<>|]+/g, '').trim() + '.docx';
     const url = URL.createObjectURL(blob);
     const enlace = document.createElement('a');
@@ -5258,7 +5343,7 @@
     if(!silencioso){ renderEstrategias(); }
     try {
       const d = await estrApi('alumna?id=' + encodeURIComponent(id));
-      estrCache[id] = { id, nombre: d.meta.nombre, negocio: d.meta.negocio, estado: d.meta.estado, gen: d.gen || { estado: 'idle', pend: [] }, respuestas: d.respuestas || [], secciones: d.secciones || {}, avisos: d.avisos || {} };
+      estrCache[id] = { id, nombre: d.meta.nombre, negocio: d.meta.negocio, estado: d.meta.estado, gen: d.gen || { estado: 'idle', pend: [] }, respuestas: d.respuestas || [], secciones: d.secciones || {}, avisos: d.avisos || {}, perfil: d.perfil || null, capturas: d.capturas || [] };
       const it = ESTR_ALUMNAS.find(x => x.id === id); if(it) estrSincronizarLista(estrCache[id]);
     } catch(e){ estrMsgTexto = e.message; }
     if(estrSeleccion === id) renderEstrategias();
@@ -5329,9 +5414,10 @@
       }
     });
     const botonDescargar = document.getElementById('estrDescargar');
-    if(botonDescargar) botonDescargar.addEventListener('click', () => {
-      estrDescargarDocx(a);
-      msg.textContent = 'Descargado. Abrilo en Google Docs desde Drive.';
+    if(botonDescargar) botonDescargar.addEventListener('click', async () => {
+      msg.textContent = (a.capturas && a.capturas.length) ? 'Preparando el Word con las capturas…' : 'Preparando el Word…';
+      try { await estrDescargarDocx(a); msg.textContent = 'Descargado. Abrilo en Google Docs desde Drive.'; }
+      catch(e){ msg.textContent = 'No se pudo armar el Word: ' + e.message; }
     });
   }
   function renderDocumento(a){
@@ -5359,7 +5445,8 @@
       const regen = estrRegenAbierto === clave
         ? `<div class="es-regen"><input type="text" class="es-input" data-sec="${s.id}" placeholder="Qué querés cambiar (opcional). Ej: más corto, agregá ejemplos de reels" maxlength="500"><button type="button" class="es-btn" data-act="regen-ok" data-sec="${s.id}">Regenerar</button><button type="button" class="es-btn es-btn-ghost" data-act="cancelar" data-sec="${s.id}">Cancelar</button></div>` : '';
       const aviso = (a.avisos && a.avisos[s.id] && a.avisos[s.id].length && texto && !st && !editando) ? `<p class="es-sec-aviso"><strong>Para revisar:</strong> ${escapeHtml(a.avisos[s.id].join(' · '))}</p>` : '';
-      return `<article class="es-sec"><div class="es-sec-bar"><span class="es-sec-nombre">${texto && !st ? '' : escapeHtml(s.titulo)}</span>${acciones}</div>${aviso}${regen}${cuerpo}</article>`;
+      const perfilBloque = s.id === 'perfil' ? estrPerfilHtml(a) : '';
+      return `<article class="es-sec"><div class="es-sec-bar"><span class="es-sec-nombre">${texto && !st ? '' : escapeHtml(s.titulo)}</span>${acciones}</div>${aviso}${perfilBloque}${regen}${cuerpo}</article>`;
     }).join('');
 
     cont.querySelectorAll('[data-act]').forEach(btn => btn.addEventListener('click', () => {
@@ -5379,6 +5466,10 @@
         estrGenerarUna(a, secId, { instruccion: instr || 'Escríbela de nuevo con otro enfoque, igual de concreta.', textoActual: a.secciones[secId] });
       }
       else if(act === 'reintentar') estrGenerarUna(a, secId, {});
+      else if(act === 'ver-capturas'){
+        estrCapAbierto[a.id] = true; renderDocumento(a);
+        (a.capturas || []).reduce((p, c) => p.then(() => estrPedirCaptura(a, c.n).then(() => { if(estrSeleccion === a.id) renderDocumento(a); }).catch(e => { estrMsgTexto = 'No se pudo cargar una captura: ' + e.message; })), Promise.resolve());
+      }
     }));
     cont.querySelectorAll('textarea.es-edit').forEach(t => t.addEventListener('input', () => { estrTextoEdicion = t.value; }));
     cont.querySelectorAll('.es-regen input').forEach(i => i.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ cont.querySelector('[data-act="regen-ok"]').click(); } }));
