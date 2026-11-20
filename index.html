@@ -5312,7 +5312,11 @@
     return a.gen && a.gen.estado === 'error' ? 'No se pudo terminar la escritura en segundo plano. ' + (a.gen.error || '') : '';
   }
   function estrBotonesCola(a){
-    if(estrEnCola(a)) return '<button type="button" class="es-btn es-btn-ghost" id="estrCancelarCola">Cancelar escritura en segundo plano</button>';
+    if(estrEnCola(a)){
+      const prio = !!(a.avisos && a.avisos._prio);
+      return `<button type="button" class="es-btn${prio ? '' : ' es-btn-ghost'}" id="estrPrioridad">${prio ? 'Con prioridad: va primera en la cola (quitar)' : 'Darle prioridad: que se escriba primero'}</button>`
+        + '<button type="button" class="es-btn es-btn-ghost" id="estrCancelarCola">Cancelar escritura en segundo plano</button>';
+    }
     if(a.gen && a.gen.estado === 'error') return '<button type="button" class="es-btn es-btn-ghost" id="estrReintentarCola">Reintentar en segundo plano</button>';
     return '';
   }
@@ -5428,6 +5432,17 @@
       + estrBotonesCola(a)
       + `<span class="es-msg" id="estrMsg">${escapeHtml(ocupada ? estrProgreso(a) : (estrMsgTexto || estrMsgGen(a)))}</span>`;
     const msg = document.getElementById('estrMsg');
+    const botonPrio = document.getElementById('estrPrioridad');
+    if(botonPrio) botonPrio.addEventListener('click', async () => {
+      const dar = !(a.avisos && a.avisos._prio);
+      botonPrio.disabled = true;
+      try {
+        await estrApi('cola', { method: 'POST', body: { id: a.id, accion: 'prioridad', prioridad: dar } });
+        a.avisos = a.avisos || {}; if(dar) a.avisos._prio = 1; else delete a.avisos._prio;
+        estrMsgTexto = dar ? 'Con prioridad: se escribe antes que las demás en la cola.' : 'Prioridad quitada.';
+      } catch(e){ estrMsgTexto = e.message; }
+      estrRefrescar(a);
+    });
     const botonCola = document.getElementById('estrCancelarCola') || document.getElementById('estrReintentarCola');
     if(botonCola) botonCola.addEventListener('click', async () => {
       const cancelar = botonCola.id === 'estrCancelarCola';
