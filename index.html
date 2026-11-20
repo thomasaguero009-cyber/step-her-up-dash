@@ -7901,6 +7901,7 @@
       if(!res.ok || !data.ok) throw new Error(data.error || ('HTTP ' + res.status));
       if(pedido !== leadsPedido) return;
       leadsData = data;
+      guardarTopCache();
       renderLeads();
       renderAdsTab();
       try { pintarTopAnuncios(); } catch(e){}
@@ -8406,6 +8407,7 @@
       if(pedido !== ghlPedidoActual) return;
       // Las campañas y el Top de anuncios salen de lo que ya llegó de GHL: se pintan ya, sin esperar a los Shows, el Tracker ni el cash.
       utmResumen = data.utm || null;
+      guardarTopCache();
       try { renderCampanas(); pintarTopAnuncios(); } catch(e){}
 
       // Shows y cierres: el mayor entre GHL y la pestaña "Shows" del Tracker (GHL solo cuenta lo que el equipo mueve de etapa).
@@ -9100,9 +9102,28 @@
   function ghlDeAnuncio(nombre){
     const id = idMetaPorNombre(nombre);
     if(!id) return { sinId: true };
-    if(!utmResumen || !leadsData) return { cargando: true };
-    const v = (utmResumen.cont && utmResumen.cont[id]) || {};
-    return { leads: (leadsData.utmLeads && leadsData.utmLeads.cont && leadsData.utmLeads.cont[id]) || 0, agendas: v.agendadas || 0, cierres: v.cierres || 0, ventas: v.ventas || 0 };
+    // Si GHL todavía no respondió, se usa la última copia guardada en este navegador (mismo mes) para no mostrar "cargando".
+    let ut = utmResumen, ul = leadsData && leadsData.utmLeads, viejo = false;
+    if(!ut || !leadsData){
+      const c = leerTopCache();
+      if(!ut && c && c.utm) { ut = c.utm; viejo = true; }
+      if(!leadsData && c && c.utmLeads) { ul = c.utmLeads; viejo = true; }
+    }
+    if(!ut || !ul) return { cargando: true };
+    const v = (ut.cont && ut.cont[id]) || {};
+    return { leads: (ul.cont && ul.cont[id]) || 0, agendas: v.agendadas || 0, cierres: v.cierres || 0, ventas: v.ventas || 0, viejo };
+  }
+  // Copia local de los dos datos de GHL que usa el Top de anuncios (utm de /leads-summary y utmLeads de /leads-por-dia), por mes.
+  function leerTopCache(){
+    try { const c = JSON.parse(localStorage.getItem('shu_top_ads_cache') || 'null'); return c && c.mes === mesElegido ? c : null; } catch(e){ return null; }
+  }
+  function guardarTopCache(){
+    try {
+      const c = leerTopCache() || { mes: mesElegido };
+      if(utmResumen) c.utm = utmResumen;
+      if(leadsData && leadsData.utmLeads) c.utmLeads = leadsData.utmLeads;
+      localStorage.setItem('shu_top_ads_cache', JSON.stringify(c));
+    } catch(e){}
   }
   function pintarTopAnuncios(){
     const d = adsV2Datos, cont = document.getElementById('top5Ads');
@@ -9127,7 +9148,7 @@
     const maxV = Math.max(1, ...filas.map(x => crit === 'cpr' ? x.r : (x.g.sinId || x.g.cargando) ? 0 : crit === 'ventas' ? x.g.cierres : valor(x)));
     const texto = (x) => {
       if(crit === 'cpr') return `${x.r} resultados · CPR ${num(x.c.gasto / x.r)} · gasto ${usdEq(x.c.gasto)}`;
-      if(x.g.cargando) return 'cargando GHL…';
+      if(x.g.cargando) return `cargando GHL… · gasto ${usdEq(x.c.gasto)}`;
       if(x.g.sinId) return `sin dato de GHL (falta el ID) · gasto ${usdEq(x.c.gasto)}`;
       if(crit === 'leads') return `${x.g.leads} ${x.g.leads === 1 ? 'lead' : 'leads'} · ${x.g.leads ? num(x.c.gasto / x.g.leads) + ' por lead' : 'sin leads'} · gasto ${usdEq(x.c.gasto)}`;
       if(crit === 'agendas') return `${x.g.agendas} ${x.g.agendas === 1 ? 'agenda' : 'agendas'} · ${x.g.agendas ? num(x.c.gasto / x.g.agendas) + ' por agenda' : 'sin agendas'} · ${x.g.leads} ${x.g.leads === 1 ? 'lead' : 'leads'} · gasto ${usdEq(x.c.gasto)}`;
