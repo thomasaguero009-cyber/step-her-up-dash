@@ -9099,9 +9099,7 @@
   // Los números de GHL salen de la etiqueta cont-<id> del contacto, así que solo se cruzan los anuncios con ID conocido (AD UNO a AD SEIS).
   let topCriterio = 'leads', adsV2Datos = null;
   const TOP_CRITERIOS = [['leads', 'Leads'], ['agendas', 'Agendas'], ['ventas', 'Ventas']];
-  function ghlDeAnuncio(nombre){
-    const id = idMetaPorNombre(nombre);
-    if(!id) return { sinId: true };
+  function ghlDatos(){
     // Si GHL todavía no respondió, se usa la última copia guardada en este navegador (mismo mes) para no mostrar "cargando".
     let ut = utmResumen, ul = leadsData && leadsData.utmLeads, viejo = false;
     if(!ut || !leadsData){
@@ -9109,9 +9107,36 @@
       if(!ut && c && c.utm) { ut = c.utm; viejo = true; }
       if(!leadsData && c && c.utmLeads) { ul = c.utmLeads; viejo = true; }
     }
-    if(!ut || !ul) return { cargando: true };
-    const v = (ut.cont && ut.cont[id]) || {};
-    return { leads: (ul.cont && ul.cont[id]) || 0, agendas: v.agendadas || 0, cierres: v.cierres || 0, ventas: v.ventas || 0, viejo };
+    return (ut && ul) ? { ut, ul, viejo } : null;
+  }
+  function ghlDeId(id){
+    const d = ghlDatos();
+    if(!d) return { cargando: true };
+    const v = (d.ut.cont && d.ut.cont[id]) || {};
+    return { leads: (d.ul.cont && d.ul.cont[id]) || 0, agendas: v.agendadas || 0, cierres: v.cierres || 0, ventas: v.ventas || 0, viejo: d.viejo };
+  }
+  function ghlDeAnuncio(nombre){
+    const id = idMetaPorNombre(nombre);
+    if(!id) return { sinId: true };
+    return ghlDeId(id);
+  }
+  // Anuncios con actividad en GHL (leads, agendas o ventas este mes) que no están en la hoja Ads de este mes (por ejemplo, los del webinar de octubre):
+  // se agregan al ranking para que no se pierda ninguna venta. No tienen gasto cargado este mes.
+  function anunciosSoloGhl(nombresHoja){
+    const d = ghlDatos(); if(!d) return [];
+    const yaEstan = new Set(nombresHoja.map(idMetaPorNombre).filter(Boolean));
+    const ids = new Set([...Object.keys(d.ut.cont || {}), ...Object.keys((d.ul && d.ul.cont) || {})]);
+    const porNombre = new Map();
+    ids.forEach(id => {
+      if(!/^\d{12,}$/.test(id) || yaEstan.has(id)) return;
+      const g = ghlDeId(id);
+      if(!(g.leads || g.agendas || g.cierres || g.ventas)) return;
+      const nombre = NOMBRES_META[id] || ('Meta · …' + id.slice(-9));
+      const a = porNombre.get(nombre) || { nombre, c: { gasto: 0, res: 0, leads: 0 }, r: 0, g: { leads: 0, agendas: 0, cierres: 0, ventas: 0, fuera: true, viejo: g.viejo } };
+      ['leads', 'agendas', 'cierres', 'ventas'].forEach(k => { a.g[k] += g[k]; });
+      porNombre.set(nombre, a);
+    });
+    return [...porNombre.values()];
   }
   // Copia local de los dos datos de GHL que usa el Top de anuncios (utm de /leads-summary y utmLeads de /leads-por-dia), por mes.
   function leerTopCache(){
@@ -9135,8 +9160,10 @@
     }
     const lista = (nivel) => [...((d.porNivel || {})[nivel] || new Map()).entries()].map(([nombre, c]) => ({ nombre, c, r: c.res > 0 ? c.res : c.leads, g: nivel === 'anuncio' ? ghlDeAnuncio(nombre) : { sinId: true } }));
     let todos = lista('anuncio'), nivelTop = 'anuncios';
+    const extrasGhl = anunciosSoloGhl(todos.map(x => x.nombre));
     // Si la hoja todavía no tiene el detalle por anuncio (todo dice "Sin detalle"), se muestran las campañas.
     if(!todos.filter(x => !/^sin (detalle|nombre)/i.test(x.nombre)).length){ todos = lista('campana'); nivelTop = 'campañas'; }
+    else todos = todos.concat(extrasGhl);
     const tt = document.getElementById('top5Titulo'); if(tt) tt.textContent = 'Top 5 ' + nivelTop;
     if(chips && nivelTop !== 'anuncios') chips.style.display = 'none';
     const crit = nivelTop === 'anuncios' ? topCriterio : 'cpr';
@@ -9149,6 +9176,11 @@
     const texto = (x) => {
       if(crit === 'cpr') return `${x.r} resultados · CPR ${num(x.c.gasto / x.r)} · gasto ${usdEq(x.c.gasto)}`;
       if(x.g.cargando) return `cargando GHL… · gasto ${usdEq(x.c.gasto)}`;
+      if(x.g.fuera){
+        const pl = (n, u, ps) => `${n} ${n === 1 ? u : ps}`;
+        const cuerpo = crit === 'leads' ? pl(x.g.leads, 'lead', 'leads') : crit === 'agendas' ? `${pl(x.g.agendas, 'agenda', 'agendas')} · ${pl(x.g.leads, 'lead', 'leads')}` : `${pl(x.g.cierres, 'venta', 'ventas')} · ${usdEq(x.g.ventas)} · ${pl(x.g.agendas, 'agenda', 'agendas')}`;
+        return `${cuerpo} · sin gasto cargado este mes`;
+      }
       if(x.g.sinId) return `sin dato de GHL (falta el ID) · gasto ${usdEq(x.c.gasto)}`;
       if(crit === 'leads') return `${x.g.leads} ${x.g.leads === 1 ? 'lead' : 'leads'} · ${x.g.leads ? num(x.c.gasto / x.g.leads) + ' por lead' : 'sin leads'} · gasto ${usdEq(x.c.gasto)}`;
       if(crit === 'agendas') return `${x.g.agendas} ${x.g.agendas === 1 ? 'agenda' : 'agendas'} · ${x.g.agendas ? num(x.c.gasto / x.g.agendas) + ' por agenda' : 'sin agendas'} · ${x.g.leads} ${x.g.leads === 1 ? 'lead' : 'leads'} · gasto ${usdEq(x.c.gasto)}`;
@@ -9156,6 +9188,16 @@
     };
     const ancho = (x) => Math.round((crit === 'cpr' ? x.r : (x.g.sinId || x.g.cargando) ? 0 : crit === 'ventas' ? x.g.cierres : valor(x)) / maxV * 100);
     cont.innerHTML = filas.length ? filas.map((x, i) => `<div class="top5-fila"><b>${i + 1}</b><span>${escapeHtml(x.nombre)}${nivelTop === 'anuncios' ? botonVerAnuncio(idMetaPorNombre(x.nombre)) : ''}</span><span style="color:var(--text-dim)">${texto(x)}</span><div class="top5-barra"><i style="width:${ancho(x)}%"></i></div></div>`).join('') : '<div class="chart-status">Cargá anuncios en la hoja Ads para ver el ranking.</div>';
+    // Lo que GHL atribuye a "sin anuncio" (mensajes directos, orgánico) no entra al ranking: se avisa abajo para que el total cierre.
+    if(nivelTop === 'anuncios'){
+      const gd = ghlDatos();
+      if(gd){
+        const sa = (gd.ut.cont && gd.ut.cont['']) || {}, la = (gd.ul.cont && gd.ul.cont['']) || 0;
+        const pl = (n, u, ps) => `${n} ${n === 1 ? u : ps}`;
+        const t = crit === 'leads' ? (la ? pl(la, 'lead', 'leads') : '') : crit === 'agendas' ? (sa.agendadas ? pl(sa.agendadas, 'agenda', 'agendas') : '') : (sa.cierres ? `${pl(sa.cierres, 'venta', 'ventas')} · ${usdEq(sa.ventas || 0)}` : '');
+        if(t) cont.insertAdjacentHTML('beforeend', `<div class="chart-status" style="margin-top:10px">Sin anuncio (mensajes directos u orgánico, no entran al ranking): ${t}</div>`);
+      }
+    }
   }
   function renderAdsV2(d){
     if(!d || !document.getElementById('adsV2')) return;
