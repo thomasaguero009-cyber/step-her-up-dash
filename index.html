@@ -1617,12 +1617,6 @@
             <span class="entry-option-sub">Ver ranking de closers y setters</span>
           </span>
         </button>
-        <button type="button" class="entry-option" id="goHerramientasBtn">
-          <span class="entry-option-text">
-            <span class="entry-option-title">Herramientas</span>
-            <span class="entry-option-sub">Contadores y utilidades</span>
-          </span>
-        </button>
         <button type="button" class="entry-option" id="goMetricasBtn">
           <span class="entry-option-text">
             <span class="entry-option-title">Métricas</span>
@@ -2555,24 +2549,6 @@
     </div>
   </section>
 
-  <!-- ===================== Herramientas (contadores tipo tally counter,
-       se llega desde "Secciones ▾" igual que Onboarding/Dashboard/Ranking) ===================== -->
-  <section class="screen" id="toolsScreen">
-    <div class="wrap">
-      <header class="dash-header">
-        <div class="section-label" style="margin:0;">Herramientas</div>
-        <div class="dash-header-right">
-          <div class="section-switcher" id="sectionSwitcherTools">
-            <button type="button" class="ghost-link-btn" id="sectionSwitcherBtnTools">Secciones ▾</button>
-            <div class="month-list" id="sectionSwitcherListTools"></div>
-          </div>
-        </div>
-      </header>
-
-      <div class="counter-grid" id="counterGrid"></div>
-      <p class="chart-status" style="margin-top:24px; text-align:center;">Los contadores se guardan en este navegador — no se comparten entre setters/closers ni se suben al Sheet.</p>
-    </div>
-  </section>
 
   <!-- ===================== Métricas (cada setter/closer carga sus
        números del día; se guarda en el Sheet y alimenta el dashboard) ===================== -->
@@ -2787,7 +2763,6 @@
   const transitionScreen = document.getElementById('transitionScreen');
   const dashboardScreen = document.getElementById('dashboardScreen');
   const rankingScreen = document.getElementById('rankingScreen');
-  const toolsScreen = document.getElementById('toolsScreen');
   const metricasScreen = document.getElementById('metricasScreen');
   const recursosScreen = document.getElementById('recursosScreen');
   const estrategiasScreen = document.getElementById('estrategiasScreen');
@@ -2795,7 +2770,7 @@
   const saleAuditScreen = document.getElementById('saleAuditScreen');
 
   function showScreen(el){
-    [loadingScreen, onboardingScreen, transitionScreen, dashboardScreen, rankingScreen, toolsScreen, metricasScreen, recursosScreen, entregaScreen, saleAuditScreen, estrategiasScreen].forEach(s => s.classList.remove('active'));
+    [loadingScreen, onboardingScreen, transitionScreen, dashboardScreen, rankingScreen, metricasScreen, recursosScreen, entregaScreen, saleAuditScreen, estrategiasScreen].forEach(s => s.classList.remove('active'));
     el.classList.add('active');
     document.documentElement.classList.toggle('sa-activo', el === saleAuditScreen);
   }
@@ -2886,12 +2861,6 @@
     }
   }, 5 * 60 * 1000);
 
-  function entrarAHerramientas(){
-    cambiarDeSeccion(toolsScreen, 'Herramientas', () => {
-      renderContadores();
-    });
-  }
-  document.getElementById('goHerramientasBtn').addEventListener('click', entrarAHerramientas);
 
   // ===== Recursos: presentaciones y materiales del equipo. Cada uno se pide
   // al Worker (servidor privado) con la contraseña de la plataforma, y se
@@ -3318,7 +3287,6 @@
     { id: 'onboarding', label: 'Onboarding', activa: () => onboardingScreen.classList.contains('active'), ir: entrarAlOnboarding },
     { id: 'dashboard', label: 'Dashboard', activa: () => dashboardScreen.classList.contains('active'), ir: entrarAlDashboard },
     { id: 'ranking', label: 'Ranking', activa: () => rankingScreen.classList.contains('active'), ir: entrarAlRanking },
-    { id: 'herramientas', label: 'Herramientas', activa: () => toolsScreen.classList.contains('active'), ir: entrarAHerramientas },
     { id: 'metricas', label: 'Métricas', activa: () => metricasScreen.classList.contains('active'), ir: entrarAMetricas },
     { id: 'recursos', label: 'Recursos', activa: () => recursosScreen.classList.contains('active'), ir: entrarARecursos },
     { id: 'entrega', label: 'Fulfillment', activa: () => entregaScreen.classList.contains('active'), ir: entrarAEntrega },
@@ -3359,146 +3327,10 @@
   inicializarSwitcherSecciones('sectionSwitcherDash', 'sectionSwitcherBtnDash', 'sectionSwitcherListDash');
   inicializarSwitcherSecciones('sectionSwitcherOnboarding', 'sectionSwitcherBtnOnboarding', 'sectionSwitcherListOnboarding');
   inicializarSwitcherSecciones('sectionSwitcherRanking', 'sectionSwitcherBtnRanking', 'sectionSwitcherListRanking');
-  inicializarSwitcherSecciones('sectionSwitcherTools', 'sectionSwitcherBtnTools', 'sectionSwitcherListTools');
   inicializarSwitcherSecciones('sectionSwitcherMetricas', 'sectionSwitcherBtnMetricas', 'sectionSwitcherListMetricas');
   inicializarSwitcherSecciones('sectionSwitcherRecursos', 'sectionSwitcherBtnRecursos', 'sectionSwitcherListRecursos');
   inicializarSwitcherSecciones('sectionSwitcherEntrega', 'sectionSwitcherBtnEntrega', 'sectionSwitcherListEntrega');
   inicializarSwitcherSecciones('sectionSwitcherSaleAudit', 'sectionSwitcherBtnSaleAudit', 'sectionSwitcherListSaleAudit');
-
-  // ===== Herramientas: contadores tipo "tally counter" — cada setter/
-  // closer los usa para llevar cuentas propias (ej. llamadas hechas en
-  // el día). Se guardan en localStorage de ESTE navegador; no se
-  // comparten entre dispositivos ni se suben a ningún Sheet. =====
-  const counterGrid = document.getElementById('counterGrid');
-  const COUNTERS_KEY = 'shu_dashboard_counters';
-
-  function cargarContadores(){
-    try {
-      const raw = JSON.parse(localStorage.getItem(COUNTERS_KEY));
-      if(Array.isArray(raw) && raw.length) return raw;
-    } catch(e) {}
-    return [{ id: 'c' + Date.now(), nombre: 'Contador 1', valor: 0 }];
-  }
-  let contadores = cargarContadores();
-
-  function guardarContadores(){
-    try { localStorage.setItem(COUNTERS_KEY, JSON.stringify(contadores)); } catch(e) {}
-  }
-
-  function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
-  }
-
-  function renderContadores(){
-    const puedeEliminar = contadores.length > 1;
-    counterGrid.innerHTML = contadores.map(c => `
-      <div class="counter-card" data-id="${c.id}">
-        <div class="counter-card-head">
-          <span class="counter-name" data-action="rename" title="Tocá para renombrar">${escapeHtml(c.nombre)}</span>
-          <div class="counter-menu-wrap">
-            <button type="button" class="counter-menu-btn" data-action="menu">⋮</button>
-            <div class="month-list">
-              <div class="mi" data-action="rename">Renombrar</div>
-              <div class="mi" data-action="reset">Reiniciar a 0</div>
-              <div class="mi${puedeEliminar ? '' : ' disabled'}" data-action="delete">Eliminar</div>
-            </div>
-          </div>
-        </div>
-        <div class="counter-value">${c.valor}</div>
-        <div class="counter-btns">
-          <button type="button" class="counter-btn" data-action="dec">−</button>
-          <button type="button" class="counter-btn" data-action="inc">+</button>
-        </div>
-      </div>
-    `).join('') + `
-      <button type="button" class="counter-add-card" id="counterAddBtn">
-        <span class="counter-add-icon">+</span>
-        Agregar contador
-      </button>
-    `;
-    document.getElementById('counterAddBtn').addEventListener('click', agregarContador);
-  }
-
-  function agregarContador(){
-    contadores.push({ id: 'c' + Date.now(), nombre: 'Contador ' + (contadores.length + 1), valor: 0 });
-    guardarContadores();
-    renderContadores();
-  }
-
-  // Edición del nombre in situ (sin prompt()): el <span> se convierte en un
-  // <input> hasta que se confirma con Enter o pierde el foco.
-  function activarEdicionNombre(card, contador){
-    const nameEl = card.querySelector('.counter-name');
-    if(!nameEl) return;
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'counter-name-input';
-    input.value = contador.nombre;
-    input.maxLength = 40;
-    nameEl.replaceWith(input);
-    input.focus();
-    input.select();
-    let guardado = false;
-    function guardar(){
-      if(guardado) return;
-      guardado = true;
-      const val = input.value.trim();
-      if(val) contador.nombre = val;
-      guardarContadores();
-      renderContadores();
-    }
-    input.addEventListener('keydown', (e) => {
-      if(e.key === 'Enter') input.blur();
-      else if(e.key === 'Escape'){ guardado = true; renderContadores(); }
-    });
-    input.addEventListener('blur', guardar);
-  }
-
-  counterGrid.addEventListener('click', (ev) => {
-    const menuBtn = ev.target.closest('[data-action="menu"]');
-    if(menuBtn){
-      ev.stopPropagation();
-      const list = menuBtn.nextElementSibling;
-      const yaAbierto = list.classList.contains('open');
-      counterGrid.querySelectorAll('.month-list').forEach(l => l.classList.remove('open'));
-      if(!yaAbierto) list.classList.add('open');
-      return;
-    }
-
-    const card = ev.target.closest('.counter-card');
-    if(!card) return;
-    const id = card.dataset.id;
-    const contador = contadores.find(c => c.id === id);
-    if(!contador) return;
-
-    const action = ev.target.dataset.action;
-    if(action === 'inc'){
-      contador.valor++;
-    } else if(action === 'dec'){
-      contador.valor--;
-    } else if(action === 'rename'){
-      counterGrid.querySelectorAll('.month-list').forEach(l => l.classList.remove('open'));
-      activarEdicionNombre(card, contador);
-      return;
-    } else if(action === 'reset'){
-      contador.valor = 0;
-    } else if(action === 'delete'){
-      if(ev.target.closest('.mi.disabled')) return;
-      contadores = contadores.filter(c => c.id !== id);
-    } else {
-      return;
-    }
-    guardarContadores();
-    renderContadores();
-  });
-
-  document.addEventListener('click', (ev) => {
-    if(!ev.target.closest('.counter-menu-wrap')){
-      counterGrid.querySelectorAll('.month-list').forEach(l => l.classList.remove('open'));
-    }
-  });
-
-  renderContadores();
 
   // ===== Botones de arriba del dashboard — cada uno muestra solo su
   // sección: "Vista General" es el resumen de la empresa (facturación +
@@ -4115,7 +3947,6 @@
     ['goOnboardingBtn', 'Onboarding', 'Primeros pasos para entrar al equipo'],
     ['goDashboardBtn', 'Dashboard', 'Ver las métricas del mes'],
     ['goRankingBtn', 'Ranking', 'Ranking de closers y setters'],
-    ['goHerramientasBtn', 'Herramientas', 'Contadores y utilidades'],
     ['goMetricasBtn', 'Métricas', 'Cargar los números del día: agendadas, no atienden (las llamadas salen solas de Zoom)'],
     ['goRecursosBtn', 'Recursos', 'Presentaciones y materiales'],
     ['goEntregaBtn', 'Fulfillment', 'Cada alumna y en qué paso va: entrega, psicóloga, vencimientos'],
@@ -9956,7 +9787,7 @@
   function ir(btnId, luego, espera) { var b = $(btnId); if (b) b.click(); if (luego) setTimeout(luego, espera || 700); }
   function construir() {
     items = [];
-    [['goOnboardingBtn', 'Onboarding'], ['goDashboardBtn', 'Dashboard'], ['goRankingBtn', 'Ranking'], ['goHerramientasBtn', 'Herramientas'], ['goMetricasBtn', 'Métricas'], ['goRecursosBtn', 'Recursos'], ['goSaleAuditBtn', 'Sales Audit']]
+    [['goOnboardingBtn', 'Onboarding'], ['goDashboardBtn', 'Dashboard'], ['goRankingBtn', 'Ranking'], ['goMetricasBtn', 'Métricas'], ['goRecursosBtn', 'Recursos'], ['goSaleAuditBtn', 'Sales Audit']]
       .forEach(function (x) { items.push({ t: x[1], k: 'Pantalla', f: function () { ir(x[0]); } }); });
     document.querySelectorAll('.quick-nav-btn[data-tab]').forEach(function (b) {
       items.push({ t: b.textContent.trim(), k: 'Dashboard', f: function () { var d = $('dashboardScreen'); if (d && d.classList.contains('active')) b.click(); else ir('goDashboardBtn', function () { b.click(); }, 900); } });
