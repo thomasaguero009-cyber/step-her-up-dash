@@ -4934,9 +4934,15 @@
       svgEl.addEventListener('touchstart', mover, { passive: true });
       svgEl.addEventListener('touchmove', mover, { passive: true });
     }
-    const mitad = Math.floor(dur / 2 / paso);
+    // La mitad se mide sobre el largo de CADA video (cada versión dura distinto): el largo es hasta donde llegó la gente que lo terminó. Sin nadie que lo haya terminado no se conoce el largo y queda en "–".
+    const mitadDe = (s) => (s.fin > 0 && s.h.length > 2) ? Math.floor((s.h.length - 1) / 2) : null;
+    const conMitad = series.filter(s => s.k !== 't' && mitadDe(s) !== null);
+    const mitadTxt = (s) => {
+      if(s.k === 't'){ const n = conMitad.reduce((a, x) => a + x.n, 0); return n ? retPct(conMitad.reduce((a, x) => a + (x.h[mitadDe(x)] || 0), 0), n) : '–'; }
+      const m = mitadDe(s); return m === null ? '–' : retPct(s.h[m] || 0, s.n);
+    };
     document.getElementById('retTabla').innerHTML = `<table class="ret-tabla"><thead><tr><th></th><th>Empezaron el video</th><th>Siguen a los 30 s</th><th>Llegan a la mitad</th><th>Llegaron al final</th><th>Tocaron "Aplicar"</th></tr></thead><tbody>${
-      series.map(s => `<tr><td><b style="color:${s.color}">${s.nombre}</b></td><td>${s.n}</td><td>${retPct(s.h[2] || 0, s.n)}</td><td>${retPct(s.h[mitad] || 0, s.n)}</td><td>${s.fin} <small>${retPct(s.fin, s.n)}</small></td><td>${s.ap} <small>${retPct(s.ap, s.n)}</small></td></tr>`).join('')
+      series.map(s => `<tr><td><b style="color:${s.color}">${s.nombre}</b></td><td>${s.n}</td><td>${retPct(s.h[2] || 0, s.n)}</td><td>${mitadTxt(s)}</td><td>${s.fin} <small>${retPct(s.fin, s.n)}</small></td><td>${s.ap} <small>${retPct(s.ap, s.n)}</small></td></tr>`).join('')
     }</tbody></table><p class="modal-sub" style="margin-top:8px;">${tot.n < 30 ? 'Todavía son pocas personas (' + tot.n + '): la curva puede cambiar mucho. Conviene esperar a tener más de 30 por versión antes de comparar versiones. ' : ''}Cuenta a quien le dio play al video. Cada persona suma una vez; se mide en tramos de 15 segundos: un punto de la curva es el porcentaje que llegó a ver, como mínimo, ese momento del video.</p>`;
   }
 
