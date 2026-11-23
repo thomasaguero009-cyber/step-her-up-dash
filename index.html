@@ -9860,16 +9860,15 @@
   // y se fuerza con ?guia=1 en la dirección (sirve para probarla).
   var CLAVE = 'shu_guia_vista';
   var PASOS = [
-    { t: 'Bienvenida a la plataforma', d: 'Esta es la plataforma privada de Step Her Up. En un minuto te mostramos para qué sirve cada sección. Puedes volver a verlo cuando quieras con el botón «Ver guía».' },
-    { id: 'goOnboardingBtn', t: 'Onboarding', d: 'Los primeros pasos para entrar al equipo: lecciones en video ordenadas por pista. Empieza por acá si recién llegas.' },
-    { id: 'goDashboardBtn', t: 'Dashboard', d: 'El resumen del mes: llamadas, agendadas, shows, cierres, cash y la meta. Arriba eliges qué mirar: leads, anuncios, ventas, llamadas, setters, closers, campañas y más.' },
-    { id: 'goRankingBtn', t: 'Ranking', d: 'Cuánto cash lleva el equipo en el mes y en el día, y quién va primera entre los closers y entre las setters.' },
-    { id: 'goMetricasBtn', t: 'Métricas', d: 'Acá cargas tus números del día: agendadas, no atienden y demás. Las llamadas salen solas de Zoom, no hace falta contarlas.' },
-    { id: 'goRecursosBtn', t: 'Recursos', d: 'Las presentaciones y los materiales del equipo, y los links que se pueden compartir con las leads.' },
-    { id: 'goEntregaBtn', t: 'Fulfillment', d: 'Cada alumna y en qué paso va: entrega, sesiones con la psicóloga y fechas de vencimiento.' },
-    { id: 'goSaleAuditBtn', t: 'Sales Audit', d: 'La auditoría de las llamadas de venta: puntaje, qué se hizo bien, qué mejorar y el coach de cada closer.' },
-    { id: 'openUtmBuilderBtn', t: 'Admin', d: 'Herramientas internas con contraseña: generador de links con UTM, estrategias de alumnas, retención del video y asistente IA.' },
-    { id: 'ayudaFab', t: 'Si no encuentras algo', d: 'Escribe qué buscas en «¿En qué te puedo ayudar?» y te llevo ahí. También puedes buscar con Cmd o Ctrl + K, y en cada pantalla el menú «Secciones» de arriba te cambia de sección.' }
+    { t: 'Te damos la bienvenida', d: 'Esta es la plataforma privada de Step Her Up, donde el equipo ve sus números y encuentra todo lo que necesita. En un minuto te mostramos para qué sirve cada sección. Puedes volver a verlo cuando quieras con el botón «Ver guía».' },
+    { id: 'goOnboardingBtn', t: 'Onboarding', d: 'Tu primer paso. Acá están las lecciones en video para aprender cómo trabajamos y empezar con el pie derecho. Míralas en orden.' },
+    { id: 'goDashboardBtn', t: 'Dashboard', d: 'El resumen del mes del equipo: cuántas llamadas se hicieron, cuántas agendas, cuántas personas llegaron a la llamada, cuántas ventas y cuánto dinero entró. Arriba eliges qué mirar: leads, ventas, llamadas, setters, closers y más.' },
+    { id: 'goRankingBtn', t: 'Ranking', d: 'Cuánto dinero lleva el equipo en el mes y en el día, y quién va primera entre los closers y entre las setters.' },
+    { id: 'goMetricasBtn', t: 'Métricas', d: 'Acá cargas tus números del día: cuántas agendaste, a cuántas no les entró la llamada y demás. Las llamadas salen solas de Zoom, no hace falta contarlas.' },
+    { id: 'goRecursosBtn', t: 'Recursos', d: 'Las presentaciones y los materiales que usa el equipo, para tenerlos siempre a mano.' },
+    { id: 'goEntregaBtn', t: 'Fulfillment', d: 'Cada alumna y en qué paso va de su programa: entrega, sesiones con la psicóloga y fecha de vencimiento.' },
+    { id: 'goSaleAuditBtn', t: 'Sales Audit', d: 'Revisión de las llamadas de venta: cómo le fue a cada closer, qué hizo bien y qué puede mejorar.' },
+    { id: 'ayudaFab', t: 'Si no encuentras algo', d: 'Escribe qué buscas en «¿En qué te puedo ayudar?» y te llevo ahí. En cada pantalla, el menú «Secciones» de arriba también te cambia de sección.' }
   ];
   var capa, foco, velo, tarj, paso = 0, abierta = false;
   function visto(v) { try { if (v === undefined) return localStorage.getItem(CLAVE) === '1'; localStorage.setItem(CLAVE, '1'); } catch (e) {} return false; }
