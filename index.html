@@ -1548,6 +1548,34 @@
     .logo-mark.small img{ height:56px; }
   }
 </style>
+<style>
+  /* ===== Guía de primera vez: recorre las secciones de la pantalla de inicio con un foco sobre cada botón ===== */
+  .guia-links{ display:flex; gap:18px; justify-content:center; }
+  #guiaCapa{ position:fixed; inset:0; z-index:9700; display:none; }
+  #guiaCapa.abierta{ display:block; }
+  #guiaFoco{ position:fixed; pointer-events:none; border-radius:24px; border:2px solid var(--blush-2);
+    box-shadow:0 0 0 100vmax rgba(14,3,6,0.72), 0 0 30px rgba(232,138,168,0.55);
+    transition:left .35s ease, top .35s ease, width .35s ease, height .35s ease, opacity .25s ease; }
+  #guiaFoco.sin-foco{ opacity:0; }
+  #guiaVelo{ position:absolute; inset:0; background:transparent; }
+  #guiaVelo.solo{ background:rgba(14,3,6,0.72); }
+  #guiaTarjeta{ position:fixed; width:min(400px, calc(100vw - 32px)); background:#1a0509; border:1px solid var(--border);
+    border-radius:18px; padding:22px 22px 18px; box-shadow:0 24px 60px rgba(0,0,0,0.55); text-align:left;
+    transition:left .35s ease, top .35s ease; }
+  #guiaTarjeta .guia-paso{ font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--blush); font-weight:700; }
+  #guiaTarjeta h3{ font-family:"Playfair Display",Georgia,serif; font-size:21px; font-weight:600; margin:6px 0 8px; }
+  #guiaTarjeta p{ font-size:14px; color:var(--text-dim); margin:0; line-height:1.55; }
+  #guiaTarjeta .guia-puntos{ display:flex; gap:6px; margin:16px 0 14px; }
+  #guiaTarjeta .guia-puntos i{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.2); }
+  #guiaTarjeta .guia-puntos i.on{ background:var(--blush-2); }
+  #guiaTarjeta .guia-botones{ display:flex; align-items:center; gap:10px; }
+  #guiaTarjeta .guia-botones .espacio{ flex:1; }
+  .guia-btn{ font-family:inherit; font-size:14px; font-weight:600; border-radius:12px; padding:10px 18px; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--cream); }
+  .guia-btn.principal{ background:var(--blush-2); border-color:var(--blush-2); color:#2a0a14; }
+  .guia-btn.suave{ border-color:transparent; color:var(--text-dim); padding-left:0; font-weight:500; }
+  .guia-btn:hover{ filter:brightness(1.1); }
+  @media (prefers-reduced-motion:reduce){ #guiaFoco, #guiaTarjeta{ transition:none; } }
+</style>
 </head>
 <body>
 
@@ -1642,7 +1670,7 @@
           </span>
         </button>
       </div>
-      <button type="button" class="admin-tiny-btn" id="openUtmBuilderBtn">Admin</button>
+      <div class="guia-links"><button type="button" class="admin-tiny-btn" id="verGuiaBtn">Ver guía</button><button type="button" class="admin-tiny-btn" id="openUtmBuilderBtn">Admin</button></div>
     </div>
   </section>
 
@@ -9824,6 +9852,107 @@
 
   // 10) app instalable
   if ('serviceWorker' in navigator && location.protocol === 'https:') window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+})();
+</script>
+<script>
+(function () {
+  // Guía de primera vez. Se muestra sola una vez por navegador (guarda shu_guia_vista), se puede volver a ver con "Ver guía"
+  // y se fuerza con ?guia=1 en la dirección (sirve para probarla).
+  var CLAVE = 'shu_guia_vista';
+  var PASOS = [
+    { t: 'Bienvenida a la plataforma', d: 'Esta es la plataforma privada de Step Her Up. En un minuto te mostramos para qué sirve cada sección. Puedes volver a verlo cuando quieras con el botón «Ver guía».' },
+    { id: 'goOnboardingBtn', t: 'Onboarding', d: 'Los primeros pasos para entrar al equipo: lecciones en video ordenadas por pista. Empieza por acá si recién llegas.' },
+    { id: 'goDashboardBtn', t: 'Dashboard', d: 'El resumen del mes: llamadas, agendadas, shows, cierres, cash y la meta. Arriba eliges qué mirar: leads, anuncios, ventas, llamadas, setters, closers, campañas y más.' },
+    { id: 'goRankingBtn', t: 'Ranking', d: 'Cuánto cash lleva el equipo en el mes y en el día, y quién va primera entre los closers y entre las setters.' },
+    { id: 'goMetricasBtn', t: 'Métricas', d: 'Acá cargas tus números del día: agendadas, no atienden y demás. Las llamadas salen solas de Zoom, no hace falta contarlas.' },
+    { id: 'goRecursosBtn', t: 'Recursos', d: 'Las presentaciones y los materiales del equipo, y los links que se pueden compartir con las leads.' },
+    { id: 'goEntregaBtn', t: 'Fulfillment', d: 'Cada alumna y en qué paso va: entrega, sesiones con la psicóloga y fechas de vencimiento.' },
+    { id: 'goSaleAuditBtn', t: 'Sales Audit', d: 'La auditoría de las llamadas de venta: puntaje, qué se hizo bien, qué mejorar y el coach de cada closer.' },
+    { id: 'openUtmBuilderBtn', t: 'Admin', d: 'Herramientas internas con contraseña: generador de links con UTM, estrategias de alumnas, retención del video y asistente IA.' },
+    { id: 'ayudaFab', t: 'Si no encuentras algo', d: 'Escribe qué buscas en «¿En qué te puedo ayudar?» y te llevo ahí. También puedes buscar con Cmd o Ctrl + K, y en cada pantalla el menú «Secciones» de arriba te cambia de sección.' }
+  ];
+  var capa, foco, velo, tarj, paso = 0, abierta = false;
+  function visto(v) { try { if (v === undefined) return localStorage.getItem(CLAVE) === '1'; localStorage.setItem(CLAVE, '1'); } catch (e) {} return false; }
+  function armar() {
+    if (capa) return;
+    capa = document.createElement('div'); capa.id = 'guiaCapa';
+    velo = document.createElement('div'); velo.id = 'guiaVelo';
+    foco = document.createElement('div'); foco.id = 'guiaFoco';
+    tarj = document.createElement('div'); tarj.id = 'guiaTarjeta'; tarj.setAttribute('role', 'dialog'); tarj.setAttribute('aria-modal', 'true'); tarj.setAttribute('aria-label', 'Guía de la plataforma');
+    capa.appendChild(velo); capa.appendChild(foco); capa.appendChild(tarj);
+    document.body.appendChild(capa);
+    window.addEventListener('resize', colocar);
+    window.addEventListener('scroll', colocar, true);
+    document.addEventListener('keydown', function (e) {
+      if (!abierta) return;
+      if (e.key === 'Escape') cerrar();
+      else if (e.key === 'ArrowRight' || e.key === 'Enter') siguiente();
+      else if (e.key === 'ArrowLeft') ir(paso - 1);
+    });
+  }
+  function dibujar() {
+    var p = PASOS[paso], ultimo = paso === PASOS.length - 1;
+    tarj.innerHTML = '<div class="guia-paso">Paso ' + (paso + 1) + ' de ' + PASOS.length + '</div><h3></h3><p></p><div class="guia-puntos">' +
+      PASOS.map(function (_, i) { return '<i class="' + (i === paso ? 'on' : '') + '"></i>'; }).join('') + '</div><div class="guia-botones">' +
+      '<button type="button" class="guia-btn suave" data-g="saltar">' + (ultimo ? '' : 'Saltar guía') + '</button><span class="espacio"></span>' +
+      (paso > 0 ? '<button type="button" class="guia-btn" data-g="atras">Atrás</button>' : '') +
+      '<button type="button" class="guia-btn principal" data-g="sigue">' + (ultimo ? 'Empezar' : 'Siguiente') + '</button></div>';
+    tarj.querySelector('h3').textContent = p.t; tarj.querySelector('p').textContent = p.d;
+    tarj.querySelector('[data-g="saltar"]').onclick = cerrar;
+    var at = tarj.querySelector('[data-g="atras"]'); if (at) at.onclick = function () { ir(paso - 1); };
+    tarj.querySelector('[data-g="sigue"]').onclick = siguiente;
+  }
+  function colocar() {
+    if (!abierta) return;
+    var p = PASOS[paso], el = p.id ? document.getElementById(p.id) : null, r = el ? el.getBoundingClientRect() : null;
+    if (r && (r.width === 0 || r.height === 0)) r = null;
+    var vw = window.innerWidth, vh = window.innerHeight, tw = tarj.offsetWidth, th = tarj.offsetHeight, x, y;
+    if (!r) {
+      foco.classList.add('sin-foco'); velo.classList.add('solo');
+      x = (vw - tw) / 2; y = (vh - th) / 2;
+    } else {
+      velo.classList.remove('solo'); foco.classList.remove('sin-foco');
+      var m = 6;
+      foco.style.left = (r.left - m) + 'px'; foco.style.top = (r.top - m) + 'px';
+      foco.style.width = (r.width + m * 2) + 'px'; foco.style.height = (r.height + m * 2) + 'px';
+      x = r.left + r.width / 2 - tw / 2;
+      if (vh - r.bottom >= th + 28) y = r.bottom + 18;
+      else if (r.top >= th + 28) y = r.top - th - 18;
+      else y = vh - th - 16;
+    }
+    x = Math.max(16, Math.min(x, vw - tw - 16)); y = Math.max(16, Math.min(y, vh - th - 16));
+    tarj.style.left = x + 'px'; tarj.style.top = y + 'px';
+  }
+  function ir(n) {
+    if (n < 0 || n >= PASOS.length) return;
+    paso = n; dibujar();
+    var p = PASOS[paso], el = p.id ? document.getElementById(p.id) : null;
+    if (el && el.scrollIntoView) { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { el.scrollIntoView(); } }
+    colocar(); setTimeout(colocar, 120); setTimeout(colocar, 450);
+  }
+  function siguiente() { if (paso >= PASOS.length - 1) cerrar(); else ir(paso + 1); }
+  function cerrar() { abierta = false; visto(true); if (capa) capa.classList.remove('abierta'); }
+  function abrir() {
+    var inicio = document.getElementById('loadingScreen');
+    if (inicio && !inicio.classList.contains('active') && typeof showScreen === 'function') { try { showScreen(inicio); } catch (e) {} }
+    armar(); abierta = true; capa.classList.add('abierta'); ir(0);
+  }
+  window.abrirGuiaShu = abrir;
+  var btn = document.getElementById('verGuiaBtn');
+  if (btn) btn.addEventListener('click', abrir);
+  var forzar = /[?&]guia=1\b/.test(location.search);
+  function gateAbierto() { var g = document.getElementById('siteGateOverlay'); return !!g && getComputedStyle(g).display !== 'none'; }
+  function auto() {
+    if (!forzar && visto()) return;
+    // Espera a que la persona entre con la contraseña de la plataforma; recién ahí aparece la guía.
+    var espera = setInterval(function () {
+      if (gateAbierto()) return;
+      clearInterval(espera);
+      var inicio = document.getElementById('loadingScreen');
+      if (inicio && inicio.classList.contains('active')) setTimeout(abrir, 400);
+    }, 500);
+  }
+  if (document.readyState === 'complete') setTimeout(auto, 600); else window.addEventListener('load', function () { setTimeout(auto, 600); });
 })();
 </script>
 </body>
