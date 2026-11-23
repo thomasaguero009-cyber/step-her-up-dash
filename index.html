@@ -9368,12 +9368,42 @@
       </div>`;
     }).join('');
   }
+  // Los medidores del Ranking se llenan con una subida suave (arco y número) cuando se abre la pantalla; si el dato se actualiza con la pantalla abierta, el arco va de lo que tenía a lo nuevo.
+  const gaugeEst = {};
   function pintarGauge(pathId, valorId, value, max){
-    const path = document.getElementById(pathId);
+    const path = document.getElementById(pathId), valorEl = document.getElementById(valorId);
     const total = path.getTotalLength();
     const frac = max > 0 ? Math.min(value / max, 1) : 0;
-    path.setAttribute('stroke-dasharray', (total * frac).toFixed(1) + ' ' + total.toFixed(1));
-    document.getElementById(valorId).textContent = '$' + Math.round(value).toLocaleString('es-AR');
+    const est = gaugeEst[pathId] || (gaugeEst[pathId] = { frac: 0, valor: 0, visto: false, raf: 0, obs: false });
+    const texto = (v) => '$' + Math.round(v).toLocaleString('es-AR');
+    const poner = (f, v) => { path.setAttribute('stroke-dasharray', (total * f).toFixed(1) + ' ' + total.toFixed(1)); valorEl.textContent = texto(v); est.frac = f; est.valor = v; };
+    est.metaFrac = frac; est.metaValor = value;
+    const animar = (f0, v0) => {
+      cancelAnimationFrame(est.raf);
+      est.visto = true;
+      if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){ poner(est.metaFrac, est.metaValor); return; }
+      const t0 = performance.now(), dur = 1300, f1 = est.metaFrac, v1 = est.metaValor;
+      const paso = (t) => {
+        const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        poner(f0 + (f1 - f0) * e, v0 + (v1 - v0) * e);
+        if(k < 1) est.raf = requestAnimationFrame(paso); else poner(f1, v1);
+      };
+      poner(f0, v0);
+      est.raf = requestAnimationFrame(paso);
+    };
+    // Cada vez que el medidor aparece en pantalla (se abre el Ranking o se llega scrolleando) sube desde cero; al salirse de la vista queda listo para volver a subir.
+    if(!est.obs && 'IntersectionObserver' in window){
+      est.obs = true;
+      new IntersectionObserver((es) => {
+        const x = es[es.length - 1];
+        if(x.isIntersecting){ if(!est.visto) animar(0, 0); }
+        else { cancelAnimationFrame(est.raf); est.visto = false; poner(est.metaFrac, est.metaValor); }
+      }, { threshold: 0.3 }).observe(path.closest('.gauge-card') || path);
+    }
+    const visible = path.getBoundingClientRect().width > 0;
+    if(visible){ animar(est.visto ? est.frac : 0, est.visto ? est.valor : 0); return; }
+    // Pantalla cerrada: se deja el valor final puesto; se anima desde cero apenas se abre.
+    cancelAnimationFrame(est.raf); est.visto = false; poner(frac, value);
   }
 
   function mismoDia(a, b){
