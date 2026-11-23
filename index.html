@@ -2834,17 +2834,11 @@
   }
   let mesElegido = nombreMes(new Date());
 
-  // ===== Cambio de sección — SIEMPRE pasa por la pantalla de transición
-  // (animación del logo, 2s), sea que se entre desde el inicio o que se
-  // cambie desde el selector "Secciones ▾" de cualquier cabecera. =====
-  const transitionText = document.getElementById('transitionText');
+  // ===== Cambio de sección — entra directo, sin pantalla de transición (23-nov-2026, Thomas: parecía un redirect).
+  // La pantalla #transitionScreen queda en el HTML pero ya no se usa. =====
   function cambiarDeSeccion(destino, label, despues){
-    transitionText.textContent = 'Cargando ' + label + '…';
-    showScreen(transitionScreen);
-    setTimeout(() => {
-      showScreen(destino);
-      if(despues) despues();
-    }, 2000);
+    showScreen(destino);
+    if(despues) despues();
   }
 
   function entrarAlOnboarding(){
