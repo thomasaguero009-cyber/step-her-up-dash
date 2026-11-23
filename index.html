@@ -2604,8 +2604,6 @@
           <select id="metricasNombre">
             <option value="">Elegí tu nombre</option>
             <option value="Paula">Paula</option>
-            <option value="Mia">Mia</option>
-            <option value="Belen">Belen</option>
           </select>
         </div>
 
@@ -7559,10 +7557,10 @@
     { valor: 'cierres', texto: 'Cierres', color: '#e9c46a' },
   ];
   // Los setters del equipo aparecen siempre (aunque todavía no hayan cargado nada).
-  const SETTERS_FIJOS = ['Paula', 'Mia', 'Belen'];
+  const SETTERS_FIJOS = ['Paula'];
   // Setters que ya no están en el equipo: no aparecen en tarjetas, gráficos ni ranking. Sus números
   // anteriores siguen en el Sheet y en los totales del mes; solo se ocultan como persona.
-  const SETTERS_INACTIVOS = ['paola'];
+  const SETTERS_INACTIVOS = ['paola', 'mia', 'belen']; // 23-nov-2026 (Thomas): Mia y Belén salen de Métricas
   const esSetterInactivo = n => SETTERS_INACTIVOS.includes(String(n || '').trim().toLowerCase());
   const COLORES_SETTER = { Paula: '#f0a8be', Mia: '#e9c46a', Belen: '#8fb8f0', Gianie: '#5fd39a' };
   const COLORES_EXTRA = ['#5fd39a', '#d9b4ff', '#ffb08a'];
@@ -7754,7 +7752,7 @@
   // ===== Progreso de cada persona (debajo de las tarjetas de Setters y de Closers): se elige a la persona y el mes (también meses anteriores) y se ve cuánto lleva
   // contra su meta y cómo viene día a día (o acumulado), con la opción de compararlo con el mes anterior. Metas: setters = SOP (125 llamadas y 5 agendadas por día hábil
   // desde el 2 de noviembre de 2026); closers = METAS_CLOSER, o un reparto parejo de la meta del equipo. =====
-  const CLOSERS_FIJOS = ['Gianie', 'Paula', 'Mia', 'Belen'];   // el equipo de closers, tengan o no datos ese mes
+  const CLOSERS_FIJOS = ['Gianie', 'Paula'];   // el equipo de closers, tengan o no datos ese mes
   const METAS_CLOSER = {};   // ej.: { Gianie: 40000 } para fijar la meta de cash de una closer
   const progEstado = { setter: { persona: null, metrica: null, modo: 'dia', mes: null, comparar: false, token: 0 }, closer: { persona: null, metrica: null, modo: 'dia', mes: null, comparar: false, token: 0 } };
   const progVentasCache = new Map();
