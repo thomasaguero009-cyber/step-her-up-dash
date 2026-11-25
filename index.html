@@ -562,7 +562,25 @@
   }
   .admin-tiny-btn:hover{ opacity:0.85; color:var(--cream); }
   .modal-card.utm-card{ max-width:440px; text-align:left; max-height:88vh; overflow-y:auto; }
-  .modal-card.ret-card{ max-width:720px; text-align:left; max-height:92vh; overflow-y:auto; }
+  /* Retención de la VSL: pantalla completa (no ventana). A la izquierda la curva y la tabla; a la derecha el video para ver hasta qué segundo llegó la gente. */
+  #retOverlay{ padding:0; align-items:stretch; justify-content:stretch; background:#13040a; backdrop-filter:none; }
+  .modal-card.ret-card{ max-width:none; width:100%; height:100%; border-radius:0; border:0; box-shadow:none; text-align:left; overflow-y:auto; padding:26px clamp(16px,3vw,48px) 44px; background:#13040a; gap:16px; }
+  .ret-cabecera{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .ret-layout{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr); gap:28px; align-items:start; }
+  .ret-izq{ min-width:0; display:flex; flex-direction:column; gap:14px; }
+  .ret-der{ position:sticky; top:0; display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .ret-der-tit{ font-size:13px; font-weight:700; color:var(--cream); letter-spacing:.02em; }
+  .ret-vsel{ display:flex; flex-wrap:wrap; gap:6px; }
+  .ret-vsel button{ background:rgba(255,255,255,.05); border:1px solid var(--border); color:var(--text-dim); font:inherit; font-size:12.5px; padding:6px 12px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  .ret-vsel button i{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+  .ret-vsel button.on{ color:var(--cream); border-color:rgba(247,134,152,.7); background:rgba(247,134,152,.12); }
+  #retVideo{ width:100%; border-radius:12px; background:#000; display:block; max-height:72vh; }
+  .ret-vlectura{ font-size:13px; line-height:1.5; color:var(--text-dim); min-height:40px; }
+  .ret-vlectura b{ color:var(--cream); }
+  .ret-caidas{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:12.5px; color:var(--text-dim); }
+  .ret-caidas button{ background:none; border:1px solid var(--border); color:var(--cream); font:inherit; font-size:12.5px; padding:5px 10px; border-radius:999px; cursor:pointer; }
+  .ret-caidas button:hover{ border-color:rgba(247,134,152,.7); }
+  @media (max-width:1000px){ .ret-layout{ grid-template-columns:1fr; } .ret-der{ position:static; } }
   .ret-top{ display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; }
   .ret-top select{ width:auto; }
   .ret-leyenda{ display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; }
@@ -1703,8 +1721,10 @@
 
   <div class="modal-overlay" id="retOverlay">
     <div class="modal-card ret-card">
-      <div class="modal-title">Retención del video (VSL)</div>
-      <p class="modal-sub">De las personas que le dieron play al video, qué porcentaje llegó a ver cada momento. Cada versión de la prueba (rosa, dorada, libre, landing vieja) por separado y en total.</p>
+      <div class="ret-cabecera">
+        <div class="modal-title">Retención del video (VSL)</div>
+        <button type="button" class="ghost-link-btn" id="retCerrar">Cerrar</button>
+      </div>
       <div class="ret-top">
         <select id="retDias" class="modal-input" aria-label="Período">
           <option value="7">Últimos 7 días</option>
@@ -1715,11 +1735,19 @@
         <div class="ret-leyenda" id="retLeyenda"></div>
       </div>
       <div id="retMsg" class="modal-sub"></div>
-      <div id="retGrafico"></div>
-      <div id="retLectura" class="ret-lectura">Pasá el dedo o el mouse por el gráfico para ver cada momento.</div>
-      <div id="retTabla"></div>
-      <div class="modal-actions">
-        <button type="button" class="ghost-link-btn" id="retCerrar">Cerrar</button>
+      <div class="ret-layout">
+        <div class="ret-izq">
+          <div id="retGrafico"></div>
+          <div id="retLectura" class="ret-lectura">Pasá el mouse por el gráfico para ver cada momento. Tocá un punto para ir a ese segundo del video.</div>
+          <div id="retTabla"></div>
+        </div>
+        <div class="ret-der">
+          <div class="ret-der-tit">Ver el video</div>
+          <div class="ret-vsel" id="retVSel"></div>
+          <video id="retVideo" controls playsinline preload="metadata"></video>
+          <div class="ret-vlectura" id="retVLectura">Dale play al video, o tocá un punto de la curva, para ver cuánta gente seguía viendo en ese segundo.</div>
+          <div class="ret-caidas" id="retCaidas"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -4572,6 +4600,12 @@
   const RET_COLOR_NUEVA = '#5fd39a'; // la landing más nueva siempre va en verde
   const RET_COLORES = ['#f0a8be', '#e9d3a0', '#8ab4f8', '#c792ea', '#ffb86b', '#7fe0e0'];
   let retDatos = null, retVisibles = {};
+  // Video que ve la gente en cada versión (el panel lo muestra para ver hasta qué segundo llegaron).
+  const RET_VID_BASE = 'https://step-her-up-calendar.thomasaguero009.workers.dev/videos/';
+  const RET_VID_LARGO = { src: RET_VID_BASE + 'gianie-april-vsl-720.mp4', poster: '' };
+  const RET_VID_CORTO = { src: RET_VID_BASE + 'first-step-vsl-v3-1080.mp4', poster: RET_VID_BASE + 'first-step-vsl-poster.jpg' };
+  const RET_VIDEOS = { a: RET_VID_LARGO, b: RET_VID_LARGO, viejo: RET_VID_LARGO, dorado: RET_VID_CORTO, libre: RET_VID_CORTO };
+  let retVerSel = null, retGeom = null, retVidSrc = '';
   const retMin = (seg) => Math.floor(seg / 60) + ':' + String(Math.floor(seg % 60)).padStart(2, '0');
   const retPct = (x, n) => n ? Math.round(x / n * 100) + '%' : '–';
   // Curva suave que pasa por cada punto sin inventar subidas ni bajadas entre ellos (interpolación monótona de Fritsch–Carlson).
@@ -4710,8 +4744,9 @@
   });
   document.getElementById('asiCerrar').addEventListener('click', () => asiOverlay.classList.remove('open'));
   asiOverlay.addEventListener('click', (e) => { if(e.target === asiOverlay) asiOverlay.classList.remove('open'); });
-  document.getElementById('retCerrar').addEventListener('click', () => retOverlay.classList.remove('open'));
-  retOverlay.addEventListener('click', (e) => { if(e.target === retOverlay) retOverlay.classList.remove('open'); });
+  function cerrarRetencion(){ retOverlay.classList.remove('open'); const v = document.getElementById('retVideo'); if(v) v.pause(); }
+  document.getElementById('retCerrar').addEventListener('click', cerrarRetencion);
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && retOverlay.classList.contains('open')) cerrarRetencion(); });
   document.getElementById('retDias').addEventListener('change', cargarRetencion);
   async function cargarRetencion(){
     const msg = document.getElementById('retMsg');
@@ -4734,6 +4769,47 @@
       msg.textContent = 'No se pudo cargar la retención (' + e.message + ').';
     }
   }
+  // ----- Video al lado de la curva: elegir versión, ir a un segundo, y ver cuánta gente seguía en ese momento -----
+  const retVid = () => document.getElementById('retVideo');
+  function retSerieSel(){ return retGeom ? retGeom.series.find(x => x.k === retVerSel) : null; }
+  function retPintarVideo(series){
+    const con = series.filter(x => x.k !== 't' && x.n);
+    const sel = document.getElementById('retVSel');
+    if(!con.length){ sel.innerHTML = ''; document.getElementById('retCaidas').innerHTML = ''; return; }
+    if(!con.some(x => x.k === retVerSel)) retVerSel = con.slice().sort((a, b) => b.n - a.n)[0].k;
+    sel.innerHTML = con.map(x => `<button type="button" data-k="${x.k}" class="${x.k === retVerSel ? 'on' : ''}"><i style="background:${x.color}"></i>${x.nombre}</button>`).join('');
+    sel.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { retVerSel = b.dataset.k; retPintarVideo(retGeom.series); retPosMarca(); }));
+    const v = RET_VIDEOS[retVerSel] || RET_VID_LARGO, el = retVid();
+    if(retVidSrc !== v.src){ retVidSrc = v.src; el.pause(); el.src = v.src; if(v.poster) el.poster = v.poster; else el.removeAttribute('poster'); el.load(); }
+    // Los 3 momentos donde más gente dejó de ver (caída entre un tramo y el siguiente), para saltar directo a ellos.
+    const s = con.find(x => x.k === retVerSel), paso = retGeom.paso, caidas = [];
+    for(let i = 1; i < s.h.length; i++){ const c = (s.h[i - 1] || 0) - (s.h[i] || 0); if(c > 0) caidas.push({ i, c }); }
+    caidas.sort((a, b) => b.c - a.c);
+    document.getElementById('retCaidas').innerHTML = caidas.length ? 'Donde más se fueron: ' + caidas.slice(0, 3).sort((a, b) => a.i - b.i).map(x => `<button type="button" data-s="${(x.i - 1) * paso}">${retMin((x.i - 1) * paso)}–${retMin(x.i * paso)} · se fueron ${x.c} de ${s.n}</button>`).join('') : '';
+    document.querySelectorAll('#retCaidas button').forEach(b => b.addEventListener('click', () => retIrA(+b.dataset.s)));
+  }
+  function retIrA(seg){
+    const el = retVid(); if(!el || !el.src) return;
+    const hasta = isFinite(el.duration) && el.duration ? el.duration - 0.5 : seg;
+    try { el.currentTime = Math.max(0, Math.min(seg, hasta)); } catch(e){}
+    retPosMarca();
+  }
+  // Mueve la línea rosa de la curva al segundo donde está el video y dice cuánta gente seguía viendo en ese momento.
+  function retPosMarca(){
+    const el = retVid(), m = document.getElementById('retMarca'), lec = document.getElementById('retVLectura');
+    if(!retGeom || !m || !lec) return;
+    const t = el && isFinite(el.currentTime) ? el.currentTime : 0;
+    const s = retSerieSel();
+    if(!s){ m.style.display = 'none'; return; }
+    const x = retGeom.X(t);
+    m.setAttribute('x1', x); m.setAttribute('x2', x); m.style.display = '';
+    const i = Math.min(s.h.length - 1, Math.floor(t / retGeom.paso)), cuantas = s.h[i] || 0;
+    lec.innerHTML = `Minuto <b>${retMin(t)}</b> · en <b>${s.nombre}</b> seguían viendo <b>${retPct(cuantas, s.n)}</b> (${cuantas} de ${s.n} que le dieron play).`;
+  }
+  {
+    const el = retVid();
+    ['timeupdate', 'seeked', 'loadedmetadata'].forEach(ev => el.addEventListener(ev, retPosMarca));
+  }
   function dibujarRetencion(){
     const d = retDatos;
     if(!d) return;
@@ -4747,7 +4823,8 @@
     const W = 680, H = 260, L = 38, R = 12, T = 12, B = 28, pw = W - L - R, ph = H - T - B;
     const X = (seg) => L + Math.min(1, seg / dur) * pw;
     const Y = (p) => T + (1 - p) * ph;
-    let svg = `<svg viewBox="0 0 ${W} ${H}" id="retSvg" role="img" aria-label="Retención del video">`;
+    retGeom = { W, H, L, pw, T, ph, X, dur, paso, series };
+    let svg = `<svg viewBox="0 0 ${W} ${H}" id="retSvg" role="img" aria-label="Retención del video" style="cursor:pointer">`;
     for(let p = 0; p <= 1.001; p += 0.25) svg += `<line x1="${L}" x2="${W - R}" y1="${Y(p)}" y2="${Y(p)}" stroke="rgba(255,255,255,0.12)"/><text x="${L - 6}" y="${Y(p) + 4}" text-anchor="end" font-size="11" fill="rgba(247,236,233,0.72)">${Math.round(p * 100)}%</text>`;
     for(let seg = 0; seg <= dur; seg += 120) svg += `<text x="${X(seg)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="rgba(247,236,233,0.72)">${retMin(seg)}</text>`;
     // Dibujo: primero el relleno suave de cada curva (mismo color, bien transparente) y encima las líneas, para que las líneas siempre se vean.
@@ -4768,7 +4845,7 @@
       svg += `<path d="${retCurva(P)}" fill="none" stroke="${s.color}" stroke-width="${s.k === 't' ? 3 : 2}" stroke-linecap="round" stroke-linejoin="round" opacity="${s.k === 't' ? 1 : 0.9}"/>`;
       if(s.n < 30) P.forEach(p => { svg += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.2" fill="${s.color}" opacity="0.8"/>`; });
     });
-    svg += `<line id="retGuia" x1="0" x2="0" y1="${T}" y2="${T + ph}" stroke="rgba(255,255,255,0.45)" style="display:none"/></svg>`;
+    svg += `<line id="retGuia" x1="0" x2="0" y1="${T}" y2="${T + ph}" stroke="rgba(255,255,255,0.45)" style="display:none"/><line id="retMarca" x1="0" x2="0" y1="${T}" y2="${T + ph}" stroke="#f78698" stroke-width="2.5" style="display:none"/></svg>`;
     document.getElementById('retGrafico').innerHTML = tot.n ? svg : '<p class="modal-sub">Todavía no hay datos de retención en este período. Aparecen cuando la VSL nueva esté publicada y alguien vea el video.</p>';
     const lectura = document.getElementById('retLectura');
     const svgEl = document.getElementById('retSvg');
@@ -4783,6 +4860,8 @@
         lectura.textContent = 'A los ' + retMin(i * paso) + ' del video: ' + series.filter(s => retVisibles[s.k] && s.n).map(s => s.nombre + ' ' + retPct(s.h[i] || 0, s.n) + ' (' + (s.h[i] || 0) + ' de ' + s.n + ')').join(' · ');
       };
       svgEl.addEventListener('mousemove', mover);
+      const segDe = (ev) => { const r = svgEl.getBoundingClientRect(); const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX); const x = (cx - r.left) / r.width * W; return Math.max(0, Math.min(dur, Math.round((x - L) / pw * dur))); };
+      svgEl.addEventListener('click', (ev) => retIrA(segDe(ev)));
       svgEl.addEventListener('touchstart', mover, { passive: true });
       svgEl.addEventListener('touchmove', mover, { passive: true });
     }
@@ -4795,7 +4874,9 @@
     };
     document.getElementById('retTabla').innerHTML = `<table class="ret-tabla"><thead><tr><th></th><th>Empezaron el video</th><th>Siguen a los 30 s</th><th>Llegan a la mitad</th><th>Llegaron al final</th><th>Tocaron "Aplicar"</th></tr></thead><tbody>${
       series.map(s => `<tr><td><b style="color:${s.color}">${s.nombre}</b></td><td>${s.n}</td><td>${retPct(s.h[2] || 0, s.n)}</td><td>${mitadTxt(s)}</td><td>${s.fin} <small>${retPct(s.fin, s.n)}</small></td><td>${s.ap} <small>${retPct(s.ap, s.n)}</small></td></tr>`).join('')
-    }</tbody></table><p class="modal-sub" style="margin-top:8px;">${tot.n < 30 ? 'Todavía son pocas personas (' + tot.n + '): la curva puede cambiar mucho. Conviene esperar a tener más de 30 por versión antes de comparar versiones. ' : ''}Cuenta a quien le dio play al video. Cada persona suma una vez; se mide en tramos de 15 segundos: un punto de la curva es el porcentaje que llegó a ver, como mínimo, ese momento del video.</p>`;
+    }</tbody></table><p class="modal-sub" style="margin-top:8px;">${tot.n < 30 ? 'Todavía son pocas personas (' + tot.n + '): la curva puede cambiar mucho. Conviene esperar a tener más de 30 por versión antes de comparar versiones.' : ''}</p>`;
+    retPintarVideo(series);
+    retPosMarca();
   }
 
   // ===== Estrategias de alumnas (Admin). La lista, las respuestas, los borradores, el estado y el prompt
