@@ -4604,7 +4604,8 @@
   const RET_VID_BASE = 'https://step-her-up-calendar.thomasaguero009.workers.dev/videos/';
   const RET_VID_LARGO = { src: RET_VID_BASE + 'gianie-april-vsl-720.mp4', poster: '' };
   const RET_VID_CORTO = { src: RET_VID_BASE + 'first-step-vsl-v3-1080.mp4', poster: RET_VID_BASE + 'first-step-vsl-poster.jpg' };
-  const RET_VIDEOS = { a: RET_VID_LARGO, b: RET_VID_LARGO, viejo: RET_VID_LARGO, dorado: RET_VID_CORTO, libre: RET_VID_CORTO };
+  // La landing vieja (/freeclass-viejo) reproduce la VSL First Step (4:38), igual que la dorada y la libre.
+  const RET_VIDEOS = { a: RET_VID_LARGO, b: RET_VID_LARGO, viejo: RET_VID_CORTO, dorado: RET_VID_CORTO, libre: RET_VID_CORTO };
   let retVerSel = null, retGeom = null, retVidSrc = '';
   const retMin = (seg) => Math.floor(seg / 60) + ':' + String(Math.floor(seg % 60)).padStart(2, '0');
   const retPct = (x, n) => n ? Math.round(x / n * 100) + '%' : '–';
